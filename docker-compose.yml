@@ -1,0 +1,45 @@
+services:
+  database:
+    image: mysql:8.0
+    container_name: mysql-container
+    env_file:
+      - ./.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  backend:
+    build: ./Backend
+    container_name: backend
+    env_file:
+      - ./Backend/.env
+    depends_on:
+      - database
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  test:
+    build: ./Backend
+    container_name: backend-test
+    env_file:
+      - ./Backend/.env
+    depends_on:
+      - database
+    command: ["npm", "test"]
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

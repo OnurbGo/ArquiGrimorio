@@ -1,0 +1,55 @@
+users
+{
+  "name":"Paulo Henrique",
+  "email":"paulo@godmail.com",
+  "password":"123",
+  "type":"teacher"
+}
+
+teachers
+{
+  "user_id": 1,
+  "biography":"aprendiz do grande samurai Bing Chilin",
+  "expertise":"chutar idosas"
+}
+
+class 
+{
+  "master_id":1,
+  "title":"como ser brabo igual o ryu",
+  "description":"vamos aprender a como lutar como o ryu",
+  "price":100,
+  "creation_date":"2024-08-12"
+}
+
+methodpayment 
+{
+  "name":"pix"
+}
+
+lesson 
+{
+  "class_id":1,
+  "title":"como realizar chute rotatório parte 1",
+  "description":"hoje vamos aprender a como fazer tatsumaki senpukyaku",
+  "video_url":"https://www.youtube.com/watch?v=DTQ-IKqjxHk",
+  "order":1
+}
+
+inscription 
+{
+  "user_id":1,
+  "class_id":1,
+  "inscription_date":"2025-01-11",
+  "status":"paid"
+}
+
+payment 
+{
+  "user_id":1,
+  "methodpayment_id":1,
+  "class_id":1,
+  "value":100,
+  "payment_date":"2025-03-05",
+  "status":"paid"
+}
