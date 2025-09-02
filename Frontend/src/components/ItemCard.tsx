@@ -1,5 +1,8 @@
-import { Eye, Heart, User } from "lucide-react";
+import { useState } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { Item } from "../interface/Item";
+import { toggleItemLike } from "../services/api";
+import { useAuth } from "../utils/AuthContext";
 
 type ItemWithExtras = Item & {
   likes?: number;
@@ -14,98 +17,183 @@ interface Props {
   onLike?: (id: number) => void;
 }
 
-const rarityColors: Record<string, string> = {
-  comum: "bg-gray-200 text-gray-700",
-  incomum: "bg-green-200 text-green-800",
-  raro: "bg-blue-500 text-white",
-  épico: "bg-purple-600 text-white",
-  lendário: "bg-yellow-400 text-black shadow-lg",
-};
+const rarityColors: Record<string, { backgroundColor: string; color: string }> =
+  {
+    comum: { backgroundColor: "#e5e7eb", color: "#374151" },
+    incomum: { backgroundColor: "#bbf7d0", color: "#166534" },
+    raro: { backgroundColor: "#3b82f6", color: "#fff" },
+    épico: { backgroundColor: "#7c3aed", color: "#fff" },
+    lendário: { backgroundColor: "#facc15", color: "#000" },
+  };
 
 export default function ItemCard({ item, onView, onLike }: Props) {
-  const rarityKey = String(item.rarity ?? "").toLowerCase();
-  const rarityClass = rarityColors[rarityKey] ?? rarityColors.comum;
-
+  const { token } = useAuth();
+  const [localItem, setLocalItem] = useState<ItemWithExtras>(item);
+  const rarityKey = String(localItem.rarity ?? "").toLowerCase();
+  const rarityStyle = rarityColors[rarityKey] ?? rarityColors.comum;
   const priceText =
-    item.price != null
-      ? `${Number(item.price).toLocaleString("pt-BR")} mo`
+    localItem.price != null
+      ? `${Number(localItem.price).toLocaleString("pt-BR")} mo`
       : "—";
+  const creatorName = localItem.creator?.name || "Desconhecido";
 
-  const creatorName = item.creator?.name || "Desconhecido";
+  async function handleLike() {
+    if (!token) return;
+    try {
+      const updated = await toggleItemLike(localItem.id, token);
+      setLocalItem((prev) => ({ ...prev, ...updated }));
+      onLike?.(localItem.id);
+    } catch {}
+  }
 
   return (
-    <div className="rounded-2xl shadow-md p-4 bg-white group transition-transform hover:shadow-lg hover:-translate-y-1 active:scale-95">
-      {/* Cabeçalho */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="space-y-2 min-w-0 flex-1">
-          <h3 className="text-base md:text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-            {item.name}
-          </h3>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={`px-2 py-0.5 rounded-md text-xs font-medium ${rarityClass}`}
-            >
-              {item.rarity}
-            </span>
-            <span className="px-2 py-0.5 rounded-md text-xs border border-gray-300">
-              {item.type}
-            </span>
-          </div>
-        </div>
-
-        {item.image_url && (
-          <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border border-gray-200 ml-3 flex-shrink-0">
-            <img
-              src={item.image_url}
-              alt={item.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Conteúdo */}
-      <div className="mb-3">
-        <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
-          {item.description}
-        </p>
-        <p className="mt-3 text-sm font-medium text-gray-800">{priceText}</p>
-      </div>
-
-      {/* Rodapé */}
-      <div className="flex items-center justify-between pt-2 border-t">
-        <div className="flex items-center text-xs text-gray-500 min-w-0 flex-1">
-          <User className="w-3 h-3 mr-1 flex-shrink-0" />
-          <span className="truncate">por {creatorName}</span>
-        </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={() => onLike?.(item.id)}
-            className={`flex items-center text-xs px-2 py-1 rounded-md transition ${
-              item.isLiked
-                ? "text-red-600 hover:bg-red-50"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-            title="Curtir"
+    <View style={styles.card}>
+      {localItem.image_url && (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: localItem.image_url }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        </View>
+      )}
+      <Text style={styles.name}>{localItem.name}</Text>
+      <View style={styles.row}>
+        <Text
+          style={[
+            styles.rarity,
+            {
+              backgroundColor: rarityStyle.backgroundColor,
+              color: rarityStyle.color,
+            },
+          ]}
+        >
+          {localItem.rarity}
+        </Text>
+        <Text style={styles.type}>{localItem.type}</Text>
+      </View>
+      <Text style={styles.description}>{localItem.description}</Text>
+      <Text style={styles.price}>{priceText}</Text>
+      <View style={styles.footer}>
+        <Text style={styles.creator}>por {creatorName}</Text>
+        <View style={styles.footerActions}>
+          <TouchableOpacity onPress={handleLike} style={styles.likeButton}>
+            <Text style={{ color: localItem.isLiked ? "#dc2626" : "#374151" }}>
+              ♥ {localItem.likes ?? 0}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onView?.(localItem.id)}
+            style={styles.viewButton}
           >
-            <Heart
-              className={`w-4 h-4 ${item.isLiked ? "fill-current" : ""}`}
-            />
-            <span className="ml-1">{item.likes ?? 0}</span>
-          </button>
-
-          <button
-            onClick={() => onView?.(item.id)}
-            className="flex items-center text-xs px-2 py-1 border rounded-md hover:bg-gray-100"
-          >
-            <Eye className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Ver</span>
-          </button>
-        </div>
-      </div>
-    </div>
+            <Text style={{ color: "#2563eb" }}>Ver</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    alignItems: "center",
+  },
+  imageContainer: {
+    width: "50%",
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    marginBottom: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  rarity: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    fontSize: 12,
+    fontWeight: "500",
+    marginRight: 6,
+  },
+  type: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    fontSize: 12,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    color: "#374151",
+  },
+  description: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  price: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 8,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    paddingTop: 8,
+  },
+  creator: {
+    fontSize: 12,
+    color: "#6b7280",
+    flex: 1,
+  },
+  footerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  likeButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#f3f4f6",
+    marginRight: 4,
+  },
+  viewButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#e0e7ff",
+  },
+});

@@ -1,77 +1,125 @@
-// src/screens/Home.tsx
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   SafeAreaView,
-  ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
-
+import AntDesign from "react-native-vector-icons/AntDesign";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import FilterPanel from "../components/FilterPanel";
 import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
-import { Item, ItemFilters } from "../interface/Item";
-import { getItems } from "../services/api";
-
-const INITIAL_FILTERS: ItemFilters = {
-  q: "",
-  rarity: "todas",
-  type: "todos",
-  page: 1,
-};
+import type { Item } from "../interface/Item";
+import { default as api, getItems, getUserCount } from "../services/api";
 
 type UIFilters = {
   search?: string;
   rarity?: string;
   type?: string;
+  page?: number;
+  q?: string;
 };
 
-function normalizeItemsResponse(data: unknown): Item[] {
-  if (Array.isArray(data)) return data as Item[];
-  if (data && typeof data === "object" && Array.isArray((data as any).items)) {
-    return (data as any).items as Item[];
-  }
-  return [];
-}
-
-type RootStackParamList = {
-  Home: undefined;
-  ItemDetails: { id: number };
+const styles = {
+  statsRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 16,
+  },
+  statCard: {
+    flex: 1,
+    marginHorizontal: 4,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: "center" as const,
+  },
+  statLabel: { color: "#b3b3b3", fontSize: 12, marginTop: 8 },
+  statValue: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "700" as const,
+    marginTop: 4,
+  },
+  cardWrapper: { flex: 1, margin: 8 },
+  columnWrapper: { justifyContent: "space-between" as const },
+  listContent: { paddingBottom: 32 },
+  emptyCard: {
+    backgroundColor: "#23234a",
+    borderColor: "#7f32cc",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 24,
+    marginTop: 32,
+    alignItems: "center" as const,
+  },
+  emptyText: { color: "#b3b3b3", fontSize: 16, textAlign: "center" as const },
 };
 
-export default function Home() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [filters, setFilters] = useState<ItemFilters>(INITIAL_FILTERS);
-  const [items, setItems] = useState<Item[]>([]);
+type ItemWithExtras = Item & {
+  likes?: number;
+  isLiked?: boolean;
+  creator?: { name?: string; url_img?: string };
+  image_url?: string;
+};
+
+const Home: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const [items, setItems] = useState<ItemWithExtras[]>([]);
+  const [stats, setStats] = useState({ itens: 0, criadores: 0, curtidas: 0 });
+  const [filters, setFilters] = useState<UIFilters>({
+    q: "",
+    rarity: "todas",
+    type: "todos",
+    page: 1,
+  });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setErrorMsg(null);
 
     (async () => {
       try {
-        setLoading(true);
-        setErrorMsg(null);
+        let result: Item[] = await getItems();
+        let totalLikes = 0;
+        let totalCreators = 0;
 
-        const raw = await getItems({
-          q: filters.q || undefined,
-          rarity:
-            filters.rarity && filters.rarity !== "todas"
-              ? filters.rarity
-              : undefined,
-          type:
-            filters.type && filters.type !== "todos" ? filters.type : undefined,
-          page: filters.page,
-        });
+        // Busca total de curtidas usando a nova rota
+        try {
+          const resp = await api.get("/itemlike/total");
+          if (typeof resp.data === "number") {
+            totalLikes = resp.data;
+          } else if (resp.data && typeof resp.data.count === "number") {
+            totalLikes = resp.data.count;
+          } else {
+            totalLikes = 0;
+          }
+        } catch {
+          totalLikes = 0;
+        }
 
-        let result = normalizeItemsResponse(raw);
+        // Busca total de criadores
+        try {
+          totalCreators = await getUserCount();
+        } catch {
+          totalCreators = 0;
+        }
+
+        if (active) {
+          setStats({
+            itens: result.length,
+            criadores: totalCreators,
+            curtidas: totalLikes,
+          });
+        }
 
         if (filters.q) {
           const qLower = filters.q.toLowerCase();
@@ -97,7 +145,18 @@ export default function Home() {
         }
 
         if (!active) return;
-        setItems(result);
+        // Adiciona propriedades extras para o ItemCard
+        const itemsWithExtras: ItemWithExtras[] = result.map((item) => ({
+          ...item,
+          creator: item.creator ?? {
+            id: item.user_id,
+            name: "Desconhecido",
+            url_img: "",
+          },
+          likes: 0, // pode ser ajustado se necessário
+          isLiked: false,
+        }));
+        setItems(itemsWithExtras);
       } catch (err: any) {
         if (!active) return;
         setErrorMsg(err?.message ?? "Erro ao carregar itens");
@@ -112,7 +171,7 @@ export default function Home() {
   }, [filters]);
 
   function handleFilterChange(next: UIFilters) {
-    setFilters((prev) => ({
+    setFilters((prev: UIFilters) => ({
       ...prev,
       q: next.search?.trim() || "",
       rarity: next.rarity ?? prev.rarity,
@@ -125,92 +184,150 @@ export default function Home() {
     navigation.navigate("ItemDetails", { id });
   }
 
-  return (
-    <SafeAreaView className="flex-1 bg-background">
-      <Navigation />
-
-      <ScrollView
-        className="px-4 pb-10"
-        contentContainerStyle={{ paddingTop: 12 }}
+  const headerComponent = useMemo(
+    () => (
+      <View
+        style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 }}
       >
-        {/* Cabeçalho */}
-        <View className="mb-4">
-          <View className="rounded-2xl p-5 bg-card border border-border shadow-elevated">
-            <Text className="text-2xl font-extrabold text-primary-foreground">
+        {/* Estatísticas */}
+        <View style={styles.statsRow}>
+          <View
+            style={[
+              styles.statCard,
+              { backgroundColor: "#1a1a2e", borderColor: "#7f32cc" },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="archive-outline"
+              size={28}
+              color="#7f32cc"
+            />
+            <Text style={styles.statLabel}>Itens Cadastrados</Text>
+            <Text style={styles.statValue}>{stats.itens}</Text>
+          </View>
+          <View
+            style={[
+              styles.statCard,
+              { backgroundColor: "#1a1a2e", borderColor: "#7f32cc" },
+            ]}
+          >
+            <Feather name="users" size={28} color="#7f32cc" />
+            <Text style={styles.statLabel}>Criadores Ativos</Text>
+            <Text style={styles.statValue}>{stats.criadores}</Text>
+          </View>
+          <View
+            style={[
+              styles.statCard,
+              { backgroundColor: "#1a1a2e", borderColor: "#7f32cc" },
+            ]}
+          >
+            <AntDesign name="heart" size={28} color="#7f32cc" />
+            <Text style={styles.statLabel}>Curtidas Totais</Text>
+            <Text style={styles.statValue}>{stats.curtidas}</Text>
+          </View>
+        </View>
+
+        {/* Título e descrição */}
+        <View style={{ marginBottom: 16 }}>
+          <View
+            style={{
+              borderRadius: 16,
+              padding: 20,
+              backgroundColor: "#23234a",
+              borderColor: "#7f32cc",
+              borderWidth: 1,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+            }}
+          >
+            <Text style={{ fontSize: 24, fontWeight: "bold", color: "#fff" }}>
               Grimório de Itens
             </Text>
-            <Text className="mt-2 text-sm text-muted-foreground">
+            <Text style={{ marginTop: 8, fontSize: 14, color: "#b3b3b3" }}>
               Explore, filtre e descubra itens místicos criados pela comunidade.
             </Text>
           </View>
         </View>
 
-        {/* Conteúdo */}
-        <View className="flex-col">
-          {/* Filtros */}
-          <View className="mb-4">
-            <View className="bg-card p-3 rounded-xl border border-border">
-              <FilterPanel onChange={handleFilterChange} />
-            </View>
+        {/* Filtros */}
+        <View style={{ marginBottom: 16 }}>
+          <View
+            style={{
+              backgroundColor: "#23234a",
+              borderColor: "#7f32cc",
+              borderWidth: 1,
+              borderRadius: 12,
+              padding: 12,
+            }}
+          >
+            <FilterPanel onChange={handleFilterChange} />
           </View>
+        </View>
 
-          {/* Itens */}
-          <View className="flex-1">
-            {errorMsg && (
-              <View className="mb-3 p-3 rounded-lg bg-destructive/10 border border-destructive">
-                <Text className="text-destructive">{errorMsg}</Text>
-              </View>
-            )}
+        {/* Erro */}
+        {errorMsg ? (
+          <View
+            style={{
+              marginBottom: 12,
+              padding: 12,
+              borderRadius: 8,
+              backgroundColor: "#7f32cc22",
+              borderColor: "#7f32cc",
+              borderWidth: 1,
+            }}
+          >
+            <Text style={{ color: "#fff" }}>{errorMsg}</Text>
+          </View>
+        ) : null}
+      </View>
+    ),
+    [errorMsg, stats]
+  );
 
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0a1747" }}>
+      <Navigation />
+      <FlatList
+        data={items}
+        keyExtractor={(it) => String(it.id)}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        renderItem={({ item }) => (
+          <View style={styles.cardWrapper}>
+            <ItemCard item={item} onView={handleView} onLike={() => {}} />
+          </View>
+        )}
+        ListHeaderComponent={
+          <>
+            {headerComponent}
             {loading && !items.length ? (
-              <View className="py-8 items-center">
+              <View style={{ paddingVertical: 32, alignItems: "center" }}>
                 <ActivityIndicator size="large" color="#7f32cc" />
               </View>
-            ) : items.length > 0 ? (
-              <FlatList
-                data={items}
-                keyExtractor={(it) => String(it.id)}
-                numColumns={2}
-                columnWrapperStyle={styles.columnWrapper}
-                renderItem={({ item }) => (
-                  <View style={styles.cardWrapper}>
-                    <ItemCard
-                      item={item}
-                      onView={handleView}
-                      onLike={() => {}}
-                    />
-                  </View>
-                )}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-              />
-            ) : (
-              <View className="p-6 rounded-xl bg-card border border-border items-center">
-                <Text className="text-muted-foreground">
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={{ paddingHorizontal: 16 }}>
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
                   Nenhum item encontrado com os filtros atuais.
                 </Text>
               </View>
-            )}
-          </View>
-        </View>
-      </ScrollView>
+            </View>
+          ) : null
+        }
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
-}
+};
 
-/**
- * Usamos StyleSheet para alguns estilos que FlatList requer (columnWrapper),
- * mantendo o restante com classes NativeWind para o tema.
- */
-const styles = StyleSheet.create({
-  columnWrapper: {
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  cardWrapper: {
-    width: "48%",
-  },
-  listContent: {
-    paddingBottom: 48,
-  },
-});
+export default Home;
+
+// ...existing code...
+// ...existing code...

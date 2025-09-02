@@ -2,6 +2,36 @@ import axios from "axios";
 import { Platform } from "react-native";
 import type { Item } from "../interface/Item";
 import type { User } from "../interface/User";
+export async function getUserCount(): Promise<number> {
+  try {
+    const res = await fetch(`${getBaseUrl()}/users/count`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!res.ok) throw new Error("Erro ao buscar contagem de usuários");
+    const data = await res.json();
+    if (typeof data.count === "number") return data.count;
+    if (typeof data === "number") return data;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+export const toggleItemLike = async (
+  id: number,
+  token?: string | null
+): Promise<Item> => {
+  const response = await api.post(
+    `/itemlike/${id}/toggle`,
+    {},
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    }
+  );
+  return response.data;
+};
 
 function getBaseUrl() {
   if (typeof process !== "undefined" && process.env && process.env.API_URL) {
@@ -92,7 +122,15 @@ export const getUserById = async (id: number): Promise<User> => {
   return response.data;
 };
 
-export const createUser = async (user: User): Promise<User> => {
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  url_img: string;
+  description?: string;
+}
+
+export const createUser = async (user: CreateUserPayload): Promise<User> => {
   const response = await api.post("/users", user);
   return response.data;
 };
@@ -106,4 +144,26 @@ export const deleteUser = async (id: number): Promise<void> => {
   await api.delete(`/users/${id}`);
 };
 
+export async function getLikesForItem(id: number): Promise<number> {
+  try {
+    const res = await fetch(`${getBaseUrl()}/itemlike/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        // Adicione o token se necessário
+      },
+    });
+    if (!res.ok) throw new Error("Erro ao buscar likes");
+    const data = await res.json();
+    // Se o retorno for um array de likes
+    if (Array.isArray(data)) return data.length;
+    // Se o retorno for um objeto com count
+    if (typeof data.count === "number") return data.count;
+    // Se o retorno for só um número
+    if (typeof data === "number") return data;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
 export default api;

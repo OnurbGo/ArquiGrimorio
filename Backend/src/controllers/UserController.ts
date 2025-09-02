@@ -1,5 +1,33 @@
 import { Request, Response } from "express";
 import UserModel from "../models/UserModel";
+import ItemModel from "../models/ItemModel";
+
+export const getUserCount = async (req: Request, res: Response) => {
+  try {
+    const count = await UserModel.count();
+    return res.status(200).json({ count });
+  } catch (error) {
+    console.error("getUserCount error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getUserItems = async (
+  req: Request<{ id: string }>,
+  res: Response
+) => {
+  try {
+    const userId = req.params.id;
+    const user = await UserModel.findByPk(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const items = await ItemModel.findAll({ where: { user_id: userId } });
+    return res.status(200).json(items);
+  } catch (error) {
+    console.error("getUserItems error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 const passwordRegex =
   /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;

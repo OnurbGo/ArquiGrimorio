@@ -1,4 +1,3 @@
-// src/utils/authUtils.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 

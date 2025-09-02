@@ -52,3 +52,13 @@ export const getLikesForItem = async (
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getTotalLikes = async (req: Request, res: Response) => {
+  try {
+    const total = await ItemLikeModel.count();
+    return res.status(200).json({ totalLikes: total });
+  } catch (error) {
+    console.error("getTotalLikes error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

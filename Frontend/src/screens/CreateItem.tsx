@@ -1,4 +1,3 @@
-// src/screens/CreateItem.tsx
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -15,7 +14,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Button } from "../components/Button";
+import Button from "../components/Button";
 import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
 import { createItem } from "../services/api";
@@ -129,11 +128,24 @@ export default function CreateItem() {
         className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[
+            styles.container,
+            {
+              flexGrow: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            },
+          ]}
           className="px-4 pb-8"
         >
-          <View className="bg-card rounded-2xl p-5 border border-border shadow-elevated">
-            <View className="flex-row items-center mb-4">
+          <View
+            className="bg-card rounded-2xl p-5 border border-border shadow-elevated"
+            style={{ width: 400, maxWidth: "100%", alignSelf: "center" }}
+          >
+            <View
+              style={{ width: "100%" }}
+              className="flex-row items-center mb-4"
+            >
               <View className="w-12 h-12 rounded-full bg-primary items-center justify-center mr-4">
                 <Text className="text-primary-foreground font-extrabold">
                   ✦
@@ -151,7 +163,7 @@ export default function CreateItem() {
             </View>
 
             {/* Nome */}
-            <View className="mb-4">
+            <View style={{ width: "100%" }} className="mb-4">
               <Text className="text-sm text-foreground font-semibold mb-2">
                 Nome do Item *
               </Text>
@@ -165,7 +177,7 @@ export default function CreateItem() {
             </View>
 
             {/* Raridade e Tipo */}
-            <View className="flex-row mb-4">
+            <View style={{ width: "100%" }} className="flex-row mb-4">
               <View style={{ flex: 1, marginRight: 8 }}>
                 <Text className="text-sm text-foreground font-semibold mb-2">
                   Raridade *
@@ -220,7 +232,7 @@ export default function CreateItem() {
             </View>
 
             {/* Descrição */}
-            <View className="mb-4">
+            <View style={{ width: "100%" }} className="mb-4">
               <Text className="text-sm text-foreground font-semibold mb-2">
                 Descrição e Efeitos *
               </Text>
@@ -236,7 +248,7 @@ export default function CreateItem() {
             </View>
 
             {/* Preço e Imagem */}
-            <View className="flex-row mb-4">
+            <View style={{ width: "100%" }} className="flex-row mb-4">
               <View style={{ flex: 1, marginRight: 8 }}>
                 <Text className="text-sm text-foreground font-semibold mb-2">
                   Preço (Opcional)
@@ -267,7 +279,7 @@ export default function CreateItem() {
 
             {/* Prévia da imagem */}
             {formData.imageUrl ? (
-              <View className="mb-4">
+              <View style={{ width: "100%" }} className="mb-4">
                 <Text className="text-sm text-foreground font-semibold mb-2">
                   Prévia da Imagem
                 </Text>
@@ -290,7 +302,7 @@ export default function CreateItem() {
             ) : null}
 
             {/* Botões */}
-            <View className="flex-row mt-2">
+            <View style={{ width: "100%" }} className="flex-row mt-2">
               <View style={{ flex: 1, marginRight: 8 }}>
                 <Button
                   onPress={handleSubmit}

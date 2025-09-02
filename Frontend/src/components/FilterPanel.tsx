@@ -2,7 +2,7 @@ import { Picker } from "@react-native-picker/picker";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import type { ItemFilters } from "../interface/Item";
-import { Button } from "./Button";
+import Button from "./Button";
 import { Card, CardContent } from "./Card";
 
 interface Props {
@@ -81,11 +81,17 @@ export default function FilterPanel({ onChange, initial }: Props) {
         </View>
 
         {/* Botões */}
-        <View className="flex-row space-x-2">
-          <Button className="flex-1" onPress={apply}>
-            Aplicar
-          </Button>
-          <Button className="flex-1" variant="outline" onPress={clearAll}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Button onPress={apply}>Aplicar</Button>
+          <Button
+            onPress={clearAll}
+            style={{
+              backgroundColor: "#ffffff",
+              borderWidth: 1,
+              borderColor: "#2563eb",
+            }}
+            textStyle={{ color: "#2563eb" }}
+          >
             Limpar
           </Button>
         </View>

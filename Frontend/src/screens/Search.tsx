@@ -4,14 +4,14 @@ import {
   ActivityIndicator,
   FlatList,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import ScreenContainer from "../components/ScreenContainer";
 
-import { Button } from "../components/Button";
+import Button from "../components/Button";
 import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
 import { Item, ItemFilters } from "../interface/Item";
@@ -98,7 +98,7 @@ export default function Search() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Navigation />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScreenContainer>
         <View style={styles.header}>
           <Text style={styles.title}>Buscar Itens</Text>
           <Text style={styles.subtitle}>
@@ -176,7 +176,7 @@ export default function Search() {
             <Button onPress={clearFilters}>Limpar Filtros</Button>
           </View>
         )}
-      </ScrollView>
+      </ScreenContainer>
     </SafeAreaView>
   );
 }
