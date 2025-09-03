@@ -3,6 +3,7 @@ import {
   BookOpen,
   LogOut,
   Menu,
+  Pen,
   Plus,
   Search,
   User as UserIcon,
@@ -151,6 +152,25 @@ export default function Navigation() {
                       </View>
                     </TouchableOpacity>
 
+                    {/* Editar Item */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setAvatarMenuOpen(false);
+                        goTo("EditItem");
+                      }}
+                      style={styles.avatarMenuItem}
+                      accessibilityRole="button"
+                    >
+                      <View style={styles.menuItemRow}>
+                        <Pen
+                          size={16}
+                          color="#fff"
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={{ color: "#fff" }}>Editar Item</Text>
+                      </View>
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                       onPress={() => {
                         setAvatarMenuOpen(false);
@@ -176,14 +196,7 @@ export default function Navigation() {
         ) : (
           <View style={styles.compactRow}>
             {/* No mobile, só mostra o menu hamburger e login */}
-            {!isAuthenticated ? (
-              <TouchableOpacity
-                onPress={() => goTo("Login")}
-                style={styles.loginBtnSmall}
-              >
-                <Text style={styles.loginText}>Login</Text>
-              </TouchableOpacity>
-            ) : null}
+            {!isAuthenticated ? null : null}
             <TouchableOpacity
               onPress={() => setHamburgerOpen((s) => !s)}
               style={styles.iconBtn}
@@ -228,6 +241,18 @@ export default function Navigation() {
                 <Text style={styles.mobileMenuText}>Ver Perfil</Text>
               </TouchableOpacity>
 
+              {/* Editar Item - mobile hamburger menu */}
+              <TouchableOpacity
+                onPress={() => {
+                  setHamburgerOpen(false);
+                  goTo("EditItem");
+                }}
+                style={styles.mobileMenuItem}
+              >
+                <Pen size={18} color="#fff" style={{ marginRight: 10 }} />
+                <Text style={styles.mobileMenuText}>Editar Item</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity
                 onPress={() => {
                   setHamburgerOpen(false);
@@ -254,6 +279,18 @@ export default function Navigation() {
           >
             <UserIcon size={16} color="#fff" style={{ marginRight: 10 }} />
             <Text style={{ color: "#fff" }}>Ver Perfil</Text>
+          </TouchableOpacity>
+
+          {/* Editar Item - mobile avatar menu */}
+          <TouchableOpacity
+            onPress={() => {
+              setAvatarMenuOpen(false);
+              goTo("EditItem");
+            }}
+            style={styles.mobileMenuItem}
+          >
+            <Pen size={16} color="#fff" style={{ marginRight: 10 }} />
+            <Text style={{ color: "#fff" }}>Editar Item</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

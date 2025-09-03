@@ -1,4 +1,4 @@
-// Search.tsx
+// Search.tsx (grid automática — cabe até 4 por linha)
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,8 +20,12 @@ import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
 import ScreenContainer from "../components/ScreenContainer";
 import { Item, ItemFilters } from "../interface/Item";
-import { ItemLikeToggleResponse } from "../interface/ItemLike";
-import { getItems, toggleItemLike } from "../services/api";
+import {
+  getItems,
+  getLikesByUser,
+  getLikesForItem,
+  toggleItemLike,
+} from "../services/api";
 import { useAuth } from "../utils/AuthContext";
 
 /* ---------- constants ---------- */
@@ -57,6 +61,12 @@ const baseVh = WIN.height / 100;
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
+// grid config
+const HORIZONTAL_PADDING = 32; // container left+right padding (16 + 16)
+const GAP = 12; // gap between cards (px)
+const MIN_CARD_WIDTH = 160; // minimal card width to try to fit 4 in row on wider screens
+const MAX_COLUMNS = 4;
+
 type RootStackParamList = {
   Home: undefined;
   ItemDetails: { id: number };
@@ -67,7 +77,7 @@ type RootStackParamList = {
 export default function Search() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [filters, setFilters] = useState<ItemFilters>({
     rarity: "todas",
@@ -87,26 +97,27 @@ export default function Search() {
     Dimensions.get("window").width
   );
   useEffect(() => {
-    const sub = Dimensions.addEventListener?.("change", ({ window }) => {
+    const handler = ({ window }: { window: { width: number } }) =>
       setWindowWidth(window.width);
-    });
+    const sub = Dimensions.addEventListener?.("change", handler);
     return () => sub?.remove?.();
   }, []);
 
-  // compute columns dynamically based on width (mobile:1, tablet/desktop: 2..4)
+  // compute columns dynamically based on width but prefer fitting up to MAX_COLUMNS
   const columns = useMemo(() => {
-    if (windowWidth < 700) return 1;
-    if (windowWidth < 1000) return 2;
-    if (windowWidth < 1400) return 3;
-    return 4;
+    const available = Math.max(0, windowWidth - HORIZONTAL_PADDING);
+    const possible = Math.floor(available / MIN_CARD_WIDTH) || 1;
+    const cols = Math.min(Math.max(possible, 1), MAX_COLUMNS);
+    // keep at least 1 column on narrow screens
+    return cols;
   }, [windowWidth]);
 
-  // compute item width (numeric px) to pass to wrapper so ItemCard has consistent size in grid.
+  // compute item width (numeric px) so ItemCard wrapper has consistent size in grid.
   const itemWrapperWidth = useMemo(() => {
-    const horizontalPadding = clamp(4 * baseVw, 12, 40) * 2; // container padding both sides
-    const gap = 16 * (columns - 1); // approx gap between items
-    const usable = Math.min(windowWidth, CAP_WIDTH) - horizontalPadding - gap;
-    return Math.floor(usable / columns);
+    const totalGap = GAP * (columns - 1);
+    const usable =
+      Math.min(windowWidth, CAP_WIDTH) - HORIZONTAL_PADDING - totalGap;
+    return Math.floor(Math.max(0, usable / columns));
   }, [columns, windowWidth]);
 
   useEffect(() => {
@@ -133,8 +144,48 @@ export default function Search() {
           return matchesQ && matchesRarity && matchesType;
         });
 
+        if (!active) return;
         setItems(allItems);
-        // optional: could fetch likes for each item here
+
+        // -------------------------
+        // Buscar likes de maneira otimizada:
+        // - buscar os likes totais para todos os itens em paralelo
+        // - buscar os likes do usuário apenas uma vez (se autenticado)
+        // -------------------------
+        const userId =
+          typeof token === "string" && token && user?.id ? user.id : null;
+
+        // Promise.all para likes totais (cada chamada trata falha com 0)
+        const likesPromises = allItems.map((item) =>
+          getLikesForItem(item.id).catch(() => 0)
+        );
+        const likesResults = await Promise.all(likesPromises);
+
+        // buscar user likes uma vez (se aplicável)
+        let userLikesArr: any[] = [];
+        if (token && userId) {
+          try {
+            userLikesArr = await getLikesByUser(userId, token);
+            if (!Array.isArray(userLikesArr)) userLikesArr = [];
+          } catch {
+            userLikesArr = [];
+          }
+        }
+
+        // construir objeto de estado para itemLikes
+        const likesObj: Record<number, { likes: number; isLiked: boolean }> =
+          {};
+        allItems.forEach((item, idx) => {
+          const totalLikes =
+            typeof likesResults[idx] === "number" ? likesResults[idx] : 0;
+          const isLiked = userLikesArr.some(
+            (l: any) => Number(l.item_id) === Number(item.id)
+          );
+          likesObj[item.id] = { likes: totalLikes, isLiked };
+        });
+
+        if (!active) return;
+        setItemLikes(likesObj);
       } catch (err: any) {
         if (!active) return;
         setErrorMsg(err?.message ?? "Erro ao buscar itens");
@@ -145,20 +196,37 @@ export default function Search() {
     return () => {
       active = false;
     };
-  }, [filters]);
+  }, [filters, token, user?.id]);
 
-  function handleLike(id: number) {
-    if (!token) return;
-    toggleItemLike(id, token)
-      .then((res: ItemLikeToggleResponse) => {
-        setItemLikes((prev) => ({
+  // handleLike: pai faz a chamada (ItemCard delega quando onLike existe)
+  async function handleLike(id: number) {
+    if (!token || !user?.id) {
+      console.warn("Token ou user.id ausente, não é possível dar like");
+      return;
+    }
+    try {
+      const res = await toggleItemLike(id, token);
+
+      setItemLikes((prev) => {
+        const prevState = prev[id] || { likes: 0, isLiked: false };
+        // Preferir dados do backend quando disponíveis
+        const isLiked =
+          typeof res?.liked === "boolean" ? res.liked : !prevState.isLiked;
+        const likes =
+          typeof res?.totalLikes === "number"
+            ? res.totalLikes
+            : isLiked
+            ? prevState.likes + 1
+            : Math.max(prevState.likes - 1, 0);
+
+        return {
           ...prev,
-          [id]: { likes: res.totalLikes, isLiked: res.liked },
-        }));
-      })
-      .catch(() => {
-        // silent fail
+          [id]: { likes, isLiked },
+        };
       });
+    } catch (err) {
+      console.error("Erro ao dar like:", err);
+    }
   }
 
   function clearFilters() {
@@ -222,7 +290,7 @@ export default function Search() {
               style={[
                 localStyles.pickerWrap,
                 windowWidth >= 900 && { width: 220 },
-                localStyles.filterBox, // Adiciona estilização similar à barra de busca
+                localStyles.filterBox,
               ]}
             >
               <Text style={localStyles.label}>Raridade</Text>
@@ -230,15 +298,22 @@ export default function Search() {
                 <Picker
                   selectedValue={filters.rarity}
                   onValueChange={(val) =>
-                    setFilters((f) => ({ ...f, rarity: String(val), page: 1 }))
+                    setFilters((f) => ({ ...f, rarity: val, page: 1 }))
                   }
-                  mode="dropdown"
+                  style={{
+                    width: "100%",
+                    color: "#222",
+                    backgroundColor: "#f1f5f9",
+                    borderWidth: 0,
+                    borderRadius: 10,
+                  }}
+                  dropdownIconColor="#64748b"
                 >
-                  {RARITIES.map((r) => (
+                  {RARITIES.map((opt) => (
                     <Picker.Item
-                      key={r.value}
-                      label={r.label}
-                      value={r.value}
+                      key={opt.value}
+                      label={opt.label}
+                      value={opt.value}
                     />
                   ))}
                 </Picker>
@@ -250,7 +325,7 @@ export default function Search() {
               style={[
                 localStyles.pickerWrap,
                 windowWidth >= 900 && { width: 220 },
-                localStyles.filterBox, // Adiciona estilização similar à barra de busca
+                localStyles.filterBox,
               ]}
             >
               <Text style={localStyles.label}>Tipo</Text>
@@ -258,15 +333,22 @@ export default function Search() {
                 <Picker
                   selectedValue={filters.type}
                   onValueChange={(val) =>
-                    setFilters((f) => ({ ...f, type: String(val), page: 1 }))
+                    setFilters((f) => ({ ...f, type: val, page: 1 }))
                   }
-                  mode="dropdown"
+                  style={{
+                    width: "100%",
+                    color: "#222",
+                    backgroundColor: "#f1f5f9",
+                    borderWidth: 0,
+                    borderRadius: 10,
+                  }}
+                  dropdownIconColor="#64748b"
                 >
-                  {TYPES.map((t) => (
+                  {TYPES.map((opt) => (
                     <Picker.Item
-                      key={t.value}
-                      label={t.label}
-                      value={t.value}
+                      key={opt.value}
+                      label={opt.label}
+                      value={opt.value}
                     />
                   ))}
                 </Picker>
@@ -292,23 +374,21 @@ export default function Search() {
               data={items}
               keyExtractor={(it) => String(it.id)}
               numColumns={columns}
-              columnWrapperStyle={
-                columns > 1
-                  ? { justifyContent: "space-between", marginBottom: 16 }
-                  : undefined
-              }
-              renderItem={({ item }) => {
+              renderItem={({ item, index }) => {
                 const likeState = itemLikes[item.id] ?? {
                   likes: 0,
                   isLiked: false,
                 };
+                const isLastInRow = (index + 1) % columns === 0;
                 return (
                   <View
                     style={[
                       localStyles.itemWrapper,
-                      columns === 1
-                        ? { width: "100%", alignItems: "center" }
-                        : { width: itemWrapperWidth, alignItems: "flex-start" },
+                      {
+                        width: columns === 1 ? "100%" : itemWrapperWidth,
+                        marginRight: columns === 1 ? 0 : isLastInRow ? 0 : GAP,
+                        alignItems: columns === 1 ? "center" : "flex-start",
+                      },
                     ]}
                   >
                     <ItemCard
@@ -317,7 +397,7 @@ export default function Search() {
                         likes: likeState.likes,
                         isLiked: likeState.isLiked,
                       }}
-                      onLike={handleLike}
+                      onLike={handleLike} // pai gerencia o toggle agora
                       onView={(id) =>
                         navigation.navigate("ItemDetails", { id })
                       }
@@ -331,6 +411,11 @@ export default function Search() {
                   ? { alignItems: "center" }
                   : { alignItems: "stretch" },
               ]}
+              columnWrapperStyle={
+                columns > 1
+                  ? { justifyContent: "flex-start", marginBottom: 16 }
+                  : undefined
+              }
               showsVerticalScrollIndicator={false}
             />
           ) : (
@@ -361,7 +446,7 @@ const localStyles = StyleSheet.create({
   subtitle: { color: "#64748b", marginTop: 6 },
 
   filtersCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f1f5f9",
     borderRadius: 12,
     padding: clamp(1.6 * baseVw, 12, 18),
     marginBottom: 16,
@@ -408,11 +493,29 @@ const localStyles = StyleSheet.create({
 
   pickerWrap: { marginBottom: 8 },
   pickerBox: {
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.04)",
-    backgroundColor: "#fafafa",
+    borderColor: "rgba(15,23,42,0.08)",
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 6,
+    paddingVertical: Platform.OS === "web" ? 6 : 0,
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    position: "relative",
+    minHeight: 42,
+  },
+  pickerCaret: {
+    position: "absolute",
+    right: 10,
+    top: Platform.OS === "android" ? 10 : 12,
+    fontSize: 16,
+    color: "#64748b",
+    pointerEvents: "none",
   },
 
   clearWrap: {
@@ -429,19 +532,16 @@ const localStyles = StyleSheet.create({
 
   error: { color: "red", marginBottom: 12 },
 
-  // list/grid styles
   listContent: {
     paddingBottom: 40,
     paddingTop: 6,
-    // horizontal padding controlled by ScreenContainer; keep some vertical spacing
   },
   itemWrapper: {
-    // marginBottom provided by columnWrapperStyle or spacing in render
-    padding: 8,
+    paddingVertical: 8,
   },
 
   filterBox: {
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#f7fafc",
     borderRadius: 8,
     paddingVertical: Platform.OS === "web" ? 8 : 6,
     paddingHorizontal: 10,
