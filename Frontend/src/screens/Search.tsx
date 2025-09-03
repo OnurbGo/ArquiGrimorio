@@ -21,11 +21,11 @@ import Navigation from "../components/Navigation";
 import ScreenContainer from "../components/ScreenContainer";
 import { Item, ItemFilters } from "../interface/Item";
 import {
-  getItems,
   getLikesByUser,
   getLikesForItem,
   toggleItemLike,
-} from "../services/api";
+} from "../hooks/itens/itemLike";
+import { getItems } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
 
 /* ---------- constants ---------- */

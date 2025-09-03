@@ -25,14 +25,15 @@ import Navigation from "../components/Navigation";
 
 import type { Item } from "../interface/Item";
 import type { RootStackParamList } from "../navigation/Routes";
-import api, {
+import {
   getLikesByUser,
   getLikesForItem,
   // optional (if available): (itemId:number) => Promise<Array<{date:string, likes:number}>>
   // @ts-ignore
   getLikesHistory,
   toggleItemLike,
-} from "../services/api";
+} from "../hooks/itens/itemLike";
+import api from "../services/api";
 import { useAuth } from "../utils/AuthContext";
 
 type ItemDetailsRouteProp = RouteProp<RootStackParamList, "ItemDetails">;

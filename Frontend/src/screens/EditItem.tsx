@@ -25,7 +25,7 @@ import {
 import ItemCardEdit from "../components/ItemCardEdit";
 import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
-import { deleteItem, getItems, updateItem } from "../services/api";
+import { deleteItem, getItems, updateItem } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
 
 // cap width como na Home para evitar escalonamento exagerado em web muito larga

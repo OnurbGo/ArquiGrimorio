@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { Item } from "../interface/Item";
-import { toggleItemLike } from "../services/api";
+import { toggleItemLike } from "../hooks/itens/itemLike";
 import { useAuth } from "../utils/AuthContext";
 
 type ItemWithExtras = Item & {

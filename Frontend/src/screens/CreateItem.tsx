@@ -19,7 +19,7 @@ import {
 import Button from "../components/Button";
 import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
-import { createItem } from "../services/api";
+import { createItem } from "../hooks/itens/item";
 
 type RootStackParamList = {
   Home: undefined;

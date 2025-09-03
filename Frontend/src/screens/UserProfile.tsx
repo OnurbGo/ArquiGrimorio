@@ -19,7 +19,8 @@ import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
 import { Item } from "../interface/Item";
 import { User } from "../interface/User";
-import api, { getLikesByUser, getLikesForItem } from "../services/api";
+import { getLikesByUser, getLikesForItem } from "../hooks/itens/itemLike";
+import api from "@/services/api";
 import { useAuth } from "../utils/AuthContext";
 
 type RootStackParamList = {

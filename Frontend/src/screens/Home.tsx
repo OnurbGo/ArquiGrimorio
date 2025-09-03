@@ -17,7 +17,8 @@ import {
   View,
 } from "react-native";
 import Navigation from "../components/Navigation";
-import { getItems, getUserCount } from "../services/api";
+import {getUserCount } from "../hooks/user/user";
+import { getItems } from "../hooks/itens/item";
 
 // Use a capped width for `vw` so fonts don't scale unbounded on very wide web screens
 const WIN = Dimensions.get("window");

@@ -311,6 +311,7 @@ export default function Navigation() {
 
 const styles = StyleSheet.create({
   innerRow: {
+    paddingTop: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

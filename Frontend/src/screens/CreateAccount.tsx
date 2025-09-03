@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import Navigation from "../components/Navigation";
 import ScreenContainer from "../components/ScreenContainer";
-import { createUser } from "../services/api";
+import { createUser } from "../hooks/user/user";
 
 /* ---------- responsive helpers ---------- */
 const WIN = Dimensions.get("window");

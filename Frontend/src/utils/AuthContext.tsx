@@ -7,10 +7,13 @@ import {
   useState,
 } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
+import { decode as atob } from "base-64";
 import type { User } from "../interface/User";
 import api from "../services/api";
 
 const AUTH_KEY = "arquiGrimorio:auth:v1";
+const AUTH_USERID_KEY = "arquiGrimorio:userId:v1";
+const AUTH_USERNAME_KEY = "arquiGrimorio:userName:v1";
 const DEBUG_FORCE_ASYNCSTORE = false;
 const isWeb = Platform.OS === "web";
 
@@ -18,6 +21,8 @@ type AuthContextType = {
   isAuthenticated: boolean;
   token: string | null;
   user: User | null;
+  userId: number | null;
+  userName: string | null;
   login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
   isReady: boolean;
@@ -117,6 +122,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  // Safely decode JWT payload and return minimal info (id, email)
+  const decodeToken = (t: string): { id?: number; email?: string } | null => {
+    try {
+      const payloadPart = t.split(".")[1];
+      if (!payloadPart) return null;
+      const json = atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/"));
+      const payload = JSON.parse(json);
+      return payload || null;
+    } catch (err) {
+      console.warn("AuthProvider: failed to decode JWT:", err);
+      return null;
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -127,19 +148,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (stored) {
           setToken(stored);
           api.defaults.headers.common["Authorization"] = `Bearer ${stored}`;
-          // Decodifica o token JWT para obter o id do usuário
-          let userId = null;
-          try {
-            const payload = JSON.parse(atob(stored.split(".")[1]));
-            userId = payload.id;
-          } catch (err) {
-            console.warn("Falha ao decodificar JWT:", err);
-          }
-          if (userId) {
+
+          // Try to use cached id/name quickly
+          const cachedIdStr = await storageGet(AUTH_USERID_KEY);
+          const cachedName = await storageGet(AUTH_USERNAME_KEY);
+          const decoded = decodeToken(stored);
+          const idFromToken = decoded?.id ?? null;
+          const idToUse = cachedIdStr ? Number(cachedIdStr) : idFromToken;
+          setUserId(Number.isFinite(idToUse as number) ? (idToUse as number) : null);
+          setUserName(cachedName ?? null);
+
+          // Refresh user data from API when possible
+          if (idToUse) {
             try {
-              const res = await api.get(`/users/${userId}`);
+              const res = await api.get(`/users/${idToUse}`);
               if (!mounted) return;
-              setUser(res.data ?? null);
+              const u: User | null = res.data ?? null;
+              setUser(u);
+              if (u?.id) await storageSet(AUTH_USERID_KEY, String(u.id));
+              if (u?.name) {
+                setUserName(u.name);
+                await storageSet(AUTH_USERNAME_KEY, u.name);
+              }
             } catch (err) {
               console.warn("AuthProvider: fetch /users/:id failed:", err);
               setUser(null);
@@ -150,12 +180,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setToken(null);
           setUser(null);
+          setUserId(null);
+          setUserName(null);
           delete api.defaults.headers.common["Authorization"];
         }
       } catch (err) {
         console.warn("AuthProvider init error:", err);
         setToken(null);
         setUser(null);
+        setUserId(null);
+        setUserName(null);
         delete api.defaults.headers.common["Authorization"];
       } finally {
         if (mounted) setIsReady(true);
@@ -170,31 +204,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await storageSet(AUTH_KEY, t);
     setToken(t);
     api.defaults.headers.common["Authorization"] = `Bearer ${t}`;
-    // Decodifica o token JWT para obter o id do usuário
-    let userId = null;
-    try {
-      const payload = JSON.parse(atob(t.split(".")[1]));
-      userId = payload.id;
-    } catch (err) {
-      console.warn("Falha ao decodificar JWT:", err);
-    }
-    if (userId) {
+
+    const decoded = decodeToken(t);
+    const id = decoded?.id ?? null;
+    if (id) {
+      setUserId(id);
+      await storageSet(AUTH_USERID_KEY, String(id));
       try {
-        const res = await api.get(`/users/${userId}`);
-        setUser(res.data ?? null);
+        const res = await api.get(`/users/${id}`);
+        const u: User | null = res.data ?? null;
+        setUser(u);
+        if (u?.name) {
+          setUserName(u.name);
+          await storageSet(AUTH_USERNAME_KEY, u.name);
+        } else {
+          setUserName(null);
+        }
       } catch (err) {
         console.warn("AuthProvider.login: fetch /users/:id failed:", err);
         setUser(null);
+        setUserName(null);
       }
     } else {
+      setUserId(null);
+      setUserName(null);
       setUser(null);
     }
   };
 
   const logout = async () => {
     await storageRemove(AUTH_KEY);
+  await storageRemove(AUTH_USERID_KEY);
+  await storageRemove(AUTH_USERNAME_KEY);
     setToken(null);
     setUser(null);
+  setUserId(null);
+  setUserName(null);
     delete api.defaults.headers.common["Authorization"];
   };
 
@@ -212,6 +257,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: !!token,
         token,
         user,
+  userId,
+  userName,
         login,
         logout,
         isReady,
