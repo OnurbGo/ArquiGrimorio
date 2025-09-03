@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 // ...existing code...
 import CreateAccount from "../screens/CreateAccount";
 import CreateItem from "../screens/CreateItem";
+import EditItem from "../screens/EditItem";
 import Home from "../screens/Home";
 import ItemDetails from "../screens/ItemDetails";
 import LoginAccount from "../screens/LoginAccount";
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   UserProfile: { userId?: string | number };
   ItemDetails: { id: number };
   NotFound: undefined;
+  EditItem: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -46,6 +48,7 @@ export default function Routes() {
         UserProfile: "profile",
         ItemDetails: "item/:id",
         NotFound: "*",
+        EditItem: "edititem",
       },
     },
   };
@@ -89,16 +92,23 @@ export default function Routes() {
             </PrivateRoute>
           )}
         </Stack.Screen>
-        <Stack.Screen
-          name="Search"
-          component={Search}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="NotFound"
-          component={NotFound}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="EditItem" options={{ headerShown: false }}>
+          {() => (
+            <PrivateRoute>
+              <EditItem />
+            </PrivateRoute>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Search" options={{ headerShown: false }}>
+          {() => (
+            <PrivateRoute>
+              <Search />
+            </PrivateRoute>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="NotFound" options={{ headerShown: false }}>
+          {() => <NotFound />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );

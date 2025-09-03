@@ -1,10 +1,13 @@
+// UserProfile.tsx (atualizado para grid dinâmica)
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Image,
+  RefreshControl,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -19,12 +22,10 @@ import { User } from "../interface/User";
 import api, { getLikesByUser, getLikesForItem } from "../services/api";
 import { useAuth } from "../utils/AuthContext";
 
-// Adicione ou importe RootStackParamList
 type RootStackParamList = {
   Home: undefined;
   UserProfile: { userId?: number };
   ItemDetails: { id: number };
-  // Adicione outras rotas conforme necessário
 };
 
 type UserProfileNavigationProp = StackNavigationProp<
@@ -32,6 +33,11 @@ type UserProfileNavigationProp = StackNavigationProp<
   "UserProfile"
 >;
 type UserProfileRouteProp = RouteProp<RootStackParamList, "UserProfile">;
+
+const WIN = Dimensions.get("window");
+const HORIZONTAL_PADDING = 32; // container padding left+right (16 each)
+const GAP = 12; // gap between cards
+const MIN_CARD_WIDTH = 160; // ajuste este valor para controlar quantos cabem
 
 export default function UserProfile() {
   const navigation = useNavigation<UserProfileNavigationProp>();
@@ -45,11 +51,39 @@ export default function UserProfile() {
   const [userLikesTotal, setUserLikesTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
+  // responsive width
+  const [windowWidth, setWindowWidth] = useState(
+    Dimensions.get("window").width
+  );
   useEffect(() => {
-    let mounted = true;
+    const handler = ({ window }: { window: { width: number } }) => {
+      setWindowWidth(window.width);
+    };
+    const sub = Dimensions.addEventListener?.("change", handler);
+    return () => sub?.remove?.();
+  }, []);
 
-    const fetchUserData = async (id: number) => {
+  // compute columns based on available width, min card width and cap to 4
+  const columns = useMemo(() => {
+    const available = Math.max(0, windowWidth - HORIZONTAL_PADDING);
+    const cols = Math.floor(available / MIN_CARD_WIDTH) || 1;
+    return Math.min(Math.max(cols, 1), 4);
+  }, [windowWidth]);
+
+  // compute item width so cards fill the row
+  const itemWidth = useMemo(() => {
+    const totalGap = GAP * (columns - 1);
+    const available = Math.max(
+      0,
+      Math.min(windowWidth, WIN.width) - HORIZONTAL_PADDING - totalGap
+    );
+    return Math.floor(available / columns);
+  }, [columns, windowWidth]);
+
+  const fetchUserData = useCallback(
+    async (id: number) => {
       try {
         setLoading(true);
         setError(null);
@@ -57,16 +91,12 @@ export default function UserProfile() {
         const userRes = await api.get(`/users/${id}`);
         const userData: User = userRes.data;
 
-        // endpoint que você já usava: /users/:id/item
         const itemsRes = await api.get(`/users/${id}/item`);
         const itemsData: Item[] = itemsRes.data;
 
-        // Buscar likes e estado de like para cada item
         const likesPromises = itemsData.map(async (item) => {
           try {
-            // total de likes
             const likes = await getLikesForItem(item.id);
-            // se o usuário autenticado curtiu
             let isLiked = false;
             if (authUser && authUser.id) {
               const userLikes = await getLikesByUser(authUser.id);
@@ -79,74 +109,78 @@ export default function UserProfile() {
         });
         const itemsWithLikesData = await Promise.all(likesPromises);
 
-        // Buscar likes totais dados pelo usuário
-        let userLikesTotal = 0;
+        let totalLikes = 0;
         if (authUser && authUser.id) {
           try {
             const userLikesArr = await getLikesByUser(authUser.id);
-            userLikesTotal = Array.isArray(userLikesArr)
-              ? userLikesArr.length
-              : 0;
+            totalLikes = Array.isArray(userLikesArr) ? userLikesArr.length : 0;
           } catch {
-            userLikesTotal = 0;
+            totalLikes = 0;
           }
         }
 
-        if (!mounted) return;
         setUser(userData);
         setUserItems(itemsData);
         setItemsWithLikes(itemsWithLikesData);
-        setUserLikesTotal(userLikesTotal);
+        setUserLikesTotal(totalLikes);
       } catch (err: any) {
         console.error("fetchUserData error:", err);
-        if (!mounted) return;
         setError(err?.message ?? "Erro ao buscar dados do usuário");
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
-    };
+    },
+    [authUser]
+  );
 
+  useEffect(() => {
     (async () => {
-      // prioridade: route param userId
       if (routeUserId !== undefined && routeUserId !== null) {
         await fetchUserData(Number(routeUserId));
         return;
       }
 
-      // fallback: se houver user no contexto (usuário logado), mostra ele
       if (authUser && authUser.id) {
         await fetchUserData(authUser.id);
         return;
       }
 
-      // se não temos userId nem authUser, mostra erro / redireciona
       setLoading(false);
       setError("Usuário não especificado");
     })();
+  }, [routeUserId, authUser, fetchUserData]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [routeUserId, authUser]);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const idToFetch = routeUserId ?? authUser?.id;
+      if (idToFetch) await fetchUserData(Number(idToFetch));
+    } finally {
+      setRefreshing(false);
+    }
+  }, [routeUserId, authUser, fetchUserData]);
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" />
+      <SafeAreaView style={styles.loadingRoot}>
+        <ActivityIndicator size="large" color="#6d28d9" />
       </SafeAreaView>
     );
   }
 
   if (error || !user) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.center}>
-          <Text style={styles.errorTitle}>
-            {error || "Usuário não encontrado"}
-          </Text>
-          <Button onPress={() => navigation.navigate("Home")}>
-            Voltar ao Início
-          </Button>
+      <SafeAreaView style={styles.root}>
+        <Navigation />
+        <View style={styles.centerFull}>
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>
+              {error ?? "Usuário não encontrado"}
+            </Text>
+            <Button onPress={() => navigation.navigate("Home")}>
+              Voltar ao Início
+            </Button>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -160,37 +194,37 @@ export default function UserProfile() {
     : "U";
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.root}>
       <Navigation />
-      <View style={{ flex: 1 }}>
-        {/* Profile Header */}
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <View style={styles.avatar}>
+      <View style={styles.container}>
+        <View style={styles.profileCard}>
+          <View style={styles.headerRow}>
+            <View style={styles.avatarWrap}>
               {user.url_img ? (
                 <Image
                   source={{ uri: user.url_img }}
                   style={styles.avatarImg}
                 />
               ) : (
-                <Text style={styles.initials}>{initials}</Text>
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
               )}
             </View>
 
             <View style={styles.headerInfo}>
-              <Text style={styles.name}>{user.name || "Usuário"}</Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Criador</Text>
+              <Text style={styles.userName}>{user.name || "Usuário"}</Text>
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleBadgeText}>Criador</Text>
               </View>
 
-              <Text style={styles.description}>
+              <Text style={styles.userDescription}>
                 {user.description || "Este usuário não adicionou descrição."}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>📚</Text>
@@ -205,115 +239,170 @@ export default function UserProfile() {
           </View>
         </View>
 
-        {/* User Items */}
-        <View style={{ width: "100%" }}>
-          <View style={styles.itemsHeader}>
-            <Text style={styles.itemsTitle}>
-              Itens Criados por {user.name || "Usuário"}
-            </Text>
-            <Text style={styles.itemsCount}>
-              {userItems.length} {userItems.length === 1 ? "item" : "itens"}
+        <View style={styles.itemsHeader}>
+          <Text style={styles.itemsTitle}>
+            Itens Criados por {user.name || "Usuário"}
+          </Text>
+          <Text style={styles.itemsCount}>
+            {userItems.length} {userItems.length === 1 ? "item" : "itens"}
+          </Text>
+        </View>
+
+        {itemsWithLikes.length > 0 ? (
+          <FlatList
+            data={itemsWithLikes}
+            keyExtractor={(it) => String(it.id)}
+            numColumns={columns}
+            renderItem={({ item, index }) => {
+              const isLastInRow = (index + 1) % columns === 0;
+              return (
+                <View
+                  style={[
+                    styles.itemWrap,
+                    { width: itemWidth, marginRight: isLastInRow ? 0 : GAP },
+                  ]}
+                >
+                  <ItemCard
+                    item={item}
+                    onView={(id: number) =>
+                      navigation.navigate("ItemDetails", { id })
+                    }
+                  />
+                </View>
+              );
+            }}
+            contentContainerStyle={[styles.listContent, { paddingBottom: 36 }]}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["#6d28d9"]}
+              />
+            }
+            columnWrapperStyle={
+              columns > 1
+                ? { justifyContent: "flex-start", marginBottom: 12 }
+                : undefined
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyIcon}>📚</Text>
+            <Text style={styles.emptyTitle}>Nenhum item criado ainda</Text>
+            <Text style={styles.emptyText}>
+              {user.name || "Este usuário"} ainda não criou nenhum item mágico
             </Text>
           </View>
-
-          {itemsWithLikes.length > 0 ? (
-            <FlatList
-              data={itemsWithLikes}
-              keyExtractor={(it) => String(it.id)}
-              numColumns={2}
-              columnWrapperStyle={{ justifyContent: "space-between" }}
-              renderItem={({ item }) => (
-                <ItemCard
-                  item={item}
-                  onView={(id) => navigation.navigate("ItemDetails", { id })}
-                />
-              )}
-              contentContainerStyle={styles.container}
-            />
-          ) : (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyIcon}>📚</Text>
-              <Text style={styles.emptyTitle}>Nenhum item criado ainda</Text>
-              <Text style={styles.emptyText}>
-                {user.name || "Este usuário"} ainda não criou nenhum item mágico
-              </Text>
-            </View>
-          )}
-        </View>
+        )}
       </View>
     </SafeAreaView>
   );
 }
 
-/* estilos: copie os seus estilos originais abaixo */
 const styles = StyleSheet.create({
-  center: {
+  root: { flex: 1, backgroundColor: "#f7fafc" },
+  loadingRoot: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    backgroundColor: "#f7fafc",
   },
-  container: { padding: 16 },
-  card: {
-    padding: 12,
-    borderRadius: 12,
+  container: { flex: 1, padding: 16 },
+
+  profileCard: {
     backgroundColor: "#fff",
-    marginVertical: 8,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(99,102,241,0.06)",
+    marginBottom: 12,
   },
-  header: { flexDirection: "row" },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#ddd",
+  headerRow: { flexDirection: "row", alignItems: "center" },
+  avatarWrap: { marginRight: 12 },
+  avatarImg: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 2,
+    borderColor: "#6d28d9",
+  },
+  avatarPlaceholder: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#eef2ff",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    marginRight: 12,
+    borderWidth: 2,
+    borderColor: "#e9d5ff",
   },
-  avatarImg: { width: "100%", height: "100%" },
-  initials: { fontSize: 24, fontWeight: "700" },
+  avatarInitials: { fontSize: 28, fontWeight: "800", color: "#6d28d9" },
+
   headerInfo: { flex: 1 },
-  name: { fontSize: 20, fontWeight: "700" },
-  badge: {
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: "#eee",
-    borderRadius: 8,
+  userName: { fontSize: 20, fontWeight: "800", color: "#0f172a" },
+  roleBadge: {
+    marginTop: 8,
     alignSelf: "flex-start",
+    backgroundColor: "#eef2ff",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
   },
-  badgeText: { fontWeight: "600" },
-  description: { marginTop: 8, color: "#666" },
-  metaRow: { marginTop: 8, flexDirection: "row" },
+  roleBadgeText: { color: "#4f46e5", fontWeight: "700" },
+  userDescription: { marginTop: 8, color: "#6b7280" },
+
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 12,
+    marginVertical: 14,
   },
   statCard: {
     flex: 1,
-    marginHorizontal: 4,
-    padding: 12,
-    borderRadius: 8,
+    marginHorizontal: 6,
+    padding: 14,
+    borderRadius: 12,
     backgroundColor: "#fff",
     alignItems: "center",
-    minWidth: 100,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
   },
-  statIcon: { fontSize: 20 },
-  statNumber: { fontSize: 18, fontWeight: "700" },
-  statLabel: { color: "#666" },
+  statIcon: { fontSize: 18 },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0f172a",
+    marginTop: 6,
+  },
+  statLabel: { color: "#6b7280", marginTop: 4 },
+
   itemsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 8,
+    marginBottom: 8,
   },
-  itemsTitle: { fontSize: 18, fontWeight: "700" },
-  itemsCount: { color: "#666" },
-  emptyBox: { alignItems: "center", padding: 24 },
+  itemsTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
+  itemsCount: { color: "#6b7280" },
+
+  listContent: { paddingBottom: 36 },
+  columnWrapper: { justifyContent: "space-between", paddingBottom: 12 },
+
+  // itemWrap width is injected inline (calculated), keep marginBottom for vertical spacing
+  itemWrap: { marginBottom: 12 },
+
+  emptyBox: { alignItems: "center", padding: 32 },
   emptyIcon: { fontSize: 36, marginBottom: 12 },
   emptyTitle: { fontSize: 18, fontWeight: "700" },
-  emptyText: { color: "#666", textAlign: "center" },
-  errorTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  emptyText: { color: "#6b7280", textAlign: "center" },
+
+  centerFull: { flex: 1, justifyContent: "center", alignItems: "center" },
+  errorCard: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#fee2e2",
+  },
+  errorTitle: { color: "#ef4444", fontWeight: "800", marginBottom: 8 },
 });
