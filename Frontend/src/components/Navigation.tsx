@@ -70,21 +70,34 @@ export default function Navigation() {
 
         {isWide ? (
           <View style={styles.rightRow}>
-            <View style={styles.itemsRow}>
-              {NAV_ITEMS.map((it) => {
-                const Icon = it.icon;
-                return (
-                  <TouchableOpacity
-                    key={it.key}
-                    onPress={() => goTo(it.route)}
-                    style={styles.navItem}
-                    activeOpacity={0.7}
-                  >
-                    <Icon size={18} color="#fff" />
-                    <Text style={styles.navText}>{it.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={styles.itemsRowWithCreate}>
+              {/* Grimório */}
+              <TouchableOpacity
+                onPress={() => goTo("Home")}
+                style={styles.navItem}
+                activeOpacity={0.7}
+              >
+                <BookOpen size={18} color="#fff" />
+                <Text style={styles.navText}>Grimório</Text>
+              </TouchableOpacity>
+              {/* Buscar */}
+              <TouchableOpacity
+                onPress={() => goTo("Search")}
+                style={styles.navItem}
+                activeOpacity={0.7}
+              >
+                <Search size={18} color="#fff" />
+                <Text style={styles.navText}>Buscar</Text>
+              </TouchableOpacity>
+              {/* Criar Item - moved left, before avatar */}
+              <TouchableOpacity
+                onPress={() => goTo("CreateItem")}
+                style={styles.navItemCreate}
+                activeOpacity={0.7}
+              >
+                <Plus size={18} color="#fff" />
+                <Text style={styles.navText}>Criar Item</Text>
+              </TouchableOpacity>
             </View>
 
             {!isAuthenticated ? (
@@ -162,20 +175,7 @@ export default function Navigation() {
           </View>
         ) : (
           <View style={styles.compactRow}>
-            <TouchableOpacity
-              onPress={() => goTo("Search")}
-              style={styles.iconBtn}
-            >
-              <Search size={18} color="#fff" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => goTo("CreateItem")}
-              style={styles.iconBtn}
-            >
-              <Plus size={18} color="#fff" />
-            </TouchableOpacity>
-
+            {/* No mobile, só mostra o menu hamburger e login */}
             {!isAuthenticated ? (
               <TouchableOpacity
                 onPress={() => goTo("Login")}
@@ -183,30 +183,7 @@ export default function Navigation() {
               >
                 <Text style={styles.loginText}>Login</Text>
               </TouchableOpacity>
-            ) : (
-              <Pressable
-                onPress={() => setAvatarMenuOpen((s) => !s)}
-                style={styles.avatarPressSmall}
-                hitSlop={8}
-              >
-                {avatarUrl ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={styles.avatarSmall}
-                    onError={() => {
-                      console.warn("Erro ao carregar imagem do avatar pequeno");
-                    }}
-                  />
-                ) : (
-                  <View style={styles.avatarFallbackSmall}>
-                    <Text style={styles.avatarInitialsSmall}>
-                      {(profileName || "U")[0].toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            )}
-
+            ) : null}
             <TouchableOpacity
               onPress={() => setHamburgerOpen((s) => !s)}
               style={styles.iconBtn}
@@ -276,7 +253,7 @@ export default function Navigation() {
             style={styles.mobileMenuItem}
           >
             <UserIcon size={16} color="#fff" style={{ marginRight: 10 }} />
-            <Text>Ver Perfil</Text>
+            <Text style={{ color: "#fff" }}>Ver Perfil</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -287,7 +264,7 @@ export default function Navigation() {
             style={styles.mobileMenuItem}
           >
             <LogOut size={16} color="#fff" style={{ marginRight: 10 }} />
-            <Text>Desconectar</Text>
+            <Text style={{ color: "#fff" }}>Desconectar</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -296,35 +273,65 @@ export default function Navigation() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#181825",
-    borderBottomWidth: 2,
-    borderBottomColor: "#7f32cc",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    zIndex: 50,
-  },
   innerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  container: {
+    width: "100%",
+    backgroundColor: "#181825",
+    borderBottomWidth: 2,
+    borderBottomColor: "#7f32cc",
+    paddingVertical: "2%",
+    paddingHorizontal: "3%",
+    paddingRight: 20,
+    zIndex: 50,
+  },
   left: { flexDirection: "row", alignItems: "center" },
   logoText: { fontSize: 16, fontWeight: "600", color: "#fff" },
-  rightRow: { flexDirection: "row", alignItems: "center" },
-  itemsRow: { flexDirection: "row", alignItems: "center" },
+  rightRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  itemsRowWithCreate: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-start",
+    gap: 24,
+    minWidth: 0,
+  },
+
   navItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 14,
+    marginLeft: 8,
     paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     borderRadius: 8,
     backgroundColor: "#23234a",
+    flexShrink: 0,
   },
+
+  navItemCreate: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: "#7f32cc",
+    position: "relative",
+    zIndex: 20,
+    flexShrink: 0,
+  },
+
   navText: { marginLeft: 8, fontSize: 14, color: "#fff" },
+
   loginBtn: {
-    marginLeft: 18,
+    marginLeft: 12,
     borderWidth: 1,
     borderColor: "#7f32cc",
     paddingHorizontal: 12,
@@ -333,7 +340,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#23234a",
   },
   loginText: { fontWeight: "600", color: "#fff" },
-  avatarArea: { marginLeft: 12, position: "relative", zIndex: 9999 },
+
+  avatarArea: {
+    marginLeft: 12,
+    position: "relative",
+    zIndex: 0,
+    flexShrink: 0,
+  },
+
   avatarPress: { padding: 2 },
   avatar: {
     width: 36,
@@ -351,6 +365,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarInitials: { color: "#fff", fontWeight: "700" },
+
   avatarMenu: {
     position: "absolute",
     right: 0,
@@ -375,17 +390,17 @@ const styles = StyleSheet.create({
   menuItemRow: { flexDirection: "row", alignItems: "center" },
 
   compactRow: { flexDirection: "row", alignItems: "center" },
-  iconBtn: { padding: 8, marginLeft: 6 },
+  iconBtn: { padding: "2%", marginLeft: "1%" },
   loginBtnSmall: {
-    marginLeft: 6,
+    marginLeft: "1%",
     borderWidth: 1,
     borderColor: "#7f32cc",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: "2%",
+    paddingVertical: "1%",
     borderRadius: 999,
     backgroundColor: "#23234a",
   },
-  avatarPressSmall: { marginLeft: 6 },
+  avatarPressSmall: { marginLeft: "1%" },
   avatarSmall: {
     width: 32,
     height: 32,
@@ -404,19 +419,19 @@ const styles = StyleSheet.create({
   avatarInitialsSmall: { color: "#fff", fontWeight: "700", fontSize: 12 },
 
   mobileMenu: {
-    marginTop: 8,
+    marginTop: "2%",
     backgroundColor: "#23234a",
     borderRadius: 8,
     borderWidth: 2,
     borderColor: "#7f32cc",
-    paddingVertical: 6,
+    paddingVertical: "1%",
     zIndex: 9999,
   },
   mobileMenuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: "2%",
+    paddingHorizontal: "3%",
     borderBottomWidth: 1,
     borderBottomColor: "#7f32cc33",
   },

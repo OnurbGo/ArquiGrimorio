@@ -1,18 +1,22 @@
 import React from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import Navigation from "../components/Navigation";
 
 const NotFound: React.FC<{ navigation?: any }> = ({ navigation }) => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>404</Text>
-      <Text style={styles.message}>Página não encontrada</Text>
-      {navigation && (
-        <Button
-          title="Voltar para Home"
-          onPress={() => navigation.navigate("Home")}
-        />
-      )}
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <Navigation />
+      <View style={styles.container}>
+        <Text style={styles.title}>404</Text>
+        <Text style={styles.message}>Página não encontrada</Text>
+        {navigation && (
+          <Button
+            title="Voltar para Home"
+            onPress={() => navigation.navigate("Home")}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 };
 

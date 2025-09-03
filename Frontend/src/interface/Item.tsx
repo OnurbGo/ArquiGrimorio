@@ -11,6 +11,20 @@ export interface Item {
   updatedAt: string;
   creator: ItemCreator;
 }
+export * from "./Item";
+export interface Item {
+  id: number;
+  user_id: number;
+  name: string;
+  description: string;
+  rarity: string;
+  type: string;
+  price: number;
+  image_url: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: ItemCreator;
+}
 
 export interface ItemCreator {
   id: number;

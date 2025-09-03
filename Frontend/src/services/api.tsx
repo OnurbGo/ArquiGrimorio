@@ -1,7 +1,44 @@
+// Buscar todos os likes de um usuário
 import axios from "axios";
 import { Platform } from "react-native";
 import type { Item } from "../interface/Item";
 import type { User } from "../interface/User";
+export const getLikesByUser = async (
+  userId: number,
+  token?: string | null
+): Promise<any[]> => {
+  const response = await api.get(
+    `/itemlike/user/${userId}`,
+    token
+      ? {
+          headers: {
+            ...api.defaults.headers.common,
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined
+  );
+  return response.data;
+};
+
+// Buscar todos os likes de um item
+export const getLikesByItem = async (
+  itemId: number,
+  token?: string | null
+): Promise<any[]> => {
+  const response = await api.get(
+    `/itemlike/item/${itemId}`,
+    token
+      ? {
+          headers: {
+            ...api.defaults.headers.common,
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined
+  );
+  return response.data;
+};
 export async function getUserCount(): Promise<number> {
   try {
     const res = await fetch(`${getBaseUrl()}/users/count`, {
@@ -22,13 +59,18 @@ export async function getUserCount(): Promise<number> {
 export const toggleItemLike = async (
   id: number,
   token?: string | null
-): Promise<Item> => {
+): Promise<import("../interface/ItemLike").ItemLikeToggleResponse> => {
   const response = await api.post(
     `/itemlike/${id}/toggle`,
     {},
-    {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    }
+    token
+      ? {
+          headers: {
+            ...api.defaults.headers.common,
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined
   );
   return response.data;
 };
@@ -145,25 +187,10 @@ export const deleteUser = async (id: number): Promise<void> => {
 };
 
 export async function getLikesForItem(id: number): Promise<number> {
-  try {
-    const res = await fetch(`${getBaseUrl()}/itemlike/${id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        // Adicione o token se necessário
-      },
-    });
-    if (!res.ok) throw new Error("Erro ao buscar likes");
-    const data = await res.json();
-    // Se o retorno for um array de likes
-    if (Array.isArray(data)) return data.length;
-    // Se o retorno for um objeto com count
-    if (typeof data.count === "number") return data.count;
-    // Se o retorno for só um número
-    if (typeof data === "number") return data;
-    return 0;
-  } catch {
-    return 0;
-  }
+  const response = await api.get(`/itemlike/${id}`);
+  const data = response.data;
+  if (typeof data.totalLikes === "number") return data.totalLikes;
+  if (typeof data === "number") return data;
+  return 0;
 }
 export default api;

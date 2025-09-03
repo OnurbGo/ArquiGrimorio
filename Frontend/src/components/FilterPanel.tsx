@@ -10,8 +10,29 @@ interface Props {
   initial?: ItemFilters;
 }
 
-const RARITIES = ["todas", "comum", "incomum", "raro", "épico", "lendário"];
-const TYPES = ["todos", "arma", "armadura", "anel", "poção", "acessório"];
+const RARITIES = [
+  { value: "todas", label: "Todas" },
+  { value: "comum", label: "Comum" },
+  { value: "incomum", label: "Incomum" },
+  { value: "raro", label: "Raro" },
+  { value: "muito-raro", label: "Muito Raro" },
+  { value: "lendario", label: "Lendário" },
+  { value: "artefato", label: "Artefato" },
+];
+
+const TYPES = [
+  { value: "todos", label: "Todos" },
+  { value: "arma", label: "Arma" },
+  { value: "armadura", label: "Armadura" },
+  { value: "escudo", label: "Escudo" },
+  { value: "pergaminho", label: "Pergaminho" },
+  { value: "pocao", label: "Poção" },
+  { value: "anel", label: "Anel" },
+  { value: "amuleto", label: "Amuleto" },
+  { value: "varinha", label: "Varinha" },
+  { value: "cajado", label: "Cajado" },
+  { value: "outros", label: "Outros" },
+];
 
 export default function FilterPanel({ onChange, initial }: Props) {
   const [q, setQ] = useState<string>(initial?.q ?? "");
@@ -36,14 +57,36 @@ export default function FilterPanel({ onChange, initial }: Props) {
   }
 
   return (
-    <Card className="border border-gray-200 bg-white shadow-sm">
-      <CardContent className="p-4 space-y-4">
+    <Card className="bg-[#23234a] border border-[#7f32cc] rounded-xl shadow-md">
+      <CardContent className="p-4">
         {/* Campo de busca */}
-        <View className="space-y-1">
-          <Text className="text-sm text-gray-600">Busca (nome/descrição)</Text>
+        <View className="mb-5">
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 18,
+              fontWeight: "bold",
+              marginBottom: 6,
+              letterSpacing: 0.5,
+            }}
+          >
+            Busca (nome/descrição)
+          </Text>
           <TextInput
-            className="w-full rounded border px-3 py-2 bg-gray-50 focus:outline-none"
+            className="w-full"
+            style={{
+              borderRadius: 10,
+              borderWidth: 2,
+              borderColor: "#7f32cc",
+              backgroundColor: "#1a1a2e",
+              color: "#fff",
+              paddingHorizontal: 14,
+              paddingVertical: 10,
+              fontSize: 16,
+              marginBottom: 2,
+            }}
             placeholder="ex.: invisibilidade, espada..."
+            placeholderTextColor="#fff6"
             value={q}
             onChangeText={setQ}
             returnKeyType="search"
@@ -51,46 +94,120 @@ export default function FilterPanel({ onChange, initial }: Props) {
         </View>
 
         {/* Select de raridade */}
-        <View className="space-y-1">
-          <Text className="text-sm text-gray-600">Raridade</Text>
-          <View className="w-full rounded border bg-gray-50">
+        <View className="mb-5">
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 18,
+              fontWeight: "bold",
+              marginBottom: 6,
+              letterSpacing: 0.5,
+            }}
+          >
+            Raridade
+          </Text>
+          <View
+            style={{
+              borderRadius: 10,
+              borderWidth: 2,
+              borderColor: "#7f32cc",
+              backgroundColor: "#1a1a2e",
+              marginBottom: 2,
+            }}
+          >
             <Picker
               selectedValue={rarity}
               onValueChange={(v) => setRarity(String(v))}
+              style={{
+                color: "#000",
+                fontSize: 16,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+              }}
+              dropdownIconColor="#7f32cc"
             >
               {RARITIES.map((r) => (
-                <Picker.Item key={r} label={r} value={r} />
+                <Picker.Item
+                  key={r.value}
+                  label={r.label}
+                  value={r.value}
+                  color="#000"
+                />
               ))}
             </Picker>
           </View>
         </View>
 
         {/* Select de tipo */}
-        <View className="space-y-1">
-          <Text className="text-sm text-gray-600">Tipo</Text>
-          <View className="w-full rounded border bg-gray-50">
+        <View className="mb-5">
+          <Text
+            style={{
+              color: "#fff",
+              fontSize: 18,
+              fontWeight: "bold",
+              marginBottom: 6,
+              letterSpacing: 0.5,
+            }}
+          >
+            Tipo
+          </Text>
+          <View
+            style={{
+              borderRadius: 10,
+              borderWidth: 2,
+              borderColor: "#7f32cc",
+              backgroundColor: "#1a1a2e",
+              marginBottom: 2,
+            }}
+          >
             <Picker
               selectedValue={type}
               onValueChange={(v) => setType(String(v))}
+              style={{
+                color: "#000",
+                fontSize: 16,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+              }}
+              dropdownIconColor="#7f32cc"
             >
               {TYPES.map((t) => (
-                <Picker.Item key={t} label={t} value={t} />
+                <Picker.Item
+                  key={t.value}
+                  label={t.label}
+                  value={t.value}
+                  color="#000"
+                />
               ))}
             </Picker>
           </View>
         </View>
 
         {/* Botões */}
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Button onPress={apply}>Aplicar</Button>
+        <View className="flex-row gap-2 mt-2">
+          <Button
+            onPress={apply}
+            style={{
+              backgroundColor: "#7f32cc",
+              borderRadius: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+            }}
+            textStyle={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}
+          >
+            Aplicar
+          </Button>
           <Button
             onPress={clearAll}
             style={{
-              backgroundColor: "#ffffff",
-              borderWidth: 1,
-              borderColor: "#2563eb",
+              backgroundColor: "#23234a",
+              borderWidth: 2,
+              borderColor: "#7f32cc",
+              borderRadius: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
             }}
-            textStyle={{ color: "#2563eb" }}
+            textStyle={{ color: "#7f32cc", fontWeight: "bold", fontSize: 16 }}
           >
             Limpar
           </Button>

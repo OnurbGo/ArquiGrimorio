@@ -16,7 +16,7 @@ import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
 import { Item } from "../interface/Item";
 import { User } from "../interface/User";
-import api from "../services/api";
+import api, { getLikesByUser, getLikesForItem } from "../services/api";
 import { useAuth } from "../utils/AuthContext";
 
 // Adicione ou importe RootStackParamList
@@ -41,6 +41,8 @@ export default function UserProfile() {
 
   const [user, setUser] = useState<User | null>(null);
   const [userItems, setUserItems] = useState<Item[]>([]);
+  const [itemsWithLikes, setItemsWithLikes] = useState<any[]>([]);
+  const [userLikesTotal, setUserLikesTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,9 +61,42 @@ export default function UserProfile() {
         const itemsRes = await api.get(`/users/${id}/item`);
         const itemsData: Item[] = itemsRes.data;
 
+        // Buscar likes e estado de like para cada item
+        const likesPromises = itemsData.map(async (item) => {
+          try {
+            // total de likes
+            const likes = await getLikesForItem(item.id);
+            // se o usuário autenticado curtiu
+            let isLiked = false;
+            if (authUser && authUser.id) {
+              const userLikes = await getLikesByUser(authUser.id);
+              isLiked = userLikes.some((like: any) => like.item_id === item.id);
+            }
+            return { ...item, likes, isLiked };
+          } catch {
+            return { ...item, likes: 0, isLiked: false };
+          }
+        });
+        const itemsWithLikesData = await Promise.all(likesPromises);
+
+        // Buscar likes totais dados pelo usuário
+        let userLikesTotal = 0;
+        if (authUser && authUser.id) {
+          try {
+            const userLikesArr = await getLikesByUser(authUser.id);
+            userLikesTotal = Array.isArray(userLikesArr)
+              ? userLikesArr.length
+              : 0;
+          } catch {
+            userLikesTotal = 0;
+          }
+        }
+
         if (!mounted) return;
         setUser(userData);
         setUserItems(itemsData);
+        setItemsWithLikes(itemsWithLikesData);
+        setUserLikesTotal(userLikesTotal);
       } catch (err: any) {
         console.error("fetchUserData error:", err);
         if (!mounted) return;
@@ -105,7 +140,6 @@ export default function UserProfile() {
   if (error || !user) {
     return (
       <SafeAreaView style={{ flex: 1 }}>
-        <Navigation />
         <View style={styles.center}>
           <Text style={styles.errorTitle}>
             {error || "Usuário não encontrado"}
@@ -128,91 +162,84 @@ export default function UserProfile() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Navigation />
-      {/* ...existing code... */}
-      <Button onPress={() => navigation.navigate("Home")}>
-        Voltar ao Grimório
-      </Button>
-
-      {/* Profile Header */}
-      <View style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            {user.url_img ? (
-              <Image source={{ uri: user.url_img }} style={styles.avatarImg} />
-            ) : (
-              <Text style={styles.initials}>{initials}</Text>
-            )}
-          </View>
-
-          <View style={styles.headerInfo}>
-            <Text style={styles.name}>{user.name || "Usuário"}</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Criador</Text>
+      <View style={{ flex: 1 }}>
+        {/* Profile Header */}
+        <View style={styles.card}>
+          <View style={styles.header}>
+            <View style={styles.avatar}>
+              {user.url_img ? (
+                <Image
+                  source={{ uri: user.url_img }}
+                  style={styles.avatarImg}
+                />
+              ) : (
+                <Text style={styles.initials}>{initials}</Text>
+              )}
             </View>
 
-            <Text style={styles.description}>
-              {user.description || "Este usuário não adicionou descrição."}
-            </Text>
+            <View style={styles.headerInfo}>
+              <Text style={styles.name}>{user.name || "Usuário"}</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>Criador</Text>
+              </View>
+
+              <Text style={styles.description}>
+                {user.description || "Este usuário não adicionou descrição."}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>📚</Text>
-          <Text style={styles.statNumber}>{userItems.length}</Text>
-          <Text style={styles.statLabel}>Itens Criados</Text>
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statIcon}>📚</Text>
+            <Text style={styles.statNumber}>{userItems.length}</Text>
+            <Text style={styles.statLabel}>Itens Criados</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statIcon}>❤️</Text>
+            <Text style={styles.statNumber}>{userLikesTotal}</Text>
+            <Text style={styles.statLabel}>Likes Totais</Text>
+          </View>
         </View>
 
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>—</Text>
-          <Text style={styles.statNumber}>—</Text>
-          <Text style={styles.statLabel}>Likes Totais</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>—</Text>
-          <Text style={styles.statNumber}>—</Text>
-          <Text style={styles.statLabel}>Likes por Item</Text>
-        </View>
-      </View>
-
-      {/* User Items */}
-      <View style={{ width: "100%" }}>
-        <View style={styles.itemsHeader}>
-          <Text style={styles.itemsTitle}>
-            Itens Criados por {user.name || "Usuário"}
-          </Text>
-          <Text style={styles.itemsCount}>
-            {userItems.length} {userItems.length === 1 ? "item" : "itens"}
-          </Text>
-        </View>
-
-        {userItems.length > 0 ? (
-          <FlatList
-            data={userItems}
-            keyExtractor={(it) => String(it.id)}
-            numColumns={2}
-            columnWrapperStyle={{ justifyContent: "space-between" }}
-            renderItem={({ item }) => (
-              <ItemCard
-                item={item}
-                onView={(id) => navigation.navigate("ItemDetails", { id })}
-                onLike={(id) => console.log("Like item:", id)}
-              />
-            )}
-            contentContainerStyle={styles.container}
-          />
-        ) : (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>📚</Text>
-            <Text style={styles.emptyTitle}>Nenhum item criado ainda</Text>
-            <Text style={styles.emptyText}>
-              {user.name || "Este usuário"} ainda não criou nenhum item mágico
+        {/* User Items */}
+        <View style={{ width: "100%" }}>
+          <View style={styles.itemsHeader}>
+            <Text style={styles.itemsTitle}>
+              Itens Criados por {user.name || "Usuário"}
+            </Text>
+            <Text style={styles.itemsCount}>
+              {userItems.length} {userItems.length === 1 ? "item" : "itens"}
             </Text>
           </View>
-        )}
+
+          {itemsWithLikes.length > 0 ? (
+            <FlatList
+              data={itemsWithLikes}
+              keyExtractor={(it) => String(it.id)}
+              numColumns={2}
+              columnWrapperStyle={{ justifyContent: "space-between" }}
+              renderItem={({ item }) => (
+                <ItemCard
+                  item={item}
+                  onView={(id) => navigation.navigate("ItemDetails", { id })}
+                />
+              )}
+              contentContainerStyle={styles.container}
+            />
+          ) : (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyIcon}>📚</Text>
+              <Text style={styles.emptyTitle}>Nenhum item criado ainda</Text>
+              <Text style={styles.emptyText}>
+                {user.name || "Este usuário"} ainda não criou nenhum item mágico
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -271,6 +298,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#fff",
     alignItems: "center",
+    minWidth: 100,
   },
   statIcon: { fontSize: 20 },
   statNumber: { fontSize: 18, fontWeight: "700" },

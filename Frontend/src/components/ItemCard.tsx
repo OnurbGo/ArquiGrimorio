@@ -36,14 +36,22 @@ export default function ItemCard({ item, onView, onLike }: Props) {
       ? `${Number(localItem.price).toLocaleString("pt-BR")} mo`
       : "—";
   const creatorName = localItem.creator?.name || "Desconhecido";
-
   async function handleLike() {
-    if (!token) return;
+    if (!token) {
+      console.warn("Token ausente, não é possível dar like");
+      return;
+    }
     try {
       const updated = await toggleItemLike(localItem.id, token);
-      setLocalItem((prev) => ({ ...prev, ...updated }));
+      setLocalItem((prev) => ({
+        ...prev,
+        isLiked: updated.liked,
+        likes: updated.totalLikes,
+      }));
       onLike?.(localItem.id);
-    } catch {}
+    } catch (err) {
+      console.error("Erro ao dar like:", err);
+    }
   }
 
   return (

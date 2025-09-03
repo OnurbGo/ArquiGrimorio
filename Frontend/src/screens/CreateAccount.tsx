@@ -1,135 +1,38 @@
+// CreateAccount.tsx
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Dimensions,
+  Platform,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-
+import Navigation from "../components/Navigation";
 import ScreenContainer from "../components/ScreenContainer";
-import { createUser, CreateUserPayload } from "../services/api";
+import { createUser } from "../services/api";
 
-const styles = StyleSheet.create({
-  bg: {
-    flex: 1,
-    flexGrow: 1,
-    backgroundColor: "#f3f4f6",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#4f46e5",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "#6b7280",
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    width: "90%",
-    maxWidth: 400,
-    alignSelf: "center",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#374151",
-    marginBottom: 4,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: "#374151",
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-  },
-  eyeBtn: {
-    position: "absolute",
-    right: 10,
-    top: 12,
-    padding: 4,
-  },
-  passwordStrength: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: "bold",
-  },
-  passwordWeak: {
-    color: "#ef4444",
-  },
-  passwordStrong: {
-    color: "#22c55e",
-  },
-  error: {
-    color: "#ef4444",
-    fontSize: 14,
-    marginTop: 8,
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  errorAlert: {
-    color: "#ef4444",
-    fontSize: 14,
-    marginTop: 8,
-    marginBottom: 4,
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  btn: {
-    backgroundColor: "#4f46e5",
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  success: {
-    color: "#22c55e",
-    fontSize: 14,
-    marginTop: 8,
-    marginBottom: 4,
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  loginLink: {
-    marginTop: 16,
-    fontSize: 15,
-    color: "#374151",
-    textAlign: "center",
-  },
-  link: {
-    color: "#4f46e5",
-    textDecorationLine: "underline",
-    fontWeight: "bold",
-  },
-});
+/* ---------- responsive helpers ---------- */
+const WIN = Dimensions.get("window");
+const CAP_WIDTH = Math.min(WIN.width, 1200); // cap vw for web
+const vw = CAP_WIDTH / 100;
+const vh = WIN.height / 100;
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
 
-// Função para validar senha
+const THEME = {
+  bg: "#0b1220",
+  text: "#e6eef8",
+  muted: "#9ca3af",
+  accent: "#7c5cff",
+  danger: "#ef4444",
+  success: "#22c55e",
+};
+
 const validatePassword = (password: string): boolean => {
   const minLength = 8;
   const hasUppercase = /[A-Z]/.test(password);
@@ -139,12 +42,10 @@ const validatePassword = (password: string): boolean => {
     password.length >= minLength && hasUppercase && hasNumber && hasSpecialChar
   );
 };
-
 const evaluatePasswordStrength = (password: string): string =>
   validatePassword(password) ? "Forte" : "Fraca";
 
-const CreateAccount = () => {
-  // Estado do formulário
+export default function CreateAccount() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -154,7 +55,6 @@ const CreateAccount = () => {
     description: "",
   });
 
-  // Estados auxiliares
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [errorAlert, setErrorAlert] = useState(false);
@@ -162,13 +62,18 @@ const CreateAccount = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<string | null>(null);
 
-  // Função para lidar com o submit
+  useEffect(() => {
+    if (success) {
+      const t = setTimeout(() => setSuccess(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [success]);
+
   const handleSubmit = async () => {
     setError("");
     setSuccess(false);
     setErrorAlert(false);
 
-    // Validação básica
     if (
       !formData.name ||
       !formData.email ||
@@ -188,14 +93,7 @@ const CreateAccount = () => {
 
     try {
       const { name, email, password, url_img, description } = formData;
-      const payload: CreateUserPayload = {
-        name,
-        email,
-        password,
-        url_img,
-        description,
-      };
-      await createUser(payload);
+      await createUser({ name, email, password, url_img, description });
       setSuccess(true);
       setError("");
       setErrorAlert(false);
@@ -216,137 +114,265 @@ const CreateAccount = () => {
   };
 
   return (
-    <ScreenContainer style={styles.bg}>
-      <View style={styles.header}>
-        <Text style={styles.title}>ArquiGrimório</Text>
-        <Text style={styles.subtitle}>Portal de Itens Místicos</Text>
-      </View>
-      <View style={styles.card}>
-        <View>
-          <Text style={styles.label}>Nome</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Nome"
-            placeholderTextColor="#9ca3af"
-            value={formData.name}
-            onChangeText={(text) => setFormData({ ...formData, name: text })}
-          />
-        </View>
-        <View>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#9ca3af"
-            value={formData.email}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
-          />
-        </View>
-        <View style={{ marginBottom: 12 }}>
-          <Text style={styles.label}>Senha</Text>
-          <View style={{ position: "relative" }}>
-            <TextInput
-              style={[styles.input, { paddingRight: 40 }]}
-              placeholder="Senha"
-              placeholderTextColor="#9ca3af"
-              value={formData.password}
-              secureTextEntry={!showPassword}
-              onChangeText={(text) => {
-                setFormData({ ...formData, password: text });
-                setPasswordStrength(evaluatePasswordStrength(text));
-              }}
-            />
-            <TouchableOpacity
-              style={styles.eyeBtn}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <Feather name="eye-off" size={20} color="#6b7280" />
-              ) : (
-                <Feather name="eye" size={20} color="#6b7280" />
-              )}
-            </TouchableOpacity>
+    <SafeAreaView style={stylesSafe.safeArea}>
+      <Navigation />
+      <ScreenContainer style={{ backgroundColor: "transparent" }}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Text style={styles.title}>ArquiGrimório</Text>
+            <Text style={styles.subtitle}>Portal de Itens Místicos</Text>
           </View>
-          {passwordStrength && (
-            <Text
-              style={[
-                styles.passwordStrength,
-                passwordStrength === "Fraca"
-                  ? styles.passwordWeak
-                  : styles.passwordStrong,
-              ]}
-            >
-              Senha {passwordStrength}
-            </Text>
-          )}
-        </View>
-        <View style={{ marginBottom: 12 }}>
-          <Text style={styles.label}>Confirmar Senha</Text>
-          <View style={{ position: "relative" }}>
+
+          <View style={styles.cardLight}>
+            {/* Nome */}
+            <Text style={styles.label}>Nome</Text>
             <TextInput
-              style={[styles.input, { paddingRight: 40 }]}
-              placeholder="Confirmar Senha"
-              placeholderTextColor="#9ca3af"
-              value={formData.confirmPassword}
-              secureTextEntry={!showConfirmPassword}
+              style={styles.inputLight}
+              placeholder="Nome"
+              placeholderTextColor={THEME.muted}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+            />
+
+            {/* Email */}
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.inputLight}
+              placeholder="Email"
+              placeholderTextColor={THEME.muted}
+              value={formData.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              onChangeText={(text) => setFormData({ ...formData, email: text })}
+            />
+
+            {/* Senha */}
+            <Text style={styles.label}>Senha</Text>
+            <View style={{ position: "relative" }}>
+              <TextInput
+                style={[styles.inputLight, { paddingRight: 44 }]}
+                placeholder="Senha"
+                placeholderTextColor={THEME.muted}
+                value={formData.password}
+                secureTextEntry={!showPassword}
+                onChangeText={(text) => {
+                  setFormData({ ...formData, password: text });
+                  setPasswordStrength(evaluatePasswordStrength(text));
+                }}
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <Feather name="eye-off" size={20} color={THEME.muted} />
+                ) : (
+                  <Feather name="eye" size={20} color={THEME.muted} />
+                )}
+              </TouchableOpacity>
+            </View>
+            {passwordStrength && (
+              <Text
+                style={[
+                  styles.passwordStrength,
+                  passwordStrength === "Fraca"
+                    ? styles.passwordWeak
+                    : styles.passwordStrong,
+                ]}
+              >
+                Senha {passwordStrength}
+              </Text>
+            )}
+
+            {/* Confirmar Senha */}
+            <Text style={styles.label}>Confirmar Senha</Text>
+            <View style={{ position: "relative" }}>
+              <TextInput
+                style={[styles.inputLight, { paddingRight: 44 }]}
+                placeholder="Confirmar Senha"
+                placeholderTextColor={THEME.muted}
+                value={formData.confirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, confirmPassword: text })
+                }
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <Feather name="eye-off" size={20} color={THEME.muted} />
+                ) : (
+                  <Feather name="eye" size={20} color={THEME.muted} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* URL da imagem */}
+            <Text style={styles.label}>URL da Imagem</Text>
+            <TextInput
+              style={styles.inputLight}
+              placeholder="URL da imagem"
+              placeholderTextColor={THEME.muted}
+              value={formData.url_img}
               onChangeText={(text) =>
-                setFormData({ ...formData, confirmPassword: text })
+                setFormData({ ...formData, url_img: text })
               }
             />
-            <TouchableOpacity
-              style={styles.eyeBtn}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? (
-                <Feather name="eye-off" size={20} color="#6b7280" />
-              ) : (
-                <Feather name="eye" size={20} color="#6b7280" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View>
-          <Text style={styles.label}>URL da Imagem</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="URL da imagem"
-            placeholderTextColor="#9ca3af"
-            value={formData.url_img}
-            onChangeText={(text) => setFormData({ ...formData, url_img: text })}
-          />
-        </View>
-        <View>
-          <Text style={styles.label}>Descrição</Text>
-          <TextInput
-            style={[styles.input, { height: 80 }]}
-            placeholder="Descrição"
-            placeholderTextColor="#9ca3af"
-            value={formData.description}
-            multiline
-            onChangeText={(text) =>
-              setFormData({ ...formData, description: text })
-            }
-          />
-        </View>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity style={styles.btn} onPress={handleSubmit}>
-          <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-            Cadastrar
-          </Text>
-        </TouchableOpacity>
-        {success ? (
-          <Text style={styles.success}>Usuário cadastrado com sucesso!</Text>
-        ) : null}
-        {errorAlert && !success ? (
-          <Text style={styles.errorAlert}>
-            {error || "Erro ao registrar. Tente novamente."}
-          </Text>
-        ) : null}
-      </View>
-    </ScreenContainer>
-  );
-};
 
-export default CreateAccount;
+            {/* Descrição */}
+            <Text style={styles.label}>Descrição</Text>
+            <TextInput
+              style={[styles.inputLight, { height: clamp(14 * vh, 80, 160) }]}
+              placeholder="Descrição"
+              placeholderTextColor={THEME.muted}
+              value={formData.description}
+              multiline
+              onChangeText={(text) =>
+                setFormData({ ...formData, description: text })
+              }
+            />
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <TouchableOpacity
+              style={styles.btn}
+              onPress={handleSubmit}
+              accessibilityRole="button"
+            >
+              <Text
+                style={{
+                  color: "#fff",
+                  fontWeight: "bold",
+                  fontSize: clamp(1.8 * vw, 14, 18),
+                }}
+              >
+                Cadastrar
+              </Text>
+            </TouchableOpacity>
+
+            {success ? (
+              <Text style={styles.success}>
+                Usuário cadastrado com sucesso!
+              </Text>
+            ) : null}
+            {errorAlert && !success ? (
+              <Text style={styles.errorAlert}>
+                {error || "Erro ao registrar. Tente novamente."}
+              </Text>
+            ) : null}
+          </View>
+        </ScrollView>
+      </ScreenContainer>
+    </SafeAreaView>
+  );
+}
+
+/* ---------- styles ---------- */
+const stylesSafe = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: THEME.bg,
+  },
+});
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    alignItems: "center", // center horizontally
+    justifyContent: "center",
+    paddingVertical: clamp(4 * vh, 24, 48),
+    paddingHorizontal: clamp(4 * vw, 12, 40),
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: clamp(2 * vh, 12, 28),
+  },
+  title: {
+    fontSize: clamp(6 * vw, 20, 54),
+    fontWeight: "900",
+    color: THEME.text,
+    textAlign: "center",
+  },
+  subtitle: {
+    marginTop: 6,
+    fontSize: clamp(2 * vw, 12, 18),
+    color: THEME.muted,
+    textAlign: "center",
+  },
+  cardLight: {
+    width: "100%",
+    maxWidth: 720,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    padding: clamp(2.2 * vw, 14, 28),
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  label: {
+    fontSize: clamp(1.8 * vw, 13, 18),
+    fontWeight: "700",
+    color: THEME.text,
+    marginBottom: 6,
+    marginTop: 8,
+  },
+  inputLight: {
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: clamp(1.8 * vw, 14, 18),
+    color: THEME.text,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.04)",
+  },
+  eyeBtn: {
+    position: "absolute",
+    right: 8,
+    top: Platform.OS === "web" ? 10 : 12,
+    padding: 6,
+  },
+  passwordStrength: {
+    fontSize: clamp(1.6 * vw, 12, 16),
+    marginTop: 6,
+    fontWeight: "700",
+  },
+  passwordWeak: { color: THEME.danger },
+  passwordStrong: { color: THEME.success },
+  error: {
+    color: THEME.danger,
+    fontSize: clamp(1.6 * vw, 12, 16),
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  btn: {
+    backgroundColor: THEME.accent,
+    borderRadius: 10,
+    paddingVertical: clamp(1.6 * vh, 10, 16),
+    alignItems: "center",
+    marginTop: 12,
+  },
+  success: {
+    color: THEME.success,
+    fontSize: clamp(1.6 * vw, 12, 16),
+    marginTop: 10,
+    textAlign: "center",
+    fontWeight: "700",
+  },
+  errorAlert: {
+    color: THEME.danger,
+    fontSize: clamp(1.6 * vw, 12, 16),
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: "center",
+    fontWeight: "700",
+  },
+});

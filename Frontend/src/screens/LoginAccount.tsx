@@ -1,10 +1,11 @@
-import Button from "@/components/Button";
+// LoginAccount.tsx
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { isAxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -14,8 +15,29 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+import Button from "@/components/Button";
+import Navigation from "../components/Navigation";
 import api from "../services/api";
 import { useAuth } from "../utils/AuthContext";
+
+/* ---------- responsive helpers ---------- */
+const WIN = Dimensions.get("window");
+const CAP_WIDTH = Math.min(WIN.width, 1200); // cap vw so it doesn't explode on large web screens
+const vw = CAP_WIDTH / 100;
+const vh = WIN.height / 100;
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
+
+/* ---------- theme ---------- */
+const THEME = {
+  bg: "#0b1220",
+  card: "#071525",
+  muted: "#9ca3af",
+  text: "#e6eef8",
+  accent: "#7c5cff",
+  danger: "#fb7185",
+};
 
 type RootStackParamList = {
   Login: undefined;
@@ -76,171 +98,184 @@ export default function LoginAccount() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboard}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>ArquiGrimório</Text>
-          <Text style={styles.subtitle}>Portal de Itens Místicos</Text>
-        </View>
+    <SafeAreaView style={stylesSafe.safeArea}>
+      <Navigation />
+      <View style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={stylesSafe.keyboard}
+        >
+          <View style={styles.wrapper}>
+            <View style={styles.header}>
+              <Text style={styles.title}>ArquiGrimório</Text>
+              <Text style={styles.subtitle}>Portal de Itens Místicos</Text>
+            </View>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="seu@exemplo.com"
-            placeholderTextColor="#9c9cae"
-            returnKeyType="next"
-            onSubmitEditing={() => passwordRef.current?.focus()}
-            style={styles.input}
-            accessible
-            accessibilityLabel="Email"
-          />
+            <View style={styles.card}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="seu@exemplo.com"
+                placeholderTextColor={THEME.muted}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                style={styles.input}
+                accessible
+                accessibilityLabel="Email"
+              />
 
-          <Text style={[styles.label, { marginTop: 12 }]}>Senha</Text>
-          <View style={{ position: "relative" }}>
-            <TextInput
-              ref={passwordRef}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={secure}
-              placeholder="••••••••"
-              placeholderTextColor="#9c9cae"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="send"
-              onSubmitEditing={handleSubmit}
-              style={[styles.input, { paddingRight: 44 }]}
-              accessible
-              accessibilityLabel="Senha"
-            />
-            <TouchableOpacity
-              onPress={() => setSecure((s) => !s)}
-              accessibilityLabel="alternar visibilidade senha"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.eyeBtn}
-            >
-              {secure ? (
-                <Eye size={20} color="#6b7280" />
-              ) : (
-                <EyeOff size={20} color="#6b7280" />
-              )}
-            </TouchableOpacity>
+              <Text style={[styles.label, { marginTop: 12 }]}>Senha</Text>
+              <View style={{ position: "relative" }}>
+                <TextInput
+                  ref={passwordRef}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={secure}
+                  placeholder="••••••••"
+                  placeholderTextColor={THEME.muted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="send"
+                  onSubmitEditing={handleSubmit}
+                  style={[styles.input, { paddingRight: 44 }]}
+                  accessible
+                  accessibilityLabel="Senha"
+                />
+                <TouchableOpacity
+                  onPress={() => setSecure((s) => !s)}
+                  accessibilityLabel="alternar visibilidade senha"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.eyeBtn}
+                >
+                  {secure ? (
+                    <Eye size={20} color={THEME.muted} />
+                  ) : (
+                    <EyeOff size={20} color={THEME.muted} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <Button
+                onPress={handleSubmit}
+                loading={loading}
+                accessibilityLabel="Entrar"
+              >
+                Entrar
+              </Button>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footText}>
+                Não tem conta?{" "}
+                <Text
+                  style={styles.link}
+                  onPress={() => navigation.navigate("CreateAccount")}
+                  accessibilityRole="link"
+                >
+                  Cadastre-se
+                </Text>{" "}
+              </Text>
+            </View>
           </View>
-
-          <Button
-            onPress={handleSubmit}
-            loading={loading}
-            accessibilityLabel="Entrar"
-          >
-            Entrar
-          </Button>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footText}>
-            Não tem conta?{" "}
-            <Text
-              style={{ color: "#2563eb", textDecorationLine: "underline" }}
-              onPress={() => navigation.navigate("CreateAccount")}
-              accessibilityRole="link"
-            >
-              Cadastre-se
-            </Text>{" "}
-          </Text>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+/* ---------- styles ---------- */
+const stylesSafe = {
   safeArea: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: THEME.bg,
   },
   keyboard: {
     flex: 1,
+  },
+} as const;
+
+const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
+    alignItems: "center", // center everything horizontally
+    paddingHorizontal: 4 * vw,
+    paddingVertical: 4 * vh,
   },
   header: {
     alignItems: "center",
     marginBottom: 18,
   },
+  // title uses vw but clamped so it won't be tiny on mobile or giant on web
   title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#f8fafc",
+    fontSize: clamp(6 * vw, 20, 54),
+    fontWeight: "900",
+    color: THEME.text,
+    textAlign: "center",
   },
   subtitle: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#9ca3af",
+    marginTop: 6,
+    fontSize: clamp(2 * vw, 12, 18),
+    color: THEME.muted,
+    textAlign: "center",
   },
   card: {
     width: "100%",
-    maxWidth: 420,
-    backgroundColor: "#0b1220",
-    padding: 20,
-    borderRadius: 18,
+    maxWidth: 520,
+    backgroundColor: THEME.card,
+    padding: clamp(2.2 * vw, 14, 28),
+    borderRadius: 14,
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
   label: {
-    fontSize: 13,
-    color: "#e6eef8",
-    fontWeight: "600",
+    fontSize: clamp(1.6 * vw, 12, 18),
+    color: THEME.text,
+    fontWeight: "700",
     marginBottom: 6,
   },
   input: {
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#2b3440",
-    color: "#f8fafc",
+    borderColor: "rgba(255,255,255,0.04)",
+    color: THEME.text,
     backgroundColor: "rgba(255,255,255,0.02)",
+    fontSize: clamp(1.6 * vw, 14, 18),
   },
   eyeBtn: {
     position: "absolute",
     right: 8,
-    top: 10,
+    top: 12,
     padding: 6,
-  },
-  button: {
-    marginTop: 18,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    backgroundColor: "#2563eb",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontWeight: "700",
   },
   error: {
     marginTop: 10,
-    color: "#fb7185",
+    color: THEME.danger,
+    textAlign: "center",
+    fontWeight: "600",
   },
   footer: {
-    marginTop: 14,
+    marginTop: 18,
     alignItems: "center",
   },
   footText: {
-    fontSize: 12,
-    color: "#9ca3af",
+    fontSize: clamp(1.6 * vw, 12, 16),
+    color: THEME.muted,
+  },
+  link: {
+    color: THEME.accent,
+    textDecorationLine: "underline",
+    fontWeight: "700",
   },
 });

@@ -1,14 +1,16 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
+// ...existing code...
 import CreateAccount from "../screens/CreateAccount";
 import CreateItem from "../screens/CreateItem";
 import Home from "../screens/Home";
-import ItemDetailsPage from "../screens/ItemDetails";
+import ItemDetails from "../screens/ItemDetails";
 import LoginAccount from "../screens/LoginAccount";
 import NotFound from "../screens/NotFound";
 import Search from "../screens/Search";
 import UserProfile from "../screens/UserProfile";
+import PrivateRoute from "../utils/PrivateRoute";
 
 /**
  * Root stack params: definir aqui centraliza as tipagens para uso em todas as telas.
@@ -66,21 +68,27 @@ export default function Routes() {
           component={Home}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="ItemDetails"
-          component={ItemDetailsPage}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="UserProfile"
-          component={UserProfile}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="CreateItem"
-          component={CreateItem}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="ItemDetails" options={{ headerShown: false }}>
+          {() => (
+            <PrivateRoute>
+              <ItemDetails />
+            </PrivateRoute>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="UserProfile" options={{ headerShown: false }}>
+          {() => (
+            <PrivateRoute>
+              <UserProfile />
+            </PrivateRoute>
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="CreateItem" options={{ headerShown: false }}>
+          {() => (
+            <PrivateRoute>
+              <CreateItem />
+            </PrivateRoute>
+          )}
+        </Stack.Screen>
         <Stack.Screen
           name="Search"
           component={Search}

@@ -11,8 +11,6 @@ import "./models/Association";
 
 const app = express();
 
-const FRONT_URL = process.env.FRONT_URL;
-
 app.use(cors());
 
 app.use(cookieParser());
