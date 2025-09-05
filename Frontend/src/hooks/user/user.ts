@@ -25,7 +25,7 @@ export const deleteUser = async (id: number): Promise<void> => {
 
 export async function getUserCount(): Promise<number> {
   try {
-    const res = await fetch(`${api}/users/count`, {
+    const res = await fetch(`${api.defaults.baseURL}/users/count`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
