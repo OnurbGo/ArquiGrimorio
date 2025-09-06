@@ -8,9 +8,6 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -27,6 +24,8 @@ import {
 } from "../hooks/itens/itemLike";
 import { getItems } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { styles, clamp, baseVh, GAP, HORIZONTAL_PADDING, MIN_CARD_WIDTH, MAX_COLUMNS, CAP_WIDTH } from "../style/search";
 
 /* ---------- constants ---------- */
 const RARITIES = [
@@ -52,20 +51,6 @@ const TYPES = [
   { value: "cajado", label: "Cajado" },
   { value: "outros", label: "Outros" },
 ];
-
-/* ---------- responsive helpers ---------- */
-const WIN = Dimensions.get("window");
-const CAP_WIDTH = Math.min(WIN.width, 1200); // cap to avoid huge vw on desktop
-const baseVw = CAP_WIDTH / 100;
-const baseVh = WIN.height / 100;
-const clamp = (value: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, value));
-
-// grid config
-const HORIZONTAL_PADDING = 32; // container left+right padding (16 + 16)
-const GAP = 12; // gap between cards (px)
-const MIN_CARD_WIDTH = 160; // minimal card width to try to fit 4 in row on wider screens
-const MAX_COLUMNS = 4;
 
 type RootStackParamList = {
   Home: undefined;
@@ -242,16 +227,16 @@ export default function Search() {
     cardBg: "#ffffff",
     border: "rgba(15,23,42,0.06)",
   };
-
+  const insets = useSafeAreaInsets();
   /* ---------- render ---------- */
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: stylesVars.bg }}>
+    <View style={{ flex: 1, paddingTop: insets.top + 10, backgroundColor: stylesVars.bg }}>
       <Navigation />
       <View style={{ flex: 1 }}>
         <ScreenContainer style={{ paddingVertical: clamp(2 * baseVh, 12, 28) }}>
-          <View style={localStyles.header}>
-            <Text style={localStyles.title}>Buscar Itens</Text>
-            <Text style={localStyles.subtitle}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Buscar Itens</Text>
+            <Text style={styles.subtitle}>
               Encontre o item perfeito para sua aventura
             </Text>
           </View>
@@ -259,23 +244,23 @@ export default function Search() {
           {/* Filters card */}
           <View
             style={[
-              localStyles.filtersCard,
+              styles.filtersCard,
               windowWidth >= 900
-                ? localStyles.filtersRow
-                : localStyles.filtersColumn,
+                ? styles.filtersRow
+                : styles.filtersColumn,
             ]}
           >
             {/* Search input */}
             <View
-              style={[localStyles.inputWrap, windowWidth >= 900 && { flex: 1 }]}
+              style={[styles.inputWrap, windowWidth >= 900 && { flex: 1 }]}
             >
-              <Text style={localStyles.label}>Buscar</Text>
-              <View style={localStyles.searchBox}>
+              <Text style={styles.label}>Buscar</Text>
+              <View style={styles.searchBox}>
                 <SearchIcon width={18} height={18} color={stylesVars.muted} />
                 <TextInput
                   placeholder="Digite o nome ou descrição..."
                   placeholderTextColor={stylesVars.muted}
-                  style={localStyles.input}
+                  style={styles.input}
                   value={filters.q}
                   onChangeText={(text) =>
                     setFilters((f) => ({ ...f, q: text, page: 1 }))
@@ -288,13 +273,13 @@ export default function Search() {
             {/* Rarity picker */}
             <View
               style={[
-                localStyles.pickerWrap,
+                styles.pickerWrap,
                 windowWidth >= 900 && { width: 220 },
-                localStyles.filterBox,
+                styles.filterBox,
               ]}
             >
-              <Text style={localStyles.label}>Raridade</Text>
-              <View style={localStyles.pickerBox}>
+              <Text style={styles.label}>Raridade</Text>
+              <View style={styles.pickerBox}>
                 <Picker
                   selectedValue={filters.rarity}
                   onValueChange={(val) =>
@@ -323,13 +308,13 @@ export default function Search() {
             {/* Type picker */}
             <View
               style={[
-                localStyles.pickerWrap,
+                styles.pickerWrap,
                 windowWidth >= 900 && { width: 220 },
-                localStyles.filterBox,
+                styles.filterBox,
               ]}
             >
-              <Text style={localStyles.label}>Tipo</Text>
-              <View style={localStyles.pickerBox}>
+              <Text style={styles.label}>Tipo</Text>
+              <View style={styles.pickerBox}>
                 <Picker
                   selectedValue={filters.type}
                   onValueChange={(val) =>
@@ -356,16 +341,16 @@ export default function Search() {
             </View>
 
             {/* Clear button on the right on desktop, below on mobile */}
-            <View style={localStyles.clearWrap}>
+            <View style={styles.clearWrap}>
               <Button onPress={clearFilters}>Limpar Filtros</Button>
             </View>
           </View>
 
           {/* Results */}
-          {errorMsg ? <Text style={localStyles.error}>{errorMsg}</Text> : null}
+          {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
 
           {loading ? (
-            <View style={localStyles.center}>
+            <View style={styles.center}>
               <ActivityIndicator size="large" />
               <Text style={{ marginTop: 8 }}>Carregando itens...</Text>
             </View>
@@ -383,7 +368,7 @@ export default function Search() {
                 return (
                   <View
                     style={[
-                      localStyles.itemWrapper,
+                      styles.itemWrapper,
                       {
                         width: columns === 1 ? "100%" : itemWrapperWidth,
                         marginRight: columns === 1 ? 0 : isLastInRow ? 0 : GAP,
@@ -406,7 +391,7 @@ export default function Search() {
                 );
               }}
               contentContainerStyle={[
-                localStyles.listContent,
+                styles.listContent,
                 columns === 1
                   ? { alignItems: "center" }
                   : { alignItems: "stretch" },
@@ -419,10 +404,10 @@ export default function Search() {
               showsVerticalScrollIndicator={false}
             />
           ) : (
-            <View style={localStyles.empty}>
-              <Text style={localStyles.emptyIcon}>🔍</Text>
-              <Text style={localStyles.emptyTitle}>Nenhum item encontrado</Text>
-              <Text style={localStyles.emptyText}>
+            <View style={styles.empty}>
+              <Text style={styles.emptyIcon}>🔍</Text>
+              <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
+              <Text style={styles.emptyText}>
                 Tente ajustar os filtros
               </Text>
               <Button onPress={clearFilters} style={{ marginTop: 12 }}>
@@ -432,121 +417,6 @@ export default function Search() {
           )}
         </ScreenContainer>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
-
-/* ---------- local styles ---------- */
-const localStyles = StyleSheet.create({
-  header: { alignItems: "center", marginBottom: clamp(2 * baseVh, 12, 24) },
-  title: {
-    fontSize: clamp(3.6 * baseVw, 20, 32),
-    fontWeight: "800",
-  },
-  subtitle: { color: "#64748b", marginTop: 6 },
-
-  filtersCard: {
-    backgroundColor: "#f1f5f9",
-    borderRadius: 12,
-    padding: clamp(1.6 * baseVw, 12, 18),
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.06)",
-    // drop shadow (subtle)
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-
-  filtersRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 12,
-  },
-  filtersColumn: {
-    flexDirection: "column",
-  },
-
-  inputWrap: { marginBottom: 8 },
-  label: { fontWeight: "700", marginBottom: 6, color: "#0f172a" },
-
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#f1f5f9",
-    borderRadius: 8,
-    paddingVertical: Platform.OS === "web" ? 8 : 6,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.04)",
-  },
-
-  input: {
-    flex: 1,
-    paddingVertical: Platform.OS === "web" ? 8 : 6,
-    fontSize: clamp(1.6 * baseVw, 14, 16),
-    color: "#0f172a",
-  },
-
-  pickerWrap: { marginBottom: 8 },
-  pickerBox: {
-    borderRadius: 10,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.08)",
-    backgroundColor: "#f1f5f9",
-    paddingHorizontal: 6,
-    paddingVertical: Platform.OS === "web" ? 6 : 0,
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-    position: "relative",
-    minHeight: 42,
-  },
-  pickerCaret: {
-    position: "absolute",
-    right: 10,
-    top: Platform.OS === "android" ? 10 : 12,
-    fontSize: 16,
-    color: "#64748b",
-    pointerEvents: "none",
-  },
-
-  clearWrap: {
-    marginTop: Platform.OS === "web" ? 0 : 8,
-    marginLeft: "auto",
-    alignSelf: "center",
-  },
-
-  center: { alignItems: "center", padding: 24 },
-  empty: { alignItems: "center", padding: 24 },
-  emptyIcon: { fontSize: 36, marginBottom: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: "700" },
-  emptyText: { color: "#64748b", marginBottom: 12 },
-
-  error: { color: "red", marginBottom: 12 },
-
-  listContent: {
-    paddingBottom: 40,
-    paddingTop: 6,
-  },
-  itemWrapper: {
-    paddingVertical: 8,
-  },
-
-  filterBox: {
-    backgroundColor: "#f7fafc",
-    borderRadius: 8,
-    paddingVertical: Platform.OS === "web" ? 8 : 6,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.04)",
-    marginBottom: 8,
-  },
-});

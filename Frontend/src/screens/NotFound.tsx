@@ -1,10 +1,14 @@
 import React from "react";
-import { Button, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Button, Text, View } from "react-native";
 import Navigation from "../components/Navigation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { styles } from "../style/notFound";
 
 const NotFound: React.FC<{ navigation?: any }> = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1, paddingTop: insets.top }}>
       <Navigation />
       <View style={styles.container}>
         <Text style={styles.title}>404</Text>
@@ -16,28 +20,8 @@ const NotFound: React.FC<{ navigation?: any }> = ({ navigation }) => {
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 16,
-  },
-  title: {
-    fontSize: 72,
-    fontWeight: "bold",
-    color: "#d32f2f",
-  },
-  message: {
-    fontSize: 20,
-    color: "#333",
-    marginBottom: 24,
-  },
-});
 
 export default NotFound;

@@ -2,11 +2,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-  Dimensions,
-  Platform,
-  SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,23 +11,8 @@ import {
 import Navigation from "../components/Navigation";
 import ScreenContainer from "../components/ScreenContainer";
 import { createUser } from "../hooks/user/user";
-
-/* ---------- responsive helpers ---------- */
-const WIN = Dimensions.get("window");
-const CAP_WIDTH = Math.min(WIN.width, 1200); // cap vw for web
-const vw = CAP_WIDTH / 100;
-const vh = WIN.height / 100;
-const clamp = (value: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, value));
-
-const THEME = {
-  bg: "#0b1220",
-  text: "#e6eef8",
-  muted: "#9ca3af",
-  accent: "#7c5cff",
-  danger: "#ef4444",
-  success: "#22c55e",
-};
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { styles, stylesSafe, THEME, vh, clamp, vw} from "../style/createAccount";
 
 const validatePassword = (password: string): boolean => {
   const minLength = 8;
@@ -61,7 +42,7 @@ export default function CreateAccount() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<string | null>(null);
-
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (success) {
       const t = setTimeout(() => setSuccess(false), 4000);
@@ -114,7 +95,7 @@ export default function CreateAccount() {
   };
 
   return (
-    <SafeAreaView style={stylesSafe.safeArea}>
+    <View style={{paddingTop: insets.top + 10, ...stylesSafe.safeArea}}/*stylesSafe.safeArea*/>
       <Navigation />
       <ScreenContainer style={{ backgroundColor: "transparent" }}>
         <ScrollView
@@ -268,111 +249,9 @@ export default function CreateAccount() {
           </View>
         </ScrollView>
       </ScreenContainer>
-    </SafeAreaView>
+    </View>
   );
 }
 
 /* ---------- styles ---------- */
-const stylesSafe = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: THEME.bg,
-  },
-});
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    alignItems: "center", // center horizontally
-    justifyContent: "center",
-    paddingVertical: clamp(4 * vh, 24, 48),
-    paddingHorizontal: clamp(4 * vw, 12, 40),
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: clamp(2 * vh, 12, 28),
-  },
-  title: {
-    fontSize: clamp(6 * vw, 20, 54),
-    fontWeight: "900",
-    color: THEME.text,
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 6,
-    fontSize: clamp(2 * vw, 12, 18),
-    color: THEME.muted,
-    textAlign: "center",
-  },
-  cardLight: {
-    width: "100%",
-    maxWidth: 720,
-    backgroundColor: "rgba(255,255,255,0.02)",
-    padding: clamp(2.2 * vw, 14, 28),
-    borderRadius: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  label: {
-    fontSize: clamp(1.8 * vw, 13, 18),
-    fontWeight: "700",
-    color: THEME.text,
-    marginBottom: 6,
-    marginTop: 8,
-  },
-  inputLight: {
-    backgroundColor: "rgba(255,255,255,0.02)",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: clamp(1.8 * vw, 14, 18),
-    color: THEME.text,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.04)",
-  },
-  eyeBtn: {
-    position: "absolute",
-    right: 8,
-    top: Platform.OS === "web" ? 10 : 12,
-    padding: 6,
-  },
-  passwordStrength: {
-    fontSize: clamp(1.6 * vw, 12, 16),
-    marginTop: 6,
-    fontWeight: "700",
-  },
-  passwordWeak: { color: THEME.danger },
-  passwordStrong: { color: THEME.success },
-  error: {
-    color: THEME.danger,
-    fontSize: clamp(1.6 * vw, 12, 16),
-    marginTop: 8,
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  btn: {
-    backgroundColor: THEME.accent,
-    borderRadius: 10,
-    paddingVertical: clamp(1.6 * vh, 10, 16),
-    alignItems: "center",
-    marginTop: 12,
-  },
-  success: {
-    color: THEME.success,
-    fontSize: clamp(1.6 * vw, 12, 16),
-    marginTop: 10,
-    textAlign: "center",
-    fontWeight: "700",
-  },
-  errorAlert: {
-    color: THEME.danger,
-    fontSize: clamp(1.6 * vw, 12, 16),
-    marginTop: 8,
-    marginBottom: 4,
-    textAlign: "center",
-    fontWeight: "700",
-  },
-});
