@@ -5,9 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
-  Image,
-  RefreshControl,
   SafeAreaView,
   Text,
   View,
@@ -22,6 +19,10 @@ import { getLikesByUser, getLikesForItem } from "../hooks/itens/itemLike";
 import api from "@/services/api";
 import { useAuth } from "../utils/AuthContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ProfileHeaderCard } from "@/components/profile/ProfileHeaderCard";
+import StatCard from "@/components/profile/StatCard";
+import ItemsGridProfile from "@/components/profile/ItemsGridProfile";
+import EmptyState from "@/components/profile/EmptyState";
 
 const HORIZONTAL_PADDING = 32; // container padding left+right (16 each)
 const GAP = 12; // gap between cards
@@ -198,13 +199,6 @@ export default function UserProfile() {
     );
   }
 
-  const initials = user.name
-    ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-    : "U";
-
   return (
     // INÍCIO COMPONENTE: ScreenContainer
     <View className="flex-1 bg-slate-50" style={{ paddingTop: insets.top }}>
@@ -214,68 +208,11 @@ export default function UserProfile() {
       {/* INÍCIO COMPONENTE: ContentContainer */}
       <View className="flex-1 p-4">
         {/* INÍCIO COMPONENTE: ProfileHeaderCard */}
-        <View className="bg-white rounded-2xl p-4 border border-indigo-500/10 mb-3">
-          <View className="flex-row items-center">
-            {/* INÍCIO COMPONENTE: Avatar */}
-            <View className="mr-3">
-              {user.url_img ? (
-                <Image
-                  source={{ uri: user.url_img }}
-                  className="w-24 h-24 rounded-full border-2 border-violet-700"
-                />
-              ) : (
-                <View className="w-24 h-24 rounded-full bg-indigo-100 items-center justify-center border-2 border-purple-200">
-                  <Text className="text-3xl font-extrabold text-violet-700">
-                    {initials}
-                  </Text>
-                </View>
-              )}
-            </View>
-            {/* FIM COMPONENTE: Avatar */}
-
-            <View className="flex-1">
-              {/* INÍCIO COMPONENTE: UserName */}
-              <Text className="text-xl font-extrabold text-slate-900">
-                {user.name || "Usuário"}
-              </Text>
-              {/* FIM COMPONENTE: UserName */}
-              {/* INÍCIO COMPONENTE: RoleBadge */}
-              <View className="mt-2 self-start bg-indigo-100 px-2.5 py-1 rounded-full">
-                <Text className="text-indigo-600 font-bold">Criador</Text>
-              </View>
-              {/* FIM COMPONENTE: RoleBadge */}
-
-              {/* INÍCIO COMPONENTE: Description */}
-              <Text className="mt-2 text-slate-500">
-                {user.description || "Este usuário não adicionou descrição."}
-              </Text>
-              {/* FIM COMPONENTE: Description */}
-            </View>
-          </View>
-        </View>
+        <ProfileHeaderCard user={user} />
         {/* FIM COMPONENTE: ProfileHeaderCard */}
 
         {/* INÍCIO COMPONENTE: StatsRow */}
-        <View className="flex-row justify-between my-3.5">
-          {/* INÍCIO COMPONENTE: StatCard (Itens Criados) */}
-          <View className="flex-1 mx-1.5 p-3.5 rounded-xl bg-white items-center border border-slate-100">
-            <Text className="text-lg">📚</Text>
-            <Text className="text-xl font-extrabold text-slate-900 mt-1.5">
-              {userItems.length}
-            </Text>
-            <Text className="text-slate-500 mt-1">Itens Criados</Text>
-          </View>
-
-          {/* FIM COMPONENTE: StatCard (Itens Criados) */}
-          {/* INÍCIO COMPONENTE: StatCard (Likes Totais) */}
-          <View className="flex-1 mx-1.5 p-3.5 rounded-xl bg-white items-center border border-slate-100">
-            <Text className="text-lg">❤️</Text>
-            <Text className="text-xl font-extrabold text-slate-900 mt-1.5">
-              {userLikesTotal}
-            </Text>
-            <Text className="text-slate-500 mt-1">Likes Totais</Text>
-          </View>
-        </View>
+        <StatCard userItems={userItems} userLikesTotal={userLikesTotal} />
         {/* FIM COMPONENTE: StatsRow */}
 
         {/* INÍCIO COMPONENTE: SectionHeader */}
@@ -291,58 +228,19 @@ export default function UserProfile() {
 
         {itemsWithLikes.length > 0 ? (
           // INÍCIO COMPONENTE: ItemsGrid
-          <FlatList
-            data={itemsWithLikes}
-            keyExtractor={(it) => String(it.id)}
-            numColumns={columns}
-            renderItem={({ item, index }) => {
-              const isLastInRow = (index + 1) % columns === 0;
-              return (
-                // INÍCIO COMPONENTE: GridItemWrapper
-                <View
-                  className="mb-3"
-                  style={[
-                    { width: itemWidth, marginRight: isLastInRow ? 0 : GAP },
-                  ]}
-                >
-                  <ItemCard
-                    item={item}
-                    onView={(id: number) =>
-                      navigation.navigate("ItemDetails", { id })
-                    }
-                  />
-                </View>
-                // FIM COMPONENTE: GridItemWrapper
-              );
-            }}
-            contentContainerStyle={{ paddingBottom: 36 }}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={["#6d28d9"]}
-              />
-            }
-            columnWrapperStyle={
-              columns > 1
-                ? { justifyContent: "flex-start", marginBottom: 12 }
-                : undefined
-            }
-            showsVerticalScrollIndicator={false}
+          <ItemsGridProfile
+            itemsWithLikes={itemsWithLikes}
+            ItemCard={ItemCard}
+            navigation={navigation}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            itemWidth={itemWidth}
+            columns={columns}
+            GAP={GAP}
           />
           // FIM COMPONENTE: ItemsGrid
         ) : (
-          // INÍCIO COMPONENTE: EmptyState
-          <View className="items-center p-8">
-            <Text className="text-4xl mb-3">📚</Text>
-            <Text className="text-lg font-bold">
-              Nenhum item criado ainda
-            </Text>
-            <Text className="text-slate-500 text-center">
-              {user.name || "Este usuário"} ainda não criou nenhum item mágico
-            </Text>
-          </View>
-          // FIM COMPONENTE: EmptyState
+          <EmptyState user={user} />
         )}
       </View>
       {/* FIM COMPONENTE: ContentContainer */}

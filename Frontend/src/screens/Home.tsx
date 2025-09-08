@@ -4,8 +4,8 @@ import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import CardExplanations from "@/components/home/CardExplanations";
-import CardStats from "@/components/home/CardStats";
+import CardExplanations from "@/components/profile/CardExplanations";
+import CardStats from "@/components/profile/CardStats";
 import Navigation from "@/components/Navigation";
 
 export default function Home() {

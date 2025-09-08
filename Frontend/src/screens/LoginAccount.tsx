@@ -1,16 +1,14 @@
 // LoginAccount.tsx
 import { useRef, useState, useCallback } from "react";
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { isAxiosError } from "axios";
-import { Eye, EyeOff } from "lucide-react-native";
-
-import Button from "@/components/Button";
 import Navigation from "@/components/Navigation";
 import api from "@/services/api";
 import { useAuth } from "@/utils/AuthContext";
+import FormCard from "@/components/login/FormCard";
 
 type RootStackParamList = {
   Login: undefined;
@@ -98,92 +96,7 @@ export default function LoginAccount() {
             {/* FIM COMPONENTE: AuthHeader */}
 
             {/* INÍCIO COMPONENTE: FormCard */}
-            <View className="w-full max-w-md bg-[#071525] p-6 rounded-2xl shadow-lg">
-              {/* INÍCIO COMPONENTE: LabeledInput (Email) */}
-              <Text className="text-base font-bold text-slate-200 mb-1.5">
-                Email
-              </Text>
-              <TextInput
-                value={email}
-                onChangeText={(t) => {
-                  setEmail(t);
-                  if (error) setError(null);
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                textContentType="emailAddress"
-                placeholder="seu@exemplo.com"
-                placeholderTextColor="#9ca3af"
-                returnKeyType="next"
-                onSubmitEditing={() => passwordRef.current?.focus()}
-                className="px-3 py-3 rounded-lg border border-white/5 bg-white/5 text-slate-200 text-base"
-                accessible
-                accessibilityLabel="Email"
-              />
-              {/* FIM COMPONENTE: LabeledInput (Email) */}
-
-              <Text className="text-base font-bold text-slate-200 mb-1.5 mt-3">
-                Senha
-              </Text>
-              {/* INÍCIO COMPONENTE: PasswordField */}
-              <View className="relative">
-                <TextInput
-                  ref={passwordRef}
-                  value={password}
-                  onChangeText={(t) => {
-                    setPassword(t);
-                    if (error) setError(null);
-                  }}
-                  secureTextEntry={secure}
-                  autoComplete="password"
-                  textContentType="password"
-                  placeholder="••••••••"
-                  placeholderTextColor="#9ca3af"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="send"
-                  onSubmitEditing={handleSubmit}
-                  className="px-3 py-3 rounded-lg border border-white/5 bg-white/5 text-slate-200 text-base pr-11"
-                  accessible
-                  accessibilityLabel="Senha"
-                />
-                {/* INÍCIO COMPONENTE: ToggleVisibilityButton */}
-                <TouchableOpacity
-                  onPress={() => setSecure((s) => !s)}
-                  accessibilityLabel="alternar visibilidade senha"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  className="absolute right-2 top-3 p-1.5"
-                >
-                  {secure ? (
-                    <Eye size={20} color={"#9ca3af"} />
-                  ) : (
-                    <EyeOff size={20} color={"#9ca3af"} />
-                  )}
-                </TouchableOpacity>
-                {/* FIM COMPONENTE: ToggleVisibilityButton */}
-              </View>
-              {/* FIM COMPONENTE: PasswordField */}
-
-              {/* INÍCIO COMPONENTE: FormSubmitButton */}
-              <Button
-                onPress={handleSubmit}
-                loading={loading}
-                accessibilityLabel="Entrar"
-              >
-                Entrar
-              </Button>
-              {/* FIM COMPONENTE: FormSubmitButton */}
-
-              {/* INÍCIO COMPONENTE: FormError */}
-              {error ? (
-                <Text className="mt-2.5 text-rose-400 text-center font-semibold">
-                  {error}
-                </Text>
-              ) : null}
-              {/* FIM COMPONENTE: FormError */}
-            </View>
+            <FormCard email={email} setEmail={setEmail} password={password} setPassword={setPassword} secure={secure} setSecure={setSecure} error={error} setError={setError} passwordRef={passwordRef} handleSubmit={handleSubmit} loading={loading} />
             {/* FIM COMPONENTE: FormCard */}
 
             {/* INÍCIO COMPONENTE: SignUpPrompt */}

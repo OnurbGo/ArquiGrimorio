@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  FlatList,
   KeyboardAvoidingView,
   LayoutAnimation,
   Modal,
@@ -26,6 +25,11 @@ import type { Item } from "../interface/Item";
 import { deleteItem, getItems, updateItem } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ItemsGridEdit from "../components/itemedit/ItemsGridEdit";
+import DeleteSection from "../components/itemedit/DeleteSection";
+import SaveCancel from "@/components/itemedit/SaveCancel";
+import RarityType from "@/components/itemedit/RarityType";
+import ImageInput from "@/components/itemedit/ImageInput";
 
 // cap width como na Home para evitar escalonamento exagerado em web muito larga
 const WIN = Dimensions.get("window");
@@ -314,25 +318,7 @@ const EditItem: React.FC = () => {
         ) : (
           <>
             {/* INÍCIO COMPONENTE: ItemsGrid */}
-            <FlatList
-              data={items}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderItem}
-              onRefresh={fetchItems}
-              refreshing={loading}
-              ListEmptyComponent={
-                <Text className="text-center mt-8 text-[#d1cfe8]">
-                  Nenhum item encontrado.
-                </Text>
-              }
-              contentContainerStyle={{ paddingBottom: 40, paddingTop: 12 }}
-              numColumns={numColumns}
-              columnWrapperStyle={
-                numColumns > 1
-                  ? { justifyContent: "space-between", paddingHorizontal: 2 * vw }
-                  : undefined
-              }
-            />
+            <ItemsGridEdit items={items} renderItem={renderItem} fetchItems={fetchItems} loading={loading} numColumns={numColumns} vw={vw} />
             {/* FIM COMPONENTE: ItemsGrid */}
           </>
         )}
@@ -387,38 +373,7 @@ const EditItem: React.FC = () => {
               />
               {/* FIM COMPONENTE: TextArea (Descrição) */}
 
-              {/* INÍCIO COMPONENTE: FormRow (Raridade e Tipo) */}
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <View style={{ flex: 1, zIndex: 99999 }}>
-                  {/* INÍCIO COMPONENTE: SelectField (Raridade) */}
-                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Raridade</Text>
-                  <DarkSelect
-                    options={RARITIES}
-                    value={form.rarity || "todas"}
-                    onChange={(val) => setForm((s) => ({ ...s, rarity: val }))}
-                    placeholder="Selecione raridade"
-                    containerStyle={{ zIndex: 99999 }}
-                    labelStyle={{ color: "#fff" }}
-                  />
-                  {/* FIM COMPONENTE: SelectField (Raridade) */}
-                </View>
-
-                <View style={{ flex: 1, zIndex: 99999 }}>
-                  {/* INÍCIO COMPONENTE: SelectField (Tipo) */}
-                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Tipo</Text>
-                  <DarkSelect
-                    options={TYPES}
-                    value={form.type || "todos"}
-                    onChange={(val) => setForm((s) => ({ ...s, type: val }))}
-                    placeholder="Selecione tipo"
-                    containerStyle={{ zIndex: 99999 }}
-                    labelStyle={{ color: "#fff" }}
-                  />
-                  {/* FIM COMPONENTE: SelectField (Tipo) */}
-                </View>
-              </View>
-              {/* FIM COMPONENTE: FormRow (Raridade e Tipo) */}
-
+              <RarityType form={form} setForm={setForm} RARITIES={RARITIES} TYPES={TYPES} DarkSelect={DarkSelect} />  
               {/* INÍCIO COMPONENTE: LabeledInput (Preço) */}
               <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Preço (mo)</Text>
               <TextInput
@@ -433,87 +388,10 @@ const EditItem: React.FC = () => {
 
               {/* INÍCIO COMPONENTE: LabeledInput (URL da imagem) */}
               <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">URL da imagem</Text>
-              <TextInput
-                value={form.image_url}
-                onChangeText={(t) => setForm((s) => ({ ...s, image_url: t }))}
-                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg"
-                placeholder="https://..."
-                placeholderTextColor="#8a87a8"
-                autoCapitalize="none"
-              />
+              <ImageInput form={form} setForm={setForm} />
               {/* FIM COMPONENTE: LabeledInput (URL da imagem) */}
-
-              {/* Botões */}
-              {/* INÍCIO COMPONENTE: ButtonsRow (Salvar/Cancelar) */}
-              <View className="flex-row justify-end gap-2 mt-3">
-                <TouchableOpacity
-                  onPress={() => setEditingItem(null)}
-                  className="px-3.5 py-2.5 rounded-lg min-w-[96px] items-center bg-[#2b2b45]"
-                  disabled={saving || deleting}
-                >
-                  <Text className="text-white font-bold">Cancelar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleSave}
-                  className="px-3.5 py-2.5 rounded-lg min-w-[96px] items-center bg-[#7f32cc]"
-                  disabled={saving || deleting}
-                >
-                  {saving ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text className="text-white font-bold">Salvar</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-              {/* FIM COMPONENTE: ButtonsRow (Salvar/Cancelar) */}
-
-              {/* Exclusão */}
-              {/* INÍCIO COMPONENTE: DeleteSection */}
-              <View style={{ marginTop: 12 }}>
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      "Excluir item",
-                      "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
-                      [
-                        { text: "Cancelar", style: "cancel" },
-                        {
-                          text: "Sim, excluir",
-                          style: "destructive",
-                          onPress: async () => {
-                            if (!editingItem) return;
-                            try {
-                              setDeleting(true);
-                              await deleteItem(editingItem.id);
-                              setItems((prev) =>
-                                prev.filter((i) => i.id !== editingItem.id)
-                              );
-                              setEditingItem(null);
-                            } catch (err: any) {
-                              Alert.alert(
-                                "Erro",
-                                err?.message || "Não foi possível excluir o item."
-                              );
-                            } finally {
-                              setDeleting(false);
-                            }
-                          },
-                        },
-                      ]
-                    )
-                  }
-                  className="mt-1.5 bg-[#ef4444] py-2.5 rounded-lg items-center"
-                  disabled={saving || deleting}
-                >
-                  {deleting ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text className="text-white font-extrabold">Excluir item</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-              {/* FIM COMPONENTE: DeleteSection */}
+              <SaveCancel handleSave={handleSave} saving={saving} deleting={deleting} setEditingItem={setEditingItem} />
+              <DeleteSection editingItem={editingItem} setEditingItem={setEditingItem} deleteItem={deleteItem} setItems={setItems} saving={saving} deleting={deleting} setDeleting={setDeleting} />
             </RNScrollView>
           </View>
           {/* FIM COMPONENTE: ModalCard */}

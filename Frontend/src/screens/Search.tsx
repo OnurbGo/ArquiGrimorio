@@ -1,19 +1,14 @@
 // Search.tsx (grid automática — cabe até 4 por linha)
-import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Search as SearchIcon } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import Button from "../components/Button";
-import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
 import { Item, ItemFilters } from "../interface/Item";
 import {
@@ -25,6 +20,8 @@ import { getItems } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollView } from "react-native-gesture-handler";
+import FilterCard from "@/components/search/FiltersCard";
+import ResultsGrid from "@/components/search/ResultsGrid";
 
 const HORIZONTAL_PADDING = 32; // container left+right padding (16 + 16)
 const GAP = 12; // gap between cards (px)
@@ -249,90 +246,7 @@ export default function Search() {
 
           {/* Filters card */}
           {/* INÍCIO COMPONENTE: FiltersCard */}
-          <View className="bg-slate-100 rounded-xl p-3 md:p-4 mb-4 border border-slate-900/10 shadow-md md:flex-row md:items-end md:gap-3">
-            {/* INÍCIO COMPONENTE: SearchInput */}
-            <View className="mb-2 md:flex-1">
-              <Text className="font-bold mb-1.5 text-slate-900">Buscar</Text>
-              <View className="flex-row items-center gap-2 bg-slate-200/60 rounded-lg py-2 px-2.5 border border-slate-900/10">
-                <SearchIcon width={18} height={18} color={"#64748b"} />
-                <TextInput
-                  placeholder="Digite o nome ou descrição..."
-                  placeholderTextColor={"#64748b"}
-                  className="flex-1 py-0 text-base text-slate-900"
-                  value={filters.q}
-                  onChangeText={(text) =>
-                    setFilters((f) => ({ ...f, q: text, page: 1 }))
-                  }
-                  returnKeyType="search"
-                />
-              </View>
-            </View>
-            {/* FIM COMPONENTE: SearchInput */}
-
-            {/* INÍCIO COMPONENTE: RarityPicker */}
-            <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
-              <Text className="font-bold mb-1.5 text-slate-900">Raridade</Text>
-              <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
-                <Picker
-                  selectedValue={filters.rarity}
-                  onValueChange={(val) =>
-                    setFilters((f) => ({ ...f, rarity: val, page: 1 }))
-                  }
-                  style={{
-                    width: "100%",
-                    color: "#222",
-                    backgroundColor: "transparent",
-                    borderWidth: 0,
-                  }}
-                  dropdownIconColor="#64748b"
-                >
-                  {RARITIES.map((opt) => (
-                    <Picker.Item
-                      key={opt.value}
-                      label={opt.label}
-                      value={opt.value}
-                    />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            {/* FIM COMPONENTE: RarityPicker */}
-
-            {/* INÍCIO COMPONENTE: TypePicker */}
-            <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
-              <Text className="font-bold mb-1.5 text-slate-900">Tipo</Text>
-              <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
-                <Picker
-                  selectedValue={filters.type}
-                  onValueChange={(val) =>
-                    setFilters((f) => ({ ...f, type: val, page: 1 }))
-                  }
-                  style={{
-                    width: "100%",
-                    color: "#222",
-                    backgroundColor: "transparent",
-                    borderWidth: 0,
-                  }}
-                  dropdownIconColor="#64748b"
-                >
-                  {TYPES.map((opt) => (
-                    <Picker.Item
-                      key={opt.value}
-                      label={opt.label}
-                      value={opt.value}
-                    />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            {/* FIM COMPONENTE: TypePicker */}
-
-            {/* INÍCIO COMPONENTE: ClearFiltersButton */}
-            <View className="mt-2 md:mt-0 ml-auto self-center">
-              <Button onPress={clearFilters}>Limpar Filtros</Button>
-            </View>
-            {/* FIM COMPONENTE: ClearFiltersButton */}
-          </View>
+          <FilterCard filters={filters} setFilters={setFilters} clearFilters={clearFilters}RARITIES={RARITIES} TYPES={TYPES}/>
           {/* FIM COMPONENTE: FiltersCard */}
 
           {/* Results */}
@@ -351,56 +265,7 @@ export default function Search() {
             // FIM COMPONENTE: LoadingState
           ) : items.length > 0 ? (
             // INÍCIO COMPONENTE: ResultsGrid
-            <FlatList
-              data={items}
-              keyExtractor={(it) => String(it.id)}
-              numColumns={columns}
-              renderItem={({ item, index }) => {
-                const likeState = itemLikes[item.id] ?? {
-                  likes: 0,
-                  isLiked: false,
-                };
-                const isLastInRow = (index + 1) % columns === 0;
-                return (
-                  // INÍCIO COMPONENTE: GridItemWrapper
-                  <View
-                    style={[
-                      {
-                        width: columns === 1 ? "100%" : itemWrapperWidth,
-                        marginRight: columns === 1 ? 0 : isLastInRow ? 0 : GAP,
-                        alignItems: columns === 1 ? "center" : "flex-start",
-                        paddingVertical: 8,
-                      },
-                    ]}
-                  >
-                    <ItemCard
-                      item={{
-                        ...item,
-                        likes: likeState.likes,
-                        isLiked: likeState.isLiked,
-                      }}
-                      onLike={handleLike} // pai gerencia o toggle agora
-                      onView={(id) =>
-                        navigation.navigate("ItemDetails", { id })
-                      }
-                    />
-                  </View>
-                  // FIM COMPONENTE: GridItemWrapper
-                );
-              }}
-              contentContainerStyle={[
-                { paddingBottom: 40, paddingTop: 6 },
-                columns === 1
-                  ? { alignItems: "center" }
-                  : { alignItems: "stretch" },
-              ]}
-              columnWrapperStyle={
-                columns > 1
-                  ? { justifyContent: "flex-start", marginBottom: 16 }
-                  : undefined
-              }
-              showsVerticalScrollIndicator={false}
-            />
+            <ResultsGrid items={items} itemLikes={itemLikes} handleLike={handleLike} navigation={navigation} columns={columns} itemWrapperWidth={itemWrapperWidth} GAP={GAP}/>
             // FIM COMPONENTE: ResultsGrid
           ) : (
             // INÍCIO COMPONENTE: EmptyState

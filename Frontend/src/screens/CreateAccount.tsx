@@ -1,16 +1,19 @@
 // CreateAccount.tsx
-import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import Navigation from "../components/Navigation";
 import { createUser } from "../hooks/user/user";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LabeledName from "@/components/register/LabeledName";
+import LabeledEmail from "@/components/register/LabeledEmail";
+import LabeledPassword from "@/components/register/LabeledPassword";
+import LabeledImage from "@/components/register/LabeledImage";
+import LabeledDesc from "@/components/register/LabeledDesc";
 
 // --- Helpers: validação de senha ---
 const validatePassword = (password: string): boolean => {
@@ -97,13 +100,8 @@ export default function CreateAccount() {
 
   return (
     <View style={{ paddingTop: insets.top }} className="flex-1 bg-theme-bg">
-      {/* INÍCIO COMPONENTE: ScreenContainer */}
       <Navigation />
-      {/* --- Container scroll da tela --- */}
-      {/* INÍCIO COMPONENTE: TransparentScrollWrapper */}
       <ScrollView style={{ backgroundColor: "transparent" }}>
-        {/* --- Conteúdo centralizado --- */}
-        {/* INÍCIO COMPONENTE: CenteredContentContainer */}
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
@@ -113,140 +111,19 @@ export default function CreateAccount() {
           className="px-3 lg:px-10 py-6 lg:py-12"
           keyboardShouldPersistTaps="handled"
         >
-          {/* --- Cabeçalho --- */}
-          {/* INÍCIO COMPONENTE: BrandHeader */}
           <View className="items-center mb-3 lg:mb-7">
             <Text className="text-xl lg:text-5xl font-black text-theme-text text-center">ArquiGrimório</Text>
             <Text className="mt-1.5 text-xs lg:text-lg text-theme-muted text-center">Portal de Itens Místicos</Text>
           </View>
-          {/* FIM COMPONENTE: BrandHeader */}
 
           {/* --- Card do formulário --- */}
           {/* INÍCIO COMPONENTE: FormCard */}
           <View className="w-full max-w-3xl bg-cardBg p-3.5 lg:p-7 rounded-2xl shadow-lg">
-            {/* Nome */}
-            {/* INÍCIO COMPONENTE: LabeledInput (Nome) */}
-            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Nome</Text>
-            <TextInput
-              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
-              placeholder="Nome"
-              placeholderTextColor="#9ca3af"
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
-            />
-            {/* FIM COMPONENTE: LabeledInput (Nome) */}
-
-            {/* Email */}
-            {/* INÍCIO COMPONENTE: LabeledInput (Email) */}
-            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Email</Text>
-            <TextInput
-              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
-              placeholder="Email"
-              placeholderTextColor="#9ca3af"
-              value={formData.email}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
-            />
-            {/* FIM COMPONENTE: LabeledInput (Email) */}
-
-            {/* Senha */}
-            {/* INÍCIO COMPONENTE: PasswordInputWithToggle (Senha) */}
-            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Senha</Text>
-            <View className="relative">
-              <TextInput
-                className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 pr-11"
-                placeholder="Senha"
-                placeholderTextColor="#9ca3af"
-                value={formData.password}
-                secureTextEntry={!showPassword}
-                onChangeText={(text) => {
-                  setFormData({ ...formData, password: text });
-                  setPasswordStrength(evaluatePasswordStrength(text));
-                }}
-              />
-              <TouchableOpacity
-                className="absolute right-2 top-2.5 p-1.5"
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <Feather name="eye-off" size={20} color="#9ca3af" />
-                ) : (
-                  <Feather name="eye" size={20} color="#9ca3af" />
-                )}
-              </TouchableOpacity>
-            </View>
-            {/* FIM COMPONENTE: PasswordInputWithToggle (Senha) */}
-            {/* INÍCIO COMPONENTE: PasswordStrengthBadge */}
-            {passwordStrength && (
-              <Text
-                className={`text-xs lg:text-base mt-1.5 font-bold ${
-                  passwordStrength === "Fraca"
-                    ? "text-theme-danger"
-                    : "text-theme-success"
-                }`}
-              >
-                Senha {passwordStrength}
-              </Text>
-            )}
-            {/* FIM COMPONENTE: PasswordStrengthBadge */}
-
-            {/* Confirmar Senha */}
-            {/* INÍCIO COMPONENTE: PasswordInputWithToggle (Confirmar Senha) */}
-            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Confirmar Senha</Text>
-            <View className="relative">
-              <TextInput
-                className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 pr-11"
-                placeholder="Confirmar Senha"
-                placeholderTextColor="#9ca3af"
-                value={formData.confirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, confirmPassword: text })
-                }
-              />
-              <TouchableOpacity
-                className="absolute right-2 top-2.5 p-1.5"
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <Feather name="eye-off" size={20} color="#9ca3af" />
-                ) : (
-                  <Feather name="eye" size={20} color="#9ca3af" />
-                )}
-              </TouchableOpacity>
-            </View>
-            {/* FIM COMPONENTE: PasswordInputWithToggle (Confirmar Senha) */}
-
-            {/* URL da imagem */}
-            {/* INÍCIO COMPONENTE: LabeledInput (URL da Imagem) */}
-            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">URL da Imagem</Text>
-            <TextInput
-              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
-              placeholder="URL da imagem"
-              placeholderTextColor="#9ca3af"
-              value={formData.url_img}
-              onChangeText={(text) =>
-                setFormData({ ...formData, url_img: text })
-              }
-            />
-            {/* FIM COMPONENTE: LabeledInput (URL da Imagem) */}
-
-            {/* Descrição */}
-            {/* INÍCIO COMPONENTE: TextArea (Descrição) */}
-            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Descrição</Text>
-            <TextInput
-              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 h-20 lg:h-40"
-              placeholder="Descrição"
-              placeholderTextColor="#9ca3af"
-              value={formData.description}
-              multiline
-              onChangeText={(text) =>
-                setFormData({ ...formData, description: text })
-              }
-            />
-            {/* FIM COMPONENTE: TextArea (Descrição) */}
-
+            <LabeledName formData={formData} setFormData={setFormData} />
+            <LabeledEmail formData={formData} setFormData={setFormData} />
+            <LabeledPassword formData={formData} setFormData={setFormData} passwordStrength={passwordStrength} setPasswordStrength={setPasswordStrength} showPassword={showPassword} setShowPassword={setShowPassword} evaluatePasswordStrength={evaluatePasswordStrength} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} />
+            <LabeledImage formData={formData} setFormData={setFormData} />
+            <LabeledDesc formData={formData} setFormData={setFormData} />
             {/* --- Mensagens de erro/sucesso --- */}
             {/* INÍCIO COMPONENTE: InlineError */}
             {error ? <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center">{error}</Text> : null}
