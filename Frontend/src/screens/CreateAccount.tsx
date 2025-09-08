@@ -12,7 +12,6 @@ import Navigation from "../components/Navigation";
 import ScreenContainer from "../components/ScreenContainer";
 import { createUser } from "../hooks/user/user";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { styles, stylesSafe, THEME, vh, clamp, vw} from "../style/createAccount";
 
 const validatePassword = (password: string): boolean => {
   const minLength = 8;
@@ -95,35 +94,36 @@ export default function CreateAccount() {
   };
 
   return (
-    <View style={{paddingTop: insets.top + 10, ...stylesSafe.safeArea}}/*stylesSafe.safeArea*/>
+    <View style={{paddingTop: insets.top}} className="flex-1 bg-theme-bg">
       <Navigation />
       <ScreenContainer style={{ backgroundColor: "transparent" }}>
-        <ScrollView
-          contentContainerStyle={styles.container}
+       <ScrollView
+          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}
+          className="px-3 lg:px-10 py-6 lg:py-12"
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
-            <Text style={styles.title}>ArquiGrimório</Text>
-            <Text style={styles.subtitle}>Portal de Itens Místicos</Text>
+          <View className="items-center mb-3 lg:mb-7">
+            <Text className="text-xl lg:text-5xl font-black text-theme-text text-center">ArquiGrimório</Text>
+            <Text className="mt-1.5 text-xs lg:text-lg text-theme-muted text-center">Portal de Itens Místicos</Text>
           </View>
 
-          <View style={styles.cardLight}>
+          <View className="w-full max-w-3xl bg-cardBg p-3.5 lg:p-7 rounded-2xl shadow-lg">
             {/* Nome */}
-            <Text style={styles.label}>Nome</Text>
+            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Nome</Text>
             <TextInput
-              style={styles.inputLight}
+              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
               placeholder="Nome"
-              placeholderTextColor={THEME.muted}
+              placeholderTextColor="#9ca3af"
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
             />
 
             {/* Email */}
-            <Text style={styles.label}>Email</Text>
+            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Email</Text>
             <TextInput
-              style={styles.inputLight}
+              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
               placeholder="Email"
-              placeholderTextColor={THEME.muted}
+              placeholderTextColor="#9ca3af"
               value={formData.email}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -131,12 +131,12 @@ export default function CreateAccount() {
             />
 
             {/* Senha */}
-            <Text style={styles.label}>Senha</Text>
-            <View style={{ position: "relative" }}>
+            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Senha</Text>
+            <View className="relative">
               <TextInput
-                style={[styles.inputLight, { paddingRight: 44 }]}
+                className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 pr-11"
                 placeholder="Senha"
-                placeholderTextColor={THEME.muted}
+                placeholderTextColor="#9ca3af"
                 value={formData.password}
                 secureTextEntry={!showPassword}
                 onChangeText={(text) => {
@@ -145,36 +145,35 @@ export default function CreateAccount() {
                 }}
               />
               <TouchableOpacity
-                style={styles.eyeBtn}
+                className="absolute right-2 top-2.5 p-1.5"
                 onPress={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <Feather name="eye-off" size={20} color={THEME.muted} />
+                  <Feather name="eye-off" size={20} color="#9ca3af" />
                 ) : (
-                  <Feather name="eye" size={20} color={THEME.muted} />
+                  <Feather name="eye" size={20} color="#9ca3af" />
                 )}
               </TouchableOpacity>
             </View>
             {passwordStrength && (
               <Text
-                style={[
-                  styles.passwordStrength,
+                className={`text-xs lg:text-base mt-1.5 font-bold ${
                   passwordStrength === "Fraca"
-                    ? styles.passwordWeak
-                    : styles.passwordStrong,
-                ]}
+                    ? "text-theme-danger"
+                    : "text-theme-success"
+                }`}
               >
                 Senha {passwordStrength}
               </Text>
             )}
 
             {/* Confirmar Senha */}
-            <Text style={styles.label}>Confirmar Senha</Text>
-            <View style={{ position: "relative" }}>
+            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Confirmar Senha</Text>
+            <View className="relative">
               <TextInput
-                style={[styles.inputLight, { paddingRight: 44 }]}
+                className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 pr-11"
                 placeholder="Confirmar Senha"
-                placeholderTextColor={THEME.muted}
+                placeholderTextColor="#9ca3af"
                 value={formData.confirmPassword}
                 secureTextEntry={!showConfirmPassword}
                 onChangeText={(text) =>
@@ -182,23 +181,23 @@ export default function CreateAccount() {
                 }
               />
               <TouchableOpacity
-                style={styles.eyeBtn}
+                className="absolute right-2 top-2.5 p-1.5"
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? (
-                  <Feather name="eye-off" size={20} color={THEME.muted} />
+                  <Feather name="eye-off" size={20} color="#9ca3af" />
                 ) : (
-                  <Feather name="eye" size={20} color={THEME.muted} />
+                  <Feather name="eye" size={20} color="#9ca3af" />
                 )}
               </TouchableOpacity>
             </View>
 
             {/* URL da imagem */}
-            <Text style={styles.label}>URL da Imagem</Text>
+            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">URL da Imagem</Text>
             <TextInput
-              style={styles.inputLight}
+              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
               placeholder="URL da imagem"
-              placeholderTextColor={THEME.muted}
+              placeholderTextColor="#9ca3af"
               value={formData.url_img}
               onChangeText={(text) =>
                 setFormData({ ...formData, url_img: text })
@@ -206,11 +205,11 @@ export default function CreateAccount() {
             />
 
             {/* Descrição */}
-            <Text style={styles.label}>Descrição</Text>
+            <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Descrição</Text>
             <TextInput
-              style={[styles.inputLight, { height: clamp(14 * vh, 80, 160) }]}
+              className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 h-20 lg:h-40"
               placeholder="Descrição"
-              placeholderTextColor={THEME.muted}
+              placeholderTextColor="#9ca3af"
               value={formData.description}
               multiline
               onChangeText={(text) =>
@@ -218,31 +217,27 @@ export default function CreateAccount() {
               }
             />
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center">{error}</Text> : null}
 
             <TouchableOpacity
-              style={styles.btn}
+              className="bg-theme-accent rounded-lg py-2.5 lg:py-4 items-center mt-3"
               onPress={handleSubmit}
               accessibilityRole="button"
             >
               <Text
-                style={{
-                  color: "#fff",
-                  fontWeight: "bold",
-                  fontSize: clamp(1.8 * vw, 14, 18),
-                }}
+                className="text-white font-bold text-sm lg:text-lg"
               >
                 Cadastrar
               </Text>
             </TouchableOpacity>
 
             {success ? (
-              <Text style={styles.success}>
+              <Text className="text-theme-success text-xs lg:text-base mt-2.5 text-center font-bold">
                 Usuário cadastrado com sucesso!
               </Text>
             ) : null}
             {errorAlert && !success ? (
-              <Text style={styles.errorAlert}>
+              <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center font-bold">
                 {error || "Erro ao registrar. Tente novamente."}
               </Text>
             ) : null}
@@ -252,6 +247,3 @@ export default function CreateAccount() {
     </View>
   );
 }
-
-/* ---------- styles ---------- */
-

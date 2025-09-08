@@ -1,13 +1,12 @@
-import { StyleSheet, Text } from "react-native";
+import { Text } from "react-native";
+import { cn } from "../utils/cn";
 
-export default function GradientLogo({ style }: { style?: any }) {
-  return <Text style={[styles.logoText, style]}>Arquigrimório</Text>;
+export default function GradientLogo({ className }: { className?: string }) {
+  return (
+    <Text
+      className={cn("text-base font-semibold text-[#a78bfa]", className)}
+    >
+      Arquigrimório
+    </Text>
+  );
 }
-
-const styles = StyleSheet.create({
-  logoText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#a78bfa",
-  },
-});

@@ -25,8 +25,7 @@ import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
 import { deleteItem, getItems, updateItem } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // import styles from separate file
-import { styles } from "../style/editItem";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // cap width como na Home para evitar escalonamento exagerado em web muito larga
 const WIN = Dimensions.get("window");
@@ -121,12 +120,12 @@ function DarkSelect({
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={toggle}
-          style={styles.customPickerButton}
+          className="flex-row items-center justify-between bg-[#0f0f1a] border border-[#2b2b45] px-2.5 py-2 rounded-lg"
         >
-          <Text style={[styles.customPickerLabel, labelStyle]}>
+          <Text className="text-white font-semibold" style={labelStyle}>
             {selected ? selected.label : placeholder ?? "Selecionar"}
           </Text>
-          <Text style={styles.customPickerCaret}>{open ? "▴" : "▾"}</Text>
+          <Text className="text-[#8a87a8] ml-2">{open ? "▴" : "▾"}</Text>
         </TouchableOpacity>
       </View>
       {/* Dropdown como modal/portal */}
@@ -137,18 +136,16 @@ function DarkSelect({
         onRequestClose={() => setOpen(false)}
       >
         <Pressable
-          style={styles.pickerModalOverlay}
+          className="absolute inset-0 bg-black/20 z-[99999]"
           onPress={() => setOpen(false)}
         />
         <View
+          className="absolute bg-[#0f0f1a] border border-[#2b2b45] rounded-lg z-[99999] shadow-lg overflow-hidden"
           style={[
-            styles.pickerModalDropdown,
             {
               top: dropdownPos.top,
               left: dropdownPos.left,
               width: dropdownPos.width,
-              right: undefined,
-              alignSelf: undefined,
             },
           ]}
         >
@@ -161,12 +158,9 @@ function DarkSelect({
               <Pressable
                 key={opt.value}
                 onPress={() => handlePick(opt.value)}
-                style={({ pressed }) => [
-                  styles.customPickerOption,
-                  pressed && { backgroundColor: "#262635" },
-                ]}
+                className="py-2.5 px-3 active:bg-[#262635]"
               >
-                <Text style={styles.customPickerOptionText}>{opt.label}</Text>
+                <Text className="text-white">{opt.label}</Text>
               </Pressable>
             ))}
           </RNScrollView>
@@ -308,13 +302,19 @@ const EditItem: React.FC = () => {
   );
 
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top + 10 }]}>
+    <View
+      className="flex-1 bg-[#07070a]"
+      style={{ paddingTop: insets.top }}
+    >
       <Navigation />
 
-      <View style={[styles.container, { paddingHorizontal: 5 * vw }]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Meus Itens</Text>
-          <Text style={styles.count}>
+      <View
+        className="flex-1 pt-2.5"
+        style={{ paddingHorizontal: 5 * vw }}
+      >
+        <View className="flex-row items-baseline justify-between mb-2.5">
+          <Text className="text-2xl font-extrabold text-white">Meus Itens</Text>
+          <Text className="text-[#d1cfe8] font-semibold">
             {items.length} item{items.length !== 1 ? "s" : ""}
           </Text>
         </View>
@@ -329,7 +329,9 @@ const EditItem: React.FC = () => {
             onRefresh={fetchItems}
             refreshing={loading}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>Nenhum item encontrado.</Text>
+              <Text className="text-center mt-8 text-[#d1cfe8]">
+                Nenhum item encontrado.
+              </Text>
             }
             contentContainerStyle={{ paddingBottom: 40, paddingTop: 12 }}
             numColumns={numColumns}
@@ -350,30 +352,40 @@ const EditItem: React.FC = () => {
         onRequestClose={() => setEditingItem(null)}
       >
         {/* Blur por trás */}
-        <BlurView intensity={80} tint="dark" style={styles.blurBackground} />
+        <BlurView
+          intensity={80}
+          tint="dark"
+          className="absolute inset-0 z-[1000]"
+        />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.modalWrapper}
+          className="flex-1 justify-center items-center px-4 z-[1001]"
         >
-          <View style={styles.modalCard}>
+          <View className="w-full max-w-[900px] bg-[#1a1a2b] rounded-xl p-4 border border-[#7f32cc] shadow-lg">
             <RNScrollView contentContainerStyle={{ paddingBottom: 18 }}>
-              <Text style={styles.modalTitle}>Editar Item</Text>
+              <Text className="text-white text-xl font-extrabold mb-3">
+                Editar Item
+              </Text>
 
-              <Text style={styles.label}>Nome</Text>
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
+                Nome
+              </Text>
               <TextInput
                 value={form.name}
                 onChangeText={(t) => setForm((s) => ({ ...s, name: t }))}
-                style={styles.input}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg"
                 placeholder="Nome do item"
                 placeholderTextColor="#8a87a8"
               />
 
-              <Text style={styles.label}>Descrição</Text>
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
+                Descrição
+              </Text>
               <TextInput
                 value={form.description}
                 onChangeText={(t) => setForm((s) => ({ ...s, description: t }))}
-                style={[styles.input, { height: 100 }]}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg h-[100px]"
                 placeholder="Descrição do item"
                 placeholderTextColor="#8a87a8"
                 multiline
@@ -381,7 +393,9 @@ const EditItem: React.FC = () => {
 
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <View style={{ flex: 1, zIndex: 99999 }}>
-                  <Text style={styles.label}>Raridade</Text>
+                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
+                    Raridade
+                  </Text>
 
                   <DarkSelect
                     options={RARITIES}
@@ -394,7 +408,9 @@ const EditItem: React.FC = () => {
                 </View>
 
                 <View style={{ flex: 1, zIndex: 99999 }}>
-                  <Text style={styles.label}>Tipo</Text>
+                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
+                    Tipo
+                  </Text>
 
                   <DarkSelect
                     options={TYPES}
@@ -407,45 +423,49 @@ const EditItem: React.FC = () => {
                 </View>
               </View>
 
-              <Text style={styles.label}>Preço (mo)</Text>
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
+                Preço (mo)
+              </Text>
               <TextInput
                 value={form.price}
                 onChangeText={(t) => setForm((s) => ({ ...s, price: t }))}
-                style={styles.input}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg"
                 placeholder="0"
                 placeholderTextColor="#8a87a8"
                 keyboardType="numeric"
               />
 
-              <Text style={styles.label}>URL da imagem</Text>
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
+                URL da imagem
+              </Text>
               <TextInput
                 value={form.image_url}
                 onChangeText={(t) => setForm((s) => ({ ...s, image_url: t }))}
-                style={styles.input}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg"
                 placeholder="https://..."
                 placeholderTextColor="#8a87a8"
                 autoCapitalize="none"
               />
 
               {/* Botões */}
-              <View style={styles.modalActions}>
+              <View className="flex-row justify-end gap-2 mt-3">
                 <TouchableOpacity
                   onPress={() => setEditingItem(null)}
-                  style={[styles.modalBtn, styles.cancelBtn]}
+                  className="px-3.5 py-2.5 rounded-lg min-w-[96px] items-center bg-[#2b2b45]"
                   disabled={saving || deleting}
                 >
-                  <Text style={styles.modalBtnText}>Cancelar</Text>
+                  <Text className="text-white font-bold">Cancelar</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={handleSave}
-                  style={[styles.modalBtn, styles.saveBtn]}
+                  className="px-3.5 py-2.5 rounded-lg min-w-[96px] items-center bg-[#7f32cc]"
                   disabled={saving || deleting}
                 >
                   {saving ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.modalBtnText}>Salvar</Text>
+                    <Text className="text-white font-bold">Salvar</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -485,13 +505,15 @@ const EditItem: React.FC = () => {
                       ]
                     )
                   }
-                  style={styles.deleteBigBtn}
+                  className="mt-1.5 bg-[#ef4444] py-2.5 rounded-lg items-center"
                   disabled={saving || deleting}
                 >
                   {deleting ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.deleteBigText}>Excluir item</Text>
+                    <Text className="text-white font-extrabold">
+                      Excluir item
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>

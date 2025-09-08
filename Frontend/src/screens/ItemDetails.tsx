@@ -8,6 +8,7 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  Dimensions,
   View,
 } from "react-native";
 import Svg, {
@@ -33,8 +34,7 @@ import {
 } from "../hooks/itens/itemLike";
 import api from "../services/api";
 import { useAuth } from "../utils/AuthContext";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // import styles from separate file
-import { styles, WIN } from "../style/itemDetail";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ItemDetailsRouteProp = RouteProp<RootStackParamList, "ItemDetails">;
 
@@ -49,10 +49,10 @@ type ItemWithExtras = Item & {
 
 
 export default function ItemDetails() {
+  
   const route = useRoute<ItemDetailsRouteProp>();
   const navigation = useNavigation<any>();
   const { token, user: authUser } = useAuth();
-
   const rawId = route.params?.id as unknown;
   const id =
     rawId == null
@@ -204,6 +204,7 @@ export default function ItemDetails() {
   // line chart path generation + points
   const chart = useMemo(() => {
     const data = likesHistory || [];
+    const WIN = Dimensions.get("window");
     const w = Math.min(WIN.width - 64, 420);
     const h = 140;
     const padding = 12;
@@ -232,7 +233,7 @@ export default function ItemDetails() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <SafeAreaView className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#6d28d9" />
       </SafeAreaView>
     );
@@ -240,18 +241,21 @@ export default function ItemDetails() {
 
   if (error || !item) {
     return (
-      <SafeAreaView style={[styles.containerRoot, { backgroundColor: "#fff" }]}>
+      <SafeAreaView
+        className="flex-1 bg-white"
+        style={[{ paddingTop: insets.top }]}
+      >
         <Navigation />
-        <View style={styles.centerBox}>
-          <View style={styles.errorCard}>
-            <Text style={styles.errorText}>
+        <View className="flex-1 items-center justify-center p-5">
+          <View className="bg-white p-4 rounded-xl border border-[#eee]">
+            <Text className="text-red-500 font-bold mb-2">
               {error ?? "Item não encontrado"}
             </Text>
             <TouchableOpacity
-              style={styles.backButton}
+              className="mt-2 bg-indigo-50 px-3 py-2 rounded-lg"
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.backButtonText}>Voltar</Text>
+              <Text className="text-indigo-600 font-semibold">Voltar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -278,36 +282,37 @@ export default function ItemDetails() {
   }
 
   return (
-    <View style={[styles.containerRoot, { backgroundColor: "#fff" }, { paddingTop: insets.top }]}>
+    <View
+      className="flex-1 bg-white"
+      style={[{ paddingTop: insets.top }]}
+    >
       <Navigation />
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.heroCard}>
+      <ScrollView contentContainerClassName="p-4 pb-9 bg-white">
+        <View className="bg-white rounded-2xl p-3 border border-indigo-50 shadow-sm mb-4">
           {/* --- TOP: IMAGE with like overlay --- */}
-          <View style={styles.imageWrap}>
+          <View className="relative items-center justify-center">
             {item.image_url ? (
               <Image
                 source={{ uri: item.image_url }}
-                style={styles.heroImage}
+                className="w-full h-[220px] rounded-xl bg-slate-50"
                 resizeMode="contain"
               />
             ) : (
-              <View style={[styles.heroImage, styles.heroImagePlaceholder]} />
+              <View className="w-full h-[220px] rounded-xl bg-slate-50 items-center justify-center" />
             )}
 
             {/* overlay like (kept on image) */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => handleLikeToggle(item.id!)}
-              style={[
-                styles.overlayLike,
-                likeLoading && styles.overlayLikeDisabled,
-              ]}
+              className={`absolute top-3 right-3 bg-white px-3 py-2 rounded-full shadow-md ${
+                likeLoading && "opacity-60"
+              }`}
             >
               <Text
-                style={[
-                  styles.overlayLikeText,
-                  item.isLiked && styles.overlayLikeTextActive,
-                ]}
+                className={`font-extrabold text-slate-700 ${
+                  item.isLiked && "text-rose-800"
+                }`}
               >
                 ♥ {item.likes ?? 0}
               </Text>
@@ -315,61 +320,67 @@ export default function ItemDetails() {
           </View>
 
           {/* --- NAME and BADGES (filters) --- */}
-          <Text style={styles.itemTitle}>{item.name}</Text>
+          <Text className="text-xl font-extrabold text-slate-900 mt-3 text-center">
+            {item.name}
+          </Text>
 
-          <View style={styles.badgesRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.rarity}</Text>
+          <View className="flex-row justify-center gap-2 mt-2.5">
+            <View className="bg-indigo-50 px-2.5 py-1.5 rounded-full mx-1.5">
+              <Text className="text-indigo-600 font-bold">{item.rarity}</Text>
             </View>
-            <View style={[styles.badge, styles.badgeOutline]}>
-              <Text style={[styles.badgeText, styles.badgeOutlineText]}>
-                {item.type}
-              </Text>
+            <View className="bg-white border border-[#e6e6f6] px-2.5 py-1.5 rounded-full mx-1.5">
+              <Text className="text-slate-700 font-bold">{item.type}</Text>
             </View>
           </View>
 
           {/* --- DESCRIPTION --- */}
-          <Text style={styles.description}>{item.description || "—"}</Text>
+          <Text className="text-center text-slate-500 mt-3 leading-5">
+            {item.description || "—"}
+          </Text>
 
           {/* --- STATS LINE: likes | price | desc chars --- */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Likes</Text>
-              <Text style={styles.statNumber}>{item.likes ?? 0}</Text>
+          <View className="flex-row justify-between mt-4">
+            <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
+              <Text className="text-slate-500 text-xs">Likes</Text>
+              <Text className="text-lg font-bold text-slate-900 mt-1.5">
+                {item.likes ?? 0}
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Preço</Text>
-              <Text style={styles.statNumber}>{priceText}</Text>
+            <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
+              <Text className="text-slate-500 text-xs">Preço</Text>
+              <Text className="text-lg font-bold text-slate-900 mt-1.5">
+                {priceText}
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Desc. (chars)</Text>
-              <Text style={styles.statNumber}>
+            <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
+              <Text className="text-slate-500 text-xs">Desc. (chars)</Text>
+              <Text className="text-lg font-bold text-slate-900 mt-1.5">
                 {(item.description || "").length}
               </Text>
             </View>
           </View>
 
           {/* --- CREATOR (left) and CHART (right) --- */}
-          <View style={styles.creatorChartRow}>
+          <View className="mt-4 md:flex-row gap-3 items-start justify-between">
             {/* left: creator */}
-            <View style={styles.creatorColumn}>
+            <View className="md:flex-[0.4] w-full">
               <TouchableOpacity
                 onPress={goToCreatorProfile}
-                style={styles.creatorRow}
+                className="flex-row items-center p-2 rounded-lg border border-slate-100 bg-white"
               >
                 {item.creator?.url_img ? (
                   <Image
                     source={{ uri: item.creator.url_img }}
-                    style={styles.creatorImg}
+                    className="w-14 h-14 rounded-full mr-3"
                   />
                 ) : (
-                  <View style={styles.creatorPlaceholder} />
+                  <View className="w-14 h-14 rounded-full bg-indigo-50 mr-3" />
                 )}
                 <View>
-                  <Text style={styles.creatorName}>
+                  <Text className="font-bold text-slate-900">
                     {item.creator?.name || "Desconhecido"}
                   </Text>
-                  <Text style={styles.creatorSubtitle}>
+                  <Text className="text-slate-500 text-xs">
                     Ver perfil do criador
                   </Text>
                 </View>
@@ -379,11 +390,13 @@ export default function ItemDetails() {
             </View>
 
             {/* right: interactive chart + aligned like button */}
-            <View style={styles.chartColumn}>
-              <Text style={styles.chartTitle}>Evolução de Likes</Text>
+            <View className="md:flex-[0.6] w-full">
+              <Text className="font-bold text-slate-900 mb-2">
+                Evolução de Likes
+              </Text>
 
               <View
-                style={styles.chartTouchWrap}
+                className="rounded-xl p-2 border border-slate-100 bg-white"
                 onStartShouldSetResponder={() => {
                   setSelectedPoint(null);
                   return false;
@@ -486,24 +499,23 @@ export default function ItemDetails() {
                 </Svg>
 
                 {/* axis labels: first and last */}
-                <View style={styles.chartLabelsRow}>
-                  <Text style={styles.chartLabelText}>
+                <View className="flex-row justify-between w-full mt-1.5">
+                  <Text className="text-slate-500 text-[11px]">
                     {chart.points[0]?.label ?? ""}
                   </Text>
-                  <Text style={styles.chartLabelText}>
+                  <Text className="text-slate-500 text-[11px]">
                     {chart.points[chart.points.length - 1]?.label ?? ""}
                   </Text>
                 </View>
 
                 {/* HERE: aligned like button under the chart (replaces the old smallLikeBtn by creator) */}
-                <View style={styles.chartLikeWrap}>
+                <View className="mt-2.5 items-center">
                   <TouchableOpacity
                     onPress={() => handleLikeToggle(item.id!)}
                     disabled={likeLoading}
-                    style={[
-                      styles.chartLikeBtn,
-                      likeLoading && styles.likeButtonDisabled,
-                    ]}
+                    className={`bg-slate-100 px-4 py-2.5 rounded-lg ${
+                      likeLoading && "opacity-60"
+                    }`}
                   ></TouchableOpacity>
                 </View>
               </View>
@@ -512,23 +524,28 @@ export default function ItemDetails() {
         </View>
 
         {/* extra details */}
-        <View style={styles.extraCard}>
-          <Text style={styles.sectionTitle}>Detalhes</Text>
-          <Text style={styles.sectionText}>
+        <View className="bg-white rounded-xl p-3.5 border border-indigo-50 mt-3">
+          <Text className="font-extrabold text-base text-slate-900 mb-2">
+            Detalhes
+          </Text>
+          <Text className="text-slate-600 leading-5">
             {item.description || "Sem descrição adicional."}
           </Text>
 
-          <View style={styles.actionsRow}>
+          <View className="flex-row mt-3">
             <TouchableOpacity
-              style={styles.secondaryBtn}
+              className="bg-white px-3 py-2 rounded-lg border border-[#e6e6f6] mr-2"
               onPress={() =>
                 navigation.navigate("ItemDetails", { id: item.id })
               }
             >
-              <Text style={styles.secondaryBtnText}>Compartilhar</Text>
+              <Text className="text-indigo-600 font-bold">Compartilhar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => {}}>
-              <Text style={styles.secondaryBtnText}>Denunciar</Text>
+            <TouchableOpacity
+              className="bg-white px-3 py-2 rounded-lg border border-[#e6e6f6] mr-2"
+              onPress={() => {}}
+            >
+              <Text className="text-indigo-600 font-bold">Denunciar</Text>
             </TouchableOpacity>
           </View>
         </View>

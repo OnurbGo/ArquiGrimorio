@@ -12,7 +12,6 @@ import { useState } from "react";
 import {
   Image,
   Pressable,
-  StyleSheet,
   Text,
   TouchableOpacity,
   useWindowDimensions,
@@ -54,78 +53,78 @@ export default function Navigation() {
   const profileName = user?.name ?? null;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.innerRow}>
-        <View style={styles.left}>
+    <View className="w-full bg-[#181825] border-b-2 border-b-[#7f32cc] py-[2%] px-[3%] pr-5 z-50">
+      <View className="py-2.5 flex-row items-center justify-between">
+        <View className="flex-row items-center">
           <TouchableOpacity
             onPress={() => goTo("Home")}
-            style={{ flexDirection: "row", alignItems: "center" }}
+            className="flex-row items-center"
             activeOpacity={0.7}
           >
-            <BookOpen size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={[styles.logoText, { color: "#fff" }]}>
+            <BookOpen size={20} color="#fff" className="mr-2" />
+            <Text className="text-base font-semibold text-white">
               Arquigrimório
             </Text>
           </TouchableOpacity>
         </View>
 
         {isWide ? (
-          <View style={styles.rightRow}>
-            <View style={styles.itemsRowWithCreate}>
+          <View className="flex-row items-center">
+            <View className="flex-row items-center justify-start gap-6 min-w-0">
               {/* Grimório */}
               <TouchableOpacity
                 onPress={() => goTo("Home")}
-                style={styles.navItem}
+                className="flex-row items-center ml-2 py-1.5 px-2.5 rounded-lg bg-[#23234a] shrink-0"
                 activeOpacity={0.7}
               >
                 <BookOpen size={18} color="#fff" />
-                <Text style={styles.navText}>Grimório</Text>
+                <Text className="ml-2 text-sm text-white">Grimório</Text>
               </TouchableOpacity>
               {/* Buscar */}
               <TouchableOpacity
                 onPress={() => goTo("Search")}
-                style={styles.navItem}
+                className="flex-row items-center ml-2 py-1.5 px-2.5 rounded-lg bg-[#23234a] shrink-0"
                 activeOpacity={0.7}
               >
                 <Search size={18} color="#fff" />
-                <Text style={styles.navText}>Buscar</Text>
+                <Text className="ml-2 text-sm text-white">Buscar</Text>
               </TouchableOpacity>
               {/* Criar Item - moved left, before avatar */}
               <TouchableOpacity
                 onPress={() => goTo("CreateItem")}
-                style={styles.navItemCreate}
+                className="flex-row items-center ml-3 py-1.5 px-2.5 rounded-lg bg-[#7f32cc] relative z-20 shrink-0"
                 activeOpacity={0.7}
               >
                 <Plus size={18} color="#fff" />
-                <Text style={styles.navText}>Criar Item</Text>
+                <Text className="ml-2 text-sm text-white">Criar Item</Text>
               </TouchableOpacity>
             </View>
 
             {!isAuthenticated ? (
               <TouchableOpacity
                 onPress={() => goTo("Login")}
-                style={styles.loginBtn}
+                className="ml-3 border border-[#7f32cc] px-3 py-1.5 rounded-full bg-[#23234a]"
               >
-                <Text style={styles.loginText}>Login</Text>
+                <Text className="font-semibold text-white">Login</Text>
               </TouchableOpacity>
             ) : (
-              <View style={[styles.avatarArea, { overflow: "visible" }]}>
+              <View className="ml-3 relative z-0 shrink-0 overflow-visible">
                 <Pressable
                   onPress={() => setAvatarMenuOpen((s) => !s)}
-                  style={styles.avatarPress}
+                  className="p-0.5"
                   hitSlop={8}
                 >
                   {avatarUrl ? (
                     <Image
                       source={{ uri: avatarUrl }}
-                      style={styles.avatar}
+                      className="w-9 h-9 rounded-full border-2 border-[#7f32cc]"
                       onError={() => {
                         console.warn("Erro ao carregar imagem do avatar");
                       }}
                     />
                   ) : (
-                    <View style={styles.avatarFallback}>
-                      <Text style={styles.avatarInitials}>
+                    <View className="w-9 h-9 rounded-full bg-[#23234a] items-center justify-center">
+                      <Text className="text-white font-bold">
                         {(profileName || "U")[0].toUpperCase()}
                       </Text>
                     </View>
@@ -133,22 +132,25 @@ export default function Navigation() {
                 </Pressable>
 
                 {avatarMenuOpen && (
-                  <View style={styles.avatarMenu} pointerEvents="auto">
+                  <View
+                    className="absolute right-0 top-[46px] min-w-[160px] bg-[#23234a] rounded-lg border-2 border-[#7f32cc] shadow-lg shadow-[#7f32cc]/15 z-[99999] overflow-visible"
+                    pointerEvents="auto"
+                  >
                     <TouchableOpacity
                       onPress={() => {
                         setAvatarMenuOpen(false);
                         goTo("UserProfile", { userId: user?.id ?? null });
                       }}
-                      style={styles.avatarMenuItem}
+                      className="p-3 border-b border-b-[#7f32cc33]"
                       accessibilityRole="button"
                     >
-                      <View style={styles.menuItemRow}>
+                      <View className="flex-row items-center">
                         <UserIcon
                           size={16}
                           color="#fff"
-                          style={{ marginRight: 8 }}
+                          className="mr-2"
                         />
-                        <Text style={{ color: "#fff" }}>Ver Perfil</Text>
+                        <Text className="text-white">Ver Perfil</Text>
                       </View>
                     </TouchableOpacity>
 
@@ -158,16 +160,16 @@ export default function Navigation() {
                         setAvatarMenuOpen(false);
                         goTo("EditItem");
                       }}
-                      style={styles.avatarMenuItem}
+                      className="p-3 border-b border-b-[#7f32cc33]"
                       accessibilityRole="button"
                     >
-                      <View style={styles.menuItemRow}>
+                      <View className="flex-row items-center">
                         <Pen
                           size={16}
                           color="#fff"
-                          style={{ marginRight: 8 }}
+                          className="mr-2"
                         />
-                        <Text style={{ color: "#fff" }}>Editar Item</Text>
+                        <Text className="text-white">Editar Item</Text>
                       </View>
                     </TouchableOpacity>
 
@@ -176,16 +178,16 @@ export default function Navigation() {
                         setAvatarMenuOpen(false);
                         handleLogout();
                       }}
-                      style={styles.avatarMenuItem}
+                      className="p-3"
                       accessibilityRole="button"
                     >
-                      <View style={styles.menuItemRow}>
+                      <View className="flex-row items-center">
                         <LogOut
                           size={16}
                           color="#fff"
-                          style={{ marginRight: 8 }}
+                          className="mr-2"
                         />
-                        <Text style={{ color: "#fff" }}>Desconectar</Text>
+                        <Text className="text-white">Desconectar</Text>
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -194,12 +196,12 @@ export default function Navigation() {
             )}
           </View>
         ) : (
-          <View style={styles.compactRow}>
+          <View className="flex-row items-center">
             {/* No mobile, só mostra o menu hamburger e login */}
             {!isAuthenticated ? null : null}
             <TouchableOpacity
               onPress={() => setHamburgerOpen((s) => !s)}
-              style={styles.iconBtn}
+              className="p-[2%] ml-[1%]"
             >
               <Menu size={20} color="#fff" />
             </TouchableOpacity>
@@ -208,25 +210,25 @@ export default function Navigation() {
       </View>
 
       {hamburgerOpen && !isWide && (
-        <View style={styles.mobileMenu}>
+        <View className="mt-[2%] bg-[#23234a] rounded-lg border-2 border-[#7f32cc] py-[1%] z-[9999]">
           {NAV_ITEMS.map((it) => (
             <TouchableOpacity
               key={it.key}
               onPress={() => goTo(it.route)}
-              style={styles.mobileMenuItem}
+              className="flex-row items-center py-[2%] px-[3%] border-b border-b-[#7f32cc33]"
             >
-              <it.icon size={18} color="#fff" style={{ marginRight: 10 }} />
-              <Text style={styles.mobileMenuText}>{it.label}</Text>
+              <it.icon size={18} color="#fff" className="mr-2.5" />
+              <Text className="text-[15px] text-white">{it.label}</Text>
             </TouchableOpacity>
           ))}
 
           {!isAuthenticated ? (
             <TouchableOpacity
               onPress={() => goTo("Login")}
-              style={styles.mobileMenuItem}
+              className="flex-row items-center py-[2%] px-[3%]"
             >
-              <Menu size={18} color="#fff" style={{ marginRight: 10 }} />
-              <Text style={styles.mobileMenuText}>Login</Text>
+              <Menu size={18} color="#fff" className="mr-2.5" />
+              <Text className="text-[15px] text-white">Login</Text>
             </TouchableOpacity>
           ) : (
             <>
@@ -235,10 +237,10 @@ export default function Navigation() {
                   setHamburgerOpen(false);
                   goTo("UserProfile", { userId: user?.id ?? null });
                 }}
-                style={styles.mobileMenuItem}
+                className="flex-row items-center py-[2%] px-[3%] border-b border-b-[#7f32cc33]"
               >
-                <UserIcon size={18} color="#fff" style={{ marginRight: 10 }} />
-                <Text style={styles.mobileMenuText}>Ver Perfil</Text>
+                <UserIcon size={18} color="#fff" className="mr-2.5" />
+                <Text className="text-[15px] text-white">Ver Perfil</Text>
               </TouchableOpacity>
 
               {/* Editar Item - mobile hamburger menu */}
@@ -247,10 +249,10 @@ export default function Navigation() {
                   setHamburgerOpen(false);
                   goTo("EditItem");
                 }}
-                style={styles.mobileMenuItem}
+                className="flex-row items-center py-[2%] px-[3%] border-b border-b-[#7f32cc33]"
               >
-                <Pen size={18} color="#fff" style={{ marginRight: 10 }} />
-                <Text style={styles.mobileMenuText}>Editar Item</Text>
+                <Pen size={18} color="#fff" className="mr-2.5" />
+                <Text className="text-[15px] text-white">Editar Item</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -258,10 +260,10 @@ export default function Navigation() {
                   setHamburgerOpen(false);
                   handleLogout();
                 }}
-                style={styles.mobileMenuItem}
+                className="flex-row items-center py-[2%] px-[3%]"
               >
-                <LogOut size={18} color="#fff" style={{ marginRight: 10 }} />
-                <Text style={styles.mobileMenuText}>Desconectar</Text>
+                <LogOut size={18} color="#fff" className="mr-2.5" />
+                <Text className="text-[15px] text-white">Desconectar</Text>
               </TouchableOpacity>
             </>
           )}
@@ -269,16 +271,16 @@ export default function Navigation() {
       )}
 
       {avatarMenuOpen && !isWide && (
-        <View style={styles.mobileAvatarMenu}>
+        <View className="mt-2 bg-[#23234a] rounded-lg border-2 border-[#7f32cc] py-1.5 z-[9999]">
           <TouchableOpacity
             onPress={() => {
               setAvatarMenuOpen(false);
               goTo("UserProfile", { userId: user?.id ?? null });
             }}
-            style={styles.mobileMenuItem}
+            className="flex-row items-center py-[2%] px-[3%] border-b border-b-[#7f32cc33]"
           >
-            <UserIcon size={16} color="#fff" style={{ marginRight: 10 }} />
-            <Text style={{ color: "#fff" }}>Ver Perfil</Text>
+            <UserIcon size={16} color="#fff" className="mr-2.5" />
+            <Text className="text-white">Ver Perfil</Text>
           </TouchableOpacity>
 
           {/* Editar Item - mobile avatar menu */}
@@ -287,10 +289,10 @@ export default function Navigation() {
               setAvatarMenuOpen(false);
               goTo("EditItem");
             }}
-            style={styles.mobileMenuItem}
+            className="flex-row items-center py-[2%] px-[3%] border-b border-b-[#7f32cc33]"
           >
-            <Pen size={16} color="#fff" style={{ marginRight: 10 }} />
-            <Text style={{ color: "#fff" }}>Editar Item</Text>
+            <Pen size={16} color="#fff" className="mr-2.5" />
+            <Text className="text-white">Editar Item</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -298,189 +300,13 @@ export default function Navigation() {
               setAvatarMenuOpen(false);
               handleLogout();
             }}
-            style={styles.mobileMenuItem}
+            className="flex-row items-center py-[2%] px-[3%]"
           >
-            <LogOut size={16} color="#fff" style={{ marginRight: 10 }} />
-            <Text style={{ color: "#fff" }}>Desconectar</Text>
+            <LogOut size={16} color="#fff" className="mr-2.5" />
+            <Text className="text-white">Desconectar</Text>
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  innerRow: {
-    paddingTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  container: {
-    width: "100%",
-    backgroundColor: "#181825",
-    borderBottomWidth: 2,
-    borderBottomColor: "#7f32cc",
-    paddingVertical: "2%",
-    paddingHorizontal: "3%",
-    paddingRight: 20,
-    zIndex: 50,
-  },
-  left: { flexDirection: "row", alignItems: "center" },
-  logoText: { fontSize: 16, fontWeight: "600", color: "#fff" },
-  rightRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  itemsRowWithCreate: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "flex-start",
-    gap: 24,
-    minWidth: 0,
-  },
-
-  navItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: "#23234a",
-    flexShrink: 0,
-  },
-
-  navItemCreate: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: "#7f32cc",
-    position: "relative",
-    zIndex: 20,
-    flexShrink: 0,
-  },
-
-  navText: { marginLeft: 8, fontSize: 14, color: "#fff" },
-
-  loginBtn: {
-    marginLeft: 12,
-    borderWidth: 1,
-    borderColor: "#7f32cc",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#23234a",
-  },
-  loginText: { fontWeight: "600", color: "#fff" },
-
-  avatarArea: {
-    marginLeft: 12,
-    position: "relative",
-    zIndex: 0,
-    flexShrink: 0,
-  },
-
-  avatarPress: { padding: 2 },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: "#7f32cc",
-  },
-  avatarFallback: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    backgroundColor: "#23234a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitials: { color: "#fff", fontWeight: "700" },
-
-  avatarMenu: {
-    position: "absolute",
-    right: 0,
-    top: 46,
-    minWidth: 160,
-    backgroundColor: "#23234a",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#7f32cc",
-    shadowColor: "#7f32cc",
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 12,
-    zIndex: 99999,
-    overflow: "visible",
-  },
-  avatarMenuItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#7f32cc33",
-  },
-  menuItemRow: { flexDirection: "row", alignItems: "center" },
-
-  compactRow: { flexDirection: "row", alignItems: "center" },
-  iconBtn: { padding: "2%", marginLeft: "1%" },
-  loginBtnSmall: {
-    marginLeft: "1%",
-    borderWidth: 1,
-    borderColor: "#7f32cc",
-    paddingHorizontal: "2%",
-    paddingVertical: "1%",
-    borderRadius: 999,
-    backgroundColor: "#23234a",
-  },
-  avatarPressSmall: { marginLeft: "1%" },
-  avatarSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: "#7f32cc",
-  },
-  avatarFallbackSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    backgroundColor: "#23234a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarInitialsSmall: { color: "#fff", fontWeight: "700", fontSize: 12 },
-
-  mobileMenu: {
-    marginTop: "2%",
-    backgroundColor: "#23234a",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#7f32cc",
-    paddingVertical: "1%",
-    zIndex: 9999,
-  },
-  mobileMenuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: "2%",
-    paddingHorizontal: "3%",
-    borderBottomWidth: 1,
-    borderBottomColor: "#7f32cc33",
-  },
-  mobileMenuText: { fontSize: 15, color: "#fff" },
-  mobileAvatarMenu: {
-    marginTop: 8,
-    backgroundColor: "#23234a",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#7f32cc",
-    paddingVertical: 6,
-    zIndex: 9999,
-  },
-});

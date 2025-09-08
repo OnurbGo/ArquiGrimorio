@@ -2,7 +2,6 @@ import { Pen } from "lucide-react-native";
 import {
   GestureResponderEvent,
   Image,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -28,36 +27,52 @@ export default function ItemCardEdit({ item, onEdit }: Props) {
   };
 
   return (
-    <View style={styles.card}>
+    <View className="flex-row bg-[#23234a] rounded-xl p-3 my-2 mx-1.5 border border-[#7f32cc] overflow-hidden items-start">
       {thumb ? (
-        <View style={styles.imageContainer}>
+        <View className="w-[140px] h-[140px] rounded-lg overflow-hidden mr-3 bg-[#1f1f33] items-center justify-center border border-[#2b2b45]">
           <Image
             source={{ uri: thumb }}
-            style={styles.image}
+            className="w-full h-full"
             resizeMode="contain"
           />
         </View>
       ) : (
-        <View style={[styles.imageContainer, styles.imagePlaceholder]}>
-          <Text style={styles.placeholderText}>
+        <View className="w-[140px] h-[140px] rounded-lg overflow-hidden mr-3 bg-[#191923] items-center justify-center border border-[#2b2b45]">
+          <Text className="text-[#dcd6ff] text-3xl font-extrabold">
             {(item.name || "").slice(0, 1).toUpperCase()}
           </Text>
         </View>
       )}
 
-      <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+      <View className="flex-1 justify-between">
+        <Text
+          className="text-white text-base font-extrabold mb-1.5"
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           {item.name}
         </Text>
 
-        <View style={styles.metaRow}>
-          <Text style={styles.rarity} numberOfLines={1} ellipsizeMode="tail">
+        <View className="flex-row items-center gap-2 mb-1.5">
+          <Text
+            className="px-2 py-1 rounded-lg bg-[#7f32cc] text-white font-bold text-xs"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {item.rarity}
           </Text>
-          <Text style={styles.type} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            className="px-2 py-1 rounded-lg bg-[#2b2b45] text-[#d1cfe8] text-xs font-semibold"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {item.type}
           </Text>
-          <Text style={styles.price} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            className="ml-auto text-[#d1cfe8] text-xs font-bold"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {item.price != null
               ? `${Number(item.price).toLocaleString("pt-BR")} mo`
               : "—"}
@@ -66,7 +81,7 @@ export default function ItemCardEdit({ item, onEdit }: Props) {
 
         {item.description ? (
           <Text
-            style={styles.description}
+            className="text-[#d1cfe8] text-sm mb-2"
             numberOfLines={3}
             ellipsizeMode="tail"
           >
@@ -74,144 +89,17 @@ export default function ItemCardEdit({ item, onEdit }: Props) {
           </Text>
         ) : null}
 
-        <View style={styles.actionsRow}>
+        <View className="flex-row items-center">
           <TouchableOpacity
             onPress={handleEdit}
-            style={styles.editBtn}
+            className="flex-row items-center py-2 px-3 rounded-lg bg-[#3a3a5a] mr-2"
             activeOpacity={0.8}
           >
-            <Pen size={14} />
-            <Text style={styles.btnText}>Editar</Text>
+            <Pen size={14} color="#fff" />
+            <Text className="text-white ml-2 font-bold text-sm">Editar</Text>
           </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    backgroundColor: "#23234a",
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 8,
-    marginHorizontal: 6,
-    borderWidth: 1,
-    borderColor: "#7f32cc",
-    overflow: "hidden",
-    alignItems: "flex-start",
-  },
-
-  // AUMENTEI a área da imagem para exibir melhor (comparado à versão anterior)
-  imageContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 10,
-    overflow: "hidden",
-    marginRight: 12,
-    backgroundColor: "#1f1f33",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#2b2b45",
-  },
-
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-
-  imagePlaceholder: {
-    backgroundColor: "#191923",
-  },
-
-  placeholderText: {
-    color: "#dcd6ff",
-    fontSize: 28,
-    fontWeight: "800",
-  },
-
-  content: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-
-  name: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-
-  rarity: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "#7f32cc",
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 12,
-  },
-
-  type: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "#2b2b45",
-    color: "#d1cfe8",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-
-  price: {
-    marginLeft: "auto",
-    color: "#d1cfe8",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  description: {
-    color: "#d1cfe8",
-    fontSize: 13,
-    marginBottom: 8,
-  },
-
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  editBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#3a3a5a",
-    marginRight: 8,
-  },
-
-  deleteBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#ef4444",
-  },
-
-  btnText: {
-    color: "#fff",
-    marginLeft: 8,
-    fontWeight: "700",
-    fontSize: 13,
-  },
-});

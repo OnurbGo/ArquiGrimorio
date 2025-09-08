@@ -1,68 +1,47 @@
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  BookOpen,
-  Library,
-  Search,
-  Sparkles,
-  User as UserIcon,
-} from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
-import Navigation from "../components/Navigation";
-import { getUserCount } from "../hooks/user/user";
-import { getItems } from "../hooks/itens/item";
+import { Sparkles } from "lucide-react-native";
+import React from "react";
+import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { styles, stylesVars } from "../style/home";
+
+import CardExplanations from "@/components/home/CardExplanations";
+import CardStats from "@/components/home/CardStats";
+import Navigation from "@/components/Navigation";
 
 export default function Home() {
-  const [itemCount, setItemCount] = useState<number | null>(null);
-  const [userCount, setUserCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    async function fetchStats() {
-      setLoading(true);
-      try {
-        const items = await getItems();
-        const users = await getUserCount();
-        setItemCount(items.length);
-        setUserCount(users);
-      } catch {
-        setItemCount(null);
-        setUserCount(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStats();
-  }, []);
-
   return (
-    <View style={{ paddingTop: insets.top + 10, ...styles.safeArea }}>
+    <View className="flex-1 bg-bgStart" style={{ paddingTop: insets.top }}>
       <Navigation />
 
-      <ScrollView style={{ flexGrow: 1 }}>
-        {/* Possible component: HeroSection */}
+      <ScrollView style={{ flex: 1 }}>
+        {/* Hero Section */}
         <LinearGradient
-          colors={[stylesVars.bgStart, stylesVars.bgMid, stylesVars.bgEnd]}
+          colors={["#07070a", "#0e0f14", "#141417"]} // bgStart, bgMid, bgEnd
           start={[0, 0]}
           end={[1, 1]}
-          style={styles.hero}
+          className="px-6 py-10 items-center rounded-b-2xl"
         >
-          <View style={styles.badgeWrap}>
-            <View style={styles.badge}>
-              <Sparkles width={16} height={16} />
-              <Text style={styles.badgeText}>Biblioteca Colaborativa</Text>
+          <View className="w-full items-center mb-2">
+            <View className="flex-row items-center gap-2 bg-purple/10 py-2 px-4 rounded-full">
+              <Sparkles width={16} height={16} color="#dcd6ff" />
+              <Text className="text-badgeText font-bold text-sm ml-1">
+                Biblioteca Colaborativa
+              </Text>
             </View>
           </View>
 
-          <View style={styles.titleWrap}>
-            <Text style={styles.titleLeft}>Arqui</Text>
-            <Text style={styles.titleRight}>Grimório</Text>
+          <View className="flex-row items-center justify-center mt-2">
+            <Text className="text-5xl font-black text-purple tracking-wider [text-shadow:0_2px_6px_rgba(0,0,0,0.6)]">
+              Arqui
+            </Text>
+            <Text className="text-5xl font-black text-deepBlue tracking-wider ml-2 [text-shadow:0_2px_6px_rgba(0,0,0,0.6)]">
+              Grimório
+            </Text>
           </View>
 
-          <Text style={styles.subtitle}>
+          <Text className="text-subtitle mt-3 max-w-[90%] text-center text-base leading-relaxed">
             Descubra, crie e compartilhe itens mágicos únicos para suas
             aventuras de RPG. Uma biblioteca colaborativa feita por jogadores,
             para jogadores.
@@ -70,66 +49,17 @@ export default function Home() {
         </LinearGradient>
         {/* End of HeroSection */}
 
-        <View style={styles.content}>
-          <Text style={styles.sectionTitle}>Visão Geral</Text>
-
-          {/* Possible component: StatsSection */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <BookOpen color="#fff" width={28} height={28} />
-              {loading ? (
-                <ActivityIndicator style={{ marginTop: 14 }} />
-              ) : (
-                <>
-                  <Text style={[styles.statValue, styles.purpleValue]}>
-                    {itemCount ?? "-"}
-                  </Text>
-                  <Text style={styles.statLabel}>Itens Cadastrados</Text>
-                </>
-              )}
-            </View>
-
-            <View style={styles.statCard}>
-              <UserIcon color="#fff" width={28} height={28} />
-              {loading ? (
-                <ActivityIndicator style={{ marginTop: 14 }} />
-              ) : (
-                <>
-                  <Text style={[styles.statValue, styles.blueValue]}>
-                    {userCount ?? "-"}
-                  </Text>
-                  <Text style={styles.statLabel}>Criadores Ativos</Text>
-                </>
-              )}
-            </View>
-          </View>
-          {/* End of StatsSection */}
-
-          {/* Possible component: FeaturesSection */}
-          <View style={styles.extraSection}>
-            <Text style={styles.extraTitle}>Como funciona</Text>
-
-            <View style={styles.featuresRow}>
-              <View style={styles.featureCard}>
-                <Search color="#fff" width={22} height={22} />
-                <Text style={styles.featureTitle}>Busca Inteligente</Text>
-                <Text style={styles.featureDesc}>
-                  Encontre itens por nome, raridade ou efeitos — filtros
-                  avançados facilitam a descoberta.
-                </Text>
-              </View>
-
-              <View style={styles.featureCard}>
-                <Library color="#fff" width={22} height={22} />
-                <Text style={styles.featureTitle}>Criação Colaborativa</Text>
-                <Text style={styles.featureDesc}>
-                  Cadastre itens, compartilhe com a comunidade e aprimore
-                  criações coletivas.
-                </Text>
-              </View>
-            </View>
-          </View>
-          {/* End of FeaturesSection */}
+        <View className="px-5 pt-6">
+          <Text className="text-sectionTitle text-2xl font-bold mb-4 text-center">
+            Visão Geral
+          </Text>
+          <CardStats />
+        </View>
+        <View className="mt-8 mb-8">
+          <Text className="text-sectionTitle text-2xl font-extrabold mb-4 text-center">
+            Como funciona
+          </Text>
+          <CardExplanations />
         </View>
       </ScrollView>
     </View>

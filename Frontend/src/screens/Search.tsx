@@ -15,7 +15,6 @@ import {
 import Button from "../components/Button";
 import ItemCard from "../components/ItemCard";
 import Navigation from "../components/Navigation";
-import ScreenContainer from "../components/ScreenContainer";
 import { Item, ItemFilters } from "../interface/Item";
 import {
   getLikesByUser,
@@ -25,7 +24,13 @@ import {
 import { getItems } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { styles, clamp, baseVh, GAP, HORIZONTAL_PADDING, MIN_CARD_WIDTH, MAX_COLUMNS, CAP_WIDTH } from "../style/search";
+import { ScrollView } from "react-native-gesture-handler";
+
+const HORIZONTAL_PADDING = 32; // container left+right padding (16 + 16)
+const GAP = 12; // gap between cards (px)
+const MIN_CARD_WIDTH = 160; // minimal card width to try to fit 4 in row on wider screens
+const MAX_COLUMNS = 4;
+const CAP_WIDTH = 1200; // cap to avoid huge vw on desktop
 
 /* ---------- constants ---------- */
 const RARITIES = [
@@ -63,7 +68,7 @@ export default function Search() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { token, user } = useAuth();
-
+  const insets = useSafeAreaInsets();
   const [filters, setFilters] = useState<ItemFilters>({
     rarity: "todas",
     type: "todos",
@@ -218,49 +223,35 @@ export default function Search() {
     setFilters({ q: "", rarity: "todas", type: "todos", page: 1 });
   }
 
-  /* ---------- styles variables (kept near top) ---------- */
-  const stylesVars = {
-    bg: "#f7fafc", // search area light bg
-    panelBg: "#ffffff",
-    muted: "#64748b",
-    accent: "#6d28d9",
-    cardBg: "#ffffff",
-    border: "rgba(15,23,42,0.06)",
-  };
-  const insets = useSafeAreaInsets();
   /* ---------- render ---------- */
   return (
-    <View style={{ flex: 1, paddingTop: insets.top + 10, backgroundColor: stylesVars.bg }}>
+    <View
+      className="flex-1 bg-slate-50"
+      style={{ paddingTop: insets.top }}
+    >
       <Navigation />
-      <View style={{ flex: 1 }}>
-        <ScreenContainer style={{ paddingVertical: clamp(2 * baseVh, 12, 28) }}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Buscar Itens</Text>
-            <Text style={styles.subtitle}>
+      <View className="flex-1">
+        <ScrollView className="py-3 md:py-7">
+          <View className="items-center mb-4 md:mb-6">
+            <Text className="text-2xl md:text-3xl font-extrabold">
+              Buscar Itens
+            </Text>
+            <Text className="text-slate-500 mt-1.5">
               Encontre o item perfeito para sua aventura
             </Text>
           </View>
 
           {/* Filters card */}
-          <View
-            style={[
-              styles.filtersCard,
-              windowWidth >= 900
-                ? styles.filtersRow
-                : styles.filtersColumn,
-            ]}
-          >
+          <View className="bg-slate-100 rounded-xl p-3 md:p-4 mb-4 border border-slate-900/10 shadow-md md:flex-row md:items-end md:gap-3">
             {/* Search input */}
-            <View
-              style={[styles.inputWrap, windowWidth >= 900 && { flex: 1 }]}
-            >
-              <Text style={styles.label}>Buscar</Text>
-              <View style={styles.searchBox}>
-                <SearchIcon width={18} height={18} color={stylesVars.muted} />
+            <View className="mb-2 md:flex-1">
+              <Text className="font-bold mb-1.5 text-slate-900">Buscar</Text>
+              <View className="flex-row items-center gap-2 bg-slate-200/60 rounded-lg py-2 px-2.5 border border-slate-900/10">
+                <SearchIcon width={18} height={18} color={"#64748b"} />
                 <TextInput
                   placeholder="Digite o nome ou descrição..."
-                  placeholderTextColor={stylesVars.muted}
-                  style={styles.input}
+                  placeholderTextColor={"#64748b"}
+                  className="flex-1 py-0 text-base text-slate-900"
                   value={filters.q}
                   onChangeText={(text) =>
                     setFilters((f) => ({ ...f, q: text, page: 1 }))
@@ -271,15 +262,9 @@ export default function Search() {
             </View>
 
             {/* Rarity picker */}
-            <View
-              style={[
-                styles.pickerWrap,
-                windowWidth >= 900 && { width: 220 },
-                styles.filterBox,
-              ]}
-            >
-              <Text style={styles.label}>Raridade</Text>
-              <View style={styles.pickerBox}>
+            <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
+              <Text className="font-bold mb-1.5 text-slate-900">Raridade</Text>
+              <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
                 <Picker
                   selectedValue={filters.rarity}
                   onValueChange={(val) =>
@@ -288,9 +273,8 @@ export default function Search() {
                   style={{
                     width: "100%",
                     color: "#222",
-                    backgroundColor: "#f1f5f9",
+                    backgroundColor: "transparent",
                     borderWidth: 0,
-                    borderRadius: 10,
                   }}
                   dropdownIconColor="#64748b"
                 >
@@ -306,15 +290,9 @@ export default function Search() {
             </View>
 
             {/* Type picker */}
-            <View
-              style={[
-                styles.pickerWrap,
-                windowWidth >= 900 && { width: 220 },
-                styles.filterBox,
-              ]}
-            >
-              <Text style={styles.label}>Tipo</Text>
-              <View style={styles.pickerBox}>
+            <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
+              <Text className="font-bold mb-1.5 text-slate-900">Tipo</Text>
+              <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
                 <Picker
                   selectedValue={filters.type}
                   onValueChange={(val) =>
@@ -323,9 +301,8 @@ export default function Search() {
                   style={{
                     width: "100%",
                     color: "#222",
-                    backgroundColor: "#f1f5f9",
+                    backgroundColor: "transparent",
                     borderWidth: 0,
-                    borderRadius: 10,
                   }}
                   dropdownIconColor="#64748b"
                 >
@@ -341,16 +318,18 @@ export default function Search() {
             </View>
 
             {/* Clear button on the right on desktop, below on mobile */}
-            <View style={styles.clearWrap}>
+            <View className="mt-2 md:mt-0 ml-auto self-center">
               <Button onPress={clearFilters}>Limpar Filtros</Button>
             </View>
           </View>
 
           {/* Results */}
-          {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
+          {errorMsg ? (
+            <Text className="text-red-500 mb-3">{errorMsg}</Text>
+          ) : null}
 
           {loading ? (
-            <View style={styles.center}>
+            <View className="items-center p-6">
               <ActivityIndicator size="large" />
               <Text style={{ marginTop: 8 }}>Carregando itens...</Text>
             </View>
@@ -368,11 +347,11 @@ export default function Search() {
                 return (
                   <View
                     style={[
-                      styles.itemWrapper,
                       {
                         width: columns === 1 ? "100%" : itemWrapperWidth,
                         marginRight: columns === 1 ? 0 : isLastInRow ? 0 : GAP,
                         alignItems: columns === 1 ? "center" : "flex-start",
+                        paddingVertical: 8,
                       },
                     ]}
                   >
@@ -391,7 +370,7 @@ export default function Search() {
                 );
               }}
               contentContainerStyle={[
-                styles.listContent,
+                { paddingBottom: 40, paddingTop: 6 },
                 columns === 1
                   ? { alignItems: "center" }
                   : { alignItems: "stretch" },
@@ -404,10 +383,10 @@ export default function Search() {
               showsVerticalScrollIndicator={false}
             />
           ) : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
-              <Text style={styles.emptyText}>
+            <View className="items-center p-6">
+              <Text className="text-4xl mb-2">🔍</Text>
+              <Text className="text-lg font-bold">Nenhum item encontrado</Text>
+              <Text className="text-slate-500 mb-3">
                 Tente ajustar os filtros
               </Text>
               <Button onPress={clearFilters} style={{ marginTop: 12 }}>
@@ -415,7 +394,7 @@ export default function Search() {
               </Button>
             </View>
           )}
-        </ScreenContainer>
+        </ScrollView>
       </View>
     </View>
   );

@@ -18,7 +18,6 @@ import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
 import { createItem } from "../hooks/itens/item";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { styles } from "../style/createItem";
 
 type RootStackParamList = {
   Home: undefined;
@@ -113,189 +112,206 @@ export default function CreateItem() {
     !!formData.rarity &&
     !!formData.type &&
     !!formData.description.trim();
-    
+
   const insets = useSafeAreaInsets();
 
-
   return (
-    <View style={{ flex: 1,paddingTop: insets.top + 10}}>
+    <View style={{ flex: 1, paddingTop: insets.top }} className="bg-slate-50">
       <Navigation />
-      <View style={styles.flex}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.flex}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{
+            flexGrow: 1,
+            alignItems: "center",
+            padding: 20,
+            paddingBottom: 48,
+          }}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <View style={styles.card}>
-              <View style={styles.headerRow}>
-                <View style={styles.iconWrap}>
-                  <Text style={styles.iconText}>✦</Text>
-                </View>
-                <View style={styles.titleWrap}>
-                  <Text style={styles.title}>Criar Novo Item Mágico</Text>
-                  <Text style={styles.subtitle}>
-                    Compartilhe suas criações com a comunidade
-                  </Text>
-                </View>
+          <View className="w-full max-w-3xl bg-white rounded-2xl p-4 border border-indigo-500/10 shadow-lg">
+            <View className="flex-row items-center mb-3">
+              <View className="w-14 h-14 rounded-xl bg-violet-900/10 items-center justify-center mr-3">
+                <Text className="text-violet-700 font-extrabold text-xl">✦</Text>
               </View>
-
-              {/* Nome */}
-              <View style={styles.field}>
-                <Text style={styles.label}>Nome do Item *</Text>
-                <TextInput
-                  placeholder="Ex: Revolver Dourado"
-                  placeholderTextColor="#9ca3af"
-                  value={formData.name}
-                  onChangeText={(t) => handleInputChange("name", t)}
-                  style={styles.input}
-                />
+              <View className="flex-1">
+                <Text className="text-xl font-extrabold text-slate-900">
+                  Criar Novo Item Mágico
+                </Text>
+                <Text className="mt-1 text-slate-500">
+                  Compartilhe suas criações com a comunidade
+                </Text>
               </View>
+            </View>
 
-              {/* Raridade e Tipo */}
-              <View style={[styles.row, { marginBottom: 12 }]}>
-                <View style={[styles.col, { marginRight: 8 }]}>
-                  <Text style={styles.label}>Raridade *</Text>
-                  <View style={styles.pickerWrap}>
-                    <Picker
-                      selectedValue={formData.rarity}
-                      onValueChange={(val) =>
-                        handleInputChange("rarity", String(val))
-                      }
-                      style={{
-                        width: "100%",
-                        color: "#0f172a",
-                        backgroundColor: "#f8fafc",
-                        borderWidth: 0,
-                        borderRadius: 10,
-                      }}
-                      dropdownIconColor="#64748b"
-                    >
-                      <Picker.Item label="Selecione a raridade" value="" />
-                      {RARITIES.map((r) => (
-                        <Picker.Item
-                          key={r.value}
-                          label={r.label}
-                          value={r.value}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
+            {/* Nome */}
+            <View className="w-full mb-3">
+              <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                Nome do Item *
+              </Text>
+              <TextInput
+                placeholder="Ex: Revolver Dourado"
+                placeholderTextColor="#9ca3af"
+                value={formData.name}
+                onChangeText={(t) => handleInputChange("name", t)}
+                className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
+              />
+            </View>
 
-                <View style={styles.col}>
-                  <Text style={styles.label}>Tipo *</Text>
-                  <View style={styles.pickerWrap}>
-                    <Picker
-                      selectedValue={formData.type}
-                      onValueChange={(val) =>
-                        handleInputChange("type", String(val))
-                      }
-                      style={{
-                        width: "100%",
-                        color: "#0f172a",
-                        backgroundColor: "#f8fafc",
-                        borderWidth: 0,
-                        borderRadius: 10,
-                      }}
-                      dropdownIconColor="#64748b"
-                    >
-                      <Picker.Item label="Selecione o tipo" value="" />
-                      {ITEM_TYPES.map((t) => (
-                        <Picker.Item
-                          key={t.value}
-                          label={t.label}
-                          value={t.value}
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              </View>
-
-              {/* Descrição */}
-              <View style={styles.field}>
-                <Text style={styles.label}>Descrição e Efeitos *</Text>
-                <TextInput
-                  placeholder="Descreva os efeitos mágicos, lore e características especiais do item..."
-                  placeholderTextColor="#9ca3af"
-                  value={formData.description}
-                  onChangeText={(t) => handleInputChange("description", t)}
-                  multiline
-                  style={[styles.input, styles.textarea]}
-                />
-              </View>
-
-              {/* Preço e Imagem */}
-              <View style={[styles.row, { marginBottom: 12 }]}>
-                <View style={[styles.col, { marginRight: 8 }]}>
-                  <Text style={styles.label}>Preço (Opcional)</Text>
-                  <TextInput
-                    keyboardType="numeric"
-                    placeholder="0.00"
-                    placeholderTextColor="#9ca3af"
-                    value={formData.price}
-                    onChangeText={(t) => handleInputChange("price", t)}
-                    style={styles.input}
-                  />
-                </View>
-
-                <View style={styles.col}>
-                  <Text style={styles.label}>URL da Imagem (Opcional)</Text>
-                  <TextInput
-                    placeholder="https://.../imagem.png"
-                    placeholderTextColor="#9ca3af"
-                    value={formData.imageUrl}
-                    onChangeText={(t) => handleInputChange("imageUrl", t)}
-                    style={styles.input}
-                  />
-                </View>
-              </View>
-
-              {/* Prévia da imagem */}
-              {formData.imageUrl ? (
-                <View style={styles.field}>
-                  <Text style={styles.label}>Prévia da Imagem</Text>
-                  <View style={styles.preview}>
-                    <Image
-                      source={{ uri: formData.imageUrl }}
-                      style={styles.previewImage}
-                      onError={() => {
-                        Alert.alert(
-                          "Aviso",
-                          "Não foi possível carregar a imagem de preview."
-                        );
-                      }}
-                    />
-                  </View>
-                </View>
-              ) : null}
-
-              {/* Botões */}
-              <View style={[styles.row, { marginTop: 8 }]}>
-                <View style={[styles.col, { marginRight: 8 }]}>
-                  <Button
-                    onPress={handleSubmit}
-                    disabled={!isFormValid || isSubmitting}
+            {/* Raridade e Tipo */}
+            <View className="flex-row w-full mb-3">
+              <View className="flex-1 mr-2">
+                <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                  Raridade *
+                </Text>
+                <View className="rounded-lg overflow-hidden border border-indigo-100 bg-indigo-50/50">
+                  <Picker
+                    selectedValue={formData.rarity}
+                    onValueChange={(val) =>
+                      handleInputChange("rarity", String(val))
+                    }
+                    style={{
+                      width: "100%",
+                      color: "#0f172a",
+                      backgroundColor: "transparent",
+                      borderWidth: 0,
+                    }}
+                    dropdownIconColor="#64748b"
                   >
-                    {isSubmitting ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      "Criar Item"
-                    )}
-                  </Button>
+                    <Picker.Item label="Selecione a raridade" value="" />
+                    {RARITIES.map((r) => (
+                      <Picker.Item
+                        key={r.value}
+                        label={r.label}
+                        value={r.value}
+                      />
+                    ))}
+                  </Picker>
                 </View>
-                <View style={styles.col}>
-                  <Button onPress={() => navigation.navigate("Home")}>
-                    Cancelar
-                  </Button>
+              </View>
+
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                  Tipo *
+                </Text>
+                <View className="rounded-lg overflow-hidden border border-indigo-100 bg-indigo-50/50">
+                  <Picker
+                    selectedValue={formData.type}
+                    onValueChange={(val) =>
+                      handleInputChange("type", String(val))
+                    }
+                    style={{
+                      width: "100%",
+                      color: "#0f172a",
+                      backgroundColor: "transparent",
+                      borderWidth: 0,
+                    }}
+                    dropdownIconColor="#64748b"
+                  >
+                    <Picker.Item label="Selecione o tipo" value="" />
+                    {ITEM_TYPES.map((t) => (
+                      <Picker.Item
+                        key={t.value}
+                        label={t.label}
+                        value={t.value}
+                      />
+                    ))}
+                  </Picker>
                 </View>
               </View>
             </View>
 
-            <View style={{ height: 28 }} />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </View>
+            {/* Descrição */}
+            <View className="w-full mb-3">
+              <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                Descrição e Efeitos *
+              </Text>
+              <TextInput
+                placeholder="Descreva os efeitos mágicos, lore e características especiais do item..."
+                placeholderTextColor="#9ca3af"
+                value={formData.description}
+                onChangeText={(t) => handleInputChange("description", t)}
+                multiline
+                className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900 h-32 align-top"
+              />
+            </View>
+
+            {/* Preço e Imagem */}
+            <View className="flex-row w-full mb-3">
+              <View className="flex-1 mr-2">
+                <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                  Preço (Opcional)
+                </Text>
+                <TextInput
+                  keyboardType="numeric"
+                  placeholder="0.00"
+                  placeholderTextColor="#9ca3af"
+                  value={formData.price}
+                  onChangeText={(t) => handleInputChange("price", t)}
+                  className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
+                />
+              </View>
+
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                  URL da Imagem (Opcional)
+                </Text>
+                <TextInput
+                  placeholder="https://.../imagem.png"
+                  placeholderTextColor="#9ca3af"
+                  value={formData.imageUrl}
+                  onChangeText={(t) => handleInputChange("imageUrl", t)}
+                  className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
+                />
+              </View>
+            </View>
+
+            {/* Prévia da imagem */}
+            {formData.imageUrl ? (
+              <View className="w-full mb-3">
+                <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                  Prévia da Imagem
+                </Text>
+                <View className="rounded-lg overflow-hidden border border-indigo-100 bg-slate-100">
+                  <Image
+                    source={{ uri: formData.imageUrl }}
+                    className="w-full h-44 object-cover"
+                    onError={() => {
+                      Alert.alert(
+                        "Aviso",
+                        "Não foi possível carregar a imagem de preview."
+                      );
+                    }}
+                  />
+                </View>
+              </View>
+            ) : null}
+
+            {/* Botões */}
+            <View className="flex-row w-full mt-2">
+              <View className="flex-1 mr-2">
+                <Button
+                  onPress={handleSubmit}
+                  disabled={!isFormValid || isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    "Criar Item"
+                  )}
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button onPress={() => navigation.navigate("Home")}>
+                  Cancelar
+                </Button>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }

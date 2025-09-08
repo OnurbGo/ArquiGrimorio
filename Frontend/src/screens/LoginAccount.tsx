@@ -1,24 +1,16 @@
 // LoginAccount.tsx
+import { useRef, useState, useCallback } from "react";
+import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { isAxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react-native";
-import { useRef, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
 
 import Button from "@/components/Button";
-import Navigation from "../components/Navigation";
-import api from "../services/api";
-import { useAuth } from "../utils/AuthContext";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // import styles from separate file
-import { stylesSafe, styles, THEME } from "../style/loginAccount";
+import Navigation from "@/components/Navigation";
+import api from "@/services/api";
+import { useAuth } from "@/utils/AuthContext";
 
 type RootStackParamList = {
   Login: undefined;
@@ -39,7 +31,16 @@ export default function LoginAccount() {
   const insets = useSafeAreaInsets();
   const passwordRef = useRef<TextInput | null>(null);
 
-  const handleSubmit = async () => {
+  const getErrorMessage = (err: unknown): string => {
+    if (isAxiosError(err)) {
+      const msg = err.response?.data?.message ?? err.response?.data ?? err.message;
+      return typeof msg === "string" ? msg : "Erro ao autenticar";
+    }
+    if (err instanceof Error) return err.message;
+    return "Erro ao autenticar";
+  };
+
+  const handleSubmit = useCallback(async () => {
     if (!email.trim() || !password) {
       setError("Preencha email e senha.");
       return;
@@ -48,98 +49,114 @@ export default function LoginAccount() {
     setError(null);
     setLoading(true);
     try {
-      const resp = await api.post("/login", {
-        email: email.trim(),
-        password,
-      });
-
+      const resp = await api.post("/login", { email: email.trim(), password });
       const token = resp?.data?.token ?? resp?.data?.accessToken ?? null;
       if (!token) throw new Error("Token não retornado pela API.");
 
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
       await login(token);
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Home" }],
-      });
-    } catch (err: any) {
+      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+    } catch (err: unknown) {
       console.error("Login error:", err);
-      if (isAxiosError(err)) {
-        const msg =
-          err.response?.data?.message ?? err.response?.data ?? err.message;
-        setError(typeof msg === "string" ? msg : "Erro ao autenticar");
-      } else {
-        setError(err?.message ?? "Erro ao autenticar");
-      }
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, login, navigation]);
 
   return (
-    <View style={{paddingTop: insets.top + 10, ...stylesSafe.safeArea }}>
+    // TODO(comp): Extrair um ScreenContainer que aplique SafeArea + paddingTop dinâmico
+    // e incorpore o KeyboardAvoidingView internamente para reuso em outras telas.
+    <View
+      className="flex-1 bg-[#0b1220]"
+      style={[{ paddingTop: insets.top }]}
+    >
       <Navigation />
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
+        {/* TODO(comp): Tornar parte do ScreenContainer (KeyboardAwareContainer) */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={stylesSafe.keyboard}
+          className="flex-1"
         >
-          <View style={styles.wrapper}>
-            <View style={styles.header}>
-              <Text style={styles.title}>ArquiGrimório</Text>
-              <Text style={styles.subtitle}>Portal de Itens Místicos</Text>
+          <View className="flex-1 justify-center items-center p-4">
+            {/* TODO(comp): Extrair <AuthHeader title subtitle /> para padronizar cabeçalhos */}
+            <View className="items-center mb-4">
+              <Text className="text-4xl font-black text-slate-200 text-center">
+                ArquiGrimório
+              </Text>
+              <Text className="mt-1.5 text-base text-slate-400 text-center">
+                Portal de Itens Místicos
+              </Text>
             </View>
 
-            <View style={styles.card}>
-              <Text style={styles.label}>Email</Text>
+            {/* TODO(comp): Extrair <FormCard> para agrupar conteúdos de formulário com padding/elevação */}
+            <View className="w-full max-w-md bg-[#071525] p-6 rounded-2xl shadow-lg">
+              <Text className="text-base font-bold text-slate-200 mb-1.5">
+                Email
+              </Text>
+              {/* TODO(comp): Extrair <LabeledInput label="Email" .../> ou <InputField .../> */}
               <TextInput
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  if (error) setError(null);
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                autoComplete="email"
+                textContentType="emailAddress"
                 placeholder="seu@exemplo.com"
-                placeholderTextColor={THEME.muted}
+                placeholderTextColor="#9ca3af"
                 returnKeyType="next"
                 onSubmitEditing={() => passwordRef.current?.focus()}
-                style={styles.input}
+                className="px-3 py-3 rounded-lg border border-white/5 bg-white/5 text-slate-200 text-base"
                 accessible
                 accessibilityLabel="Email"
               />
 
-              <Text style={[styles.label, { marginTop: 12 }]}>Senha</Text>
-              <View style={{ position: "relative" }}>
+              <Text className="text-base font-bold text-slate-200 mb-1.5 mt-3">
+                Senha
+              </Text>
+              {/* TODO(comp): Extrair <PasswordField value onChange onSubmit /> com botão de mostrar/ocultar */}
+              <View className="relative">
                 <TextInput
                   ref={passwordRef}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(t) => {
+                    setPassword(t);
+                    if (error) setError(null);
+                  }}
                   secureTextEntry={secure}
+                  autoComplete="password"
+                  textContentType="password"
                   placeholder="••••••••"
-                  placeholderTextColor={THEME.muted}
+                  placeholderTextColor="#9ca3af"
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="send"
                   onSubmitEditing={handleSubmit}
-                  style={[styles.input, { paddingRight: 44 }]}
+                  className="px-3 py-3 rounded-lg border border-white/5 bg-white/5 text-slate-200 text-base pr-11"
                   accessible
                   accessibilityLabel="Senha"
                 />
+                {/* TODO(comp): Dentro de PasswordField, extrair <ToggleVisibilityButton /> */}
                 <TouchableOpacity
                   onPress={() => setSecure((s) => !s)}
                   accessibilityLabel="alternar visibilidade senha"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  style={styles.eyeBtn}
+                  className="absolute right-2 top-3 p-1.5"
                 >
                   {secure ? (
-                    <Eye size={20} color={THEME.muted} />
+                    <Eye size={20} color={"#9ca3af"} />
                   ) : (
-                    <EyeOff size={20} color={THEME.muted} />
+                    <EyeOff size={20} color={"#9ca3af"} />
                   )}
                 </TouchableOpacity>
               </View>
 
+              {/* OK: Já é um componente. Opcional: <FormSubmitButton loading>Entrar</FormSubmitButton> */}
               <Button
                 onPress={handleSubmit}
                 loading={loading}
@@ -148,14 +165,20 @@ export default function LoginAccount() {
                 Entrar
               </Button>
 
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {/* TODO(comp): Extrair <FormError message={error} /> */}
+              {error ? (
+                <Text className="mt-2.5 text-rose-400 text-center font-semibold">
+                  {error}
+                </Text>
+              ) : null}
             </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footText}>
+            {/* TODO(comp): Extrair <SignUpPrompt onPress={...}/> */}
+            <View className="mt-4 items-center">
+              <Text className="text-base text-slate-400">
                 Não tem conta?{" "}
                 <Text
-                  style={styles.link}
+                  className="text-[#7c5cff] underline font-bold"
                   onPress={() => navigation.navigate("CreateAccount")}
                   accessibilityRole="link"
                 >
@@ -169,5 +192,3 @@ export default function LoginAccount() {
     </View>
   );
 }
-
-/* ---------- styles ---------- */

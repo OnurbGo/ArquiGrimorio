@@ -21,7 +21,12 @@ import { User } from "../interface/User";
 import { getLikesByUser, getLikesForItem } from "../hooks/itens/itemLike";
 import api from "@/services/api";
 import { useAuth } from "../utils/AuthContext";
-import { styles, GAP, MIN_CARD_WIDTH, HORIZONTAL_PADDING, WIN } from "../style/UserProfile";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const HORIZONTAL_PADDING = 32; // container padding left+right (16 each)
+const GAP = 12; // gap between cards
+const MIN_CARD_WIDTH = 160;
+const WIN = Dimensions.get("window");
 
 type RootStackParamList = {
   Home: undefined;
@@ -40,6 +45,7 @@ export default function UserProfile() {
   const route = useRoute<UserProfileRouteProp>();
   const routeUserId = route?.params?.userId;
   const { user: authUser } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<User | null>(null);
   const [userItems, setUserItems] = useState<Item[]>([]);
@@ -158,7 +164,7 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingRoot}>
+      <SafeAreaView className="flex-1 justify-center items-center bg-slate-50">
         <ActivityIndicator size="large" color="#6d28d9" />
       </SafeAreaView>
     );
@@ -166,11 +172,11 @@ export default function UserProfile() {
 
   if (error || !user) {
     return (
-      <SafeAreaView style={styles.root}>
+      <SafeAreaView className="flex-1 bg-slate-50">
         <Navigation />
-        <View style={styles.centerFull}>
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>
+        <View className="flex-1 justify-center items-center">
+          <View className="bg-white p-4 rounded-xl border border-red-100">
+            <Text className="text-red-500 font-extrabold mb-2">
               {error ?? "Usuário não encontrado"}
             </Text>
             <Button onPress={() => navigation.navigate("Home")}>
@@ -190,56 +196,64 @@ export default function UserProfile() {
     : "U";
 
   return (
-    <View style={styles.root}>
+    <View className="flex-1 bg-slate-50" style={{ paddingTop: insets.top }}>
       <Navigation />
-      <View style={styles.container}>
-        <View style={styles.profileCard}>
-          <View style={styles.headerRow}>
-            <View style={styles.avatarWrap}>
+      <View className="flex-1 p-4">
+        <View className="bg-white rounded-2xl p-4 border border-indigo-500/10 mb-3">
+          <View className="flex-row items-center">
+            <View className="mr-3">
               {user.url_img ? (
                 <Image
                   source={{ uri: user.url_img }}
-                  style={styles.avatarImg}
+                  className="w-24 h-24 rounded-full border-2 border-violet-700"
                 />
               ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarInitials}>{initials}</Text>
+                <View className="w-24 h-24 rounded-full bg-indigo-100 items-center justify-center border-2 border-purple-200">
+                  <Text className="text-3xl font-extrabold text-violet-700">
+                    {initials}
+                  </Text>
                 </View>
               )}
             </View>
 
-            <View style={styles.headerInfo}>
-              <Text style={styles.userName}>{user.name || "Usuário"}</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleBadgeText}>Criador</Text>
+            <View className="flex-1">
+              <Text className="text-xl font-extrabold text-slate-900">
+                {user.name || "Usuário"}
+              </Text>
+              <View className="mt-2 self-start bg-indigo-100 px-2.5 py-1 rounded-full">
+                <Text className="text-indigo-600 font-bold">Criador</Text>
               </View>
 
-              <Text style={styles.userDescription}>
+              <Text className="mt-2 text-slate-500">
                 {user.description || "Este usuário não adicionou descrição."}
               </Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📚</Text>
-            <Text style={styles.statNumber}>{userItems.length}</Text>
-            <Text style={styles.statLabel}>Itens Criados</Text>
+        <View className="flex-row justify-between my-3.5">
+          <View className="flex-1 mx-1.5 p-3.5 rounded-xl bg-white items-center border border-slate-100">
+            <Text className="text-lg">📚</Text>
+            <Text className="text-xl font-extrabold text-slate-900 mt-1.5">
+              {userItems.length}
+            </Text>
+            <Text className="text-slate-500 mt-1">Itens Criados</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>❤️</Text>
-            <Text style={styles.statNumber}>{userLikesTotal}</Text>
-            <Text style={styles.statLabel}>Likes Totais</Text>
+          <View className="flex-1 mx-1.5 p-3.5 rounded-xl bg-white items-center border border-slate-100">
+            <Text className="text-lg">❤️</Text>
+            <Text className="text-xl font-extrabold text-slate-900 mt-1.5">
+              {userLikesTotal}
+            </Text>
+            <Text className="text-slate-500 mt-1">Likes Totais</Text>
           </View>
         </View>
 
-        <View style={styles.itemsHeader}>
-          <Text style={styles.itemsTitle}>
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="text-lg font-extrabold text-slate-900">
             Itens Criados por {user.name || "Usuário"}
           </Text>
-          <Text style={styles.itemsCount}>
+          <Text className="text-slate-500">
             {userItems.length} {userItems.length === 1 ? "item" : "itens"}
           </Text>
         </View>
@@ -253,8 +267,8 @@ export default function UserProfile() {
               const isLastInRow = (index + 1) % columns === 0;
               return (
                 <View
+                  className="mb-3"
                   style={[
-                    styles.itemWrap,
                     { width: itemWidth, marginRight: isLastInRow ? 0 : GAP },
                   ]}
                 >
@@ -267,7 +281,7 @@ export default function UserProfile() {
                 </View>
               );
             }}
-            contentContainerStyle={[styles.listContent, { paddingBottom: 36 }]}
+            contentContainerStyle={{ paddingBottom: 36 }}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -283,10 +297,12 @@ export default function UserProfile() {
             showsVerticalScrollIndicator={false}
           />
         ) : (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>📚</Text>
-            <Text style={styles.emptyTitle}>Nenhum item criado ainda</Text>
-            <Text style={styles.emptyText}>
+          <View className="items-center p-8">
+            <Text className="text-4xl mb-3">📚</Text>
+            <Text className="text-lg font-bold">
+              Nenhum item criado ainda
+            </Text>
+            <Text className="text-slate-500 text-center">
               {user.name || "Este usuário"} ainda não criou nenhum item mágico
             </Text>
           </View>
