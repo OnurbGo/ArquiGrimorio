@@ -66,13 +66,9 @@ if (
 
 /**
  * DarkSelect - dropdown customizado para usar dentro do modal.
- * - options: {value,label}[]
- * - value: string
- * - onChange: (value)=>void
- * - labelStyle / containerStyle opcionais
- *
  * Implementado inline para evitar dependências externas e garantir estilo escuro.
  */
+// INÍCIO COMPONENTE: DarkSelect
 function DarkSelect({
   options,
   value,
@@ -169,6 +165,7 @@ function DarkSelect({
     </View>
   );
 }
+// FIM COMPONENTE: DarkSelect
 
 const EditItem: React.FC = () => {
   const { user } = useAuth();
@@ -220,10 +217,7 @@ const EditItem: React.FC = () => {
       const my = user ? all.filter((it: Item) => it.user_id === user.id) : [];
       setItems(my);
     } catch (err: any) {
-      Alert.alert(
-        "Erro",
-        err?.message || "Não foi possível carregar os itens."
-      );
+      Alert.alert("Erro", err?.message || "Não foi possível carregar os itens.");
     } finally {
       setLoading(false);
     }
@@ -236,7 +230,6 @@ const EditItem: React.FC = () => {
 
   // Remove item (usado no card e também após confirmação no modal)
   const handleDelete = async (itemId: number) => {
-    // confirmação padrão
     Alert.alert(
       "Excluir Item",
       "Tem certeza que deseja excluir este item?",
@@ -252,10 +245,7 @@ const EditItem: React.FC = () => {
               setItems((prev) => prev.filter((i) => i.id !== itemId));
               if (editingItem?.id === itemId) setEditingItem(null);
             } catch (err: any) {
-              Alert.alert(
-                "Erro",
-                err?.message || "Não foi possível excluir o item."
-              );
+              Alert.alert("Erro", err?.message || "Não foi possível excluir o item.");
             } finally {
               setDeleting(false);
             }
@@ -286,9 +276,7 @@ const EditItem: React.FC = () => {
     try {
       setSaving(true);
       const updated = await updateItem(editingItem.id, payload);
-      setItems((prev) =>
-        prev.map((it) => (it.id === updated.id ? updated : it))
-      );
+      setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
       setEditingItem(null);
     } catch (err: any) {
       Alert.alert("Erro", err?.message || "Não foi possível salvar o item.");
@@ -302,49 +290,57 @@ const EditItem: React.FC = () => {
   );
 
   return (
-    <View
-      className="flex-1 bg-[#07070a]"
-      style={{ paddingTop: insets.top }}
-    >
+    <View className="flex-1 bg-[#07070a]" style={{ paddingTop: insets.top }}>
+      {/* INÍCIO COMPONENTE: ScreenContainer */}
       <Navigation />
 
-      <View
-        className="flex-1 pt-2.5"
-        style={{ paddingHorizontal: 5 * vw }}
-      >
+      {/* INÍCIO COMPONENTE: ContentWrapper */}
+      <View className="flex-1 pt-2.5" style={{ paddingHorizontal: 5 * vw }}>
+        {/* INÍCIO COMPONENTE: HeaderBar */}
         <View className="flex-row items-baseline justify-between mb-2.5">
           <Text className="text-2xl font-extrabold text-white">Meus Itens</Text>
           <Text className="text-[#d1cfe8] font-semibold">
             {items.length} item{items.length !== 1 ? "s" : ""}
           </Text>
         </View>
+        {/* FIM COMPONENTE: HeaderBar */}
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 30 }} />
+          <>
+            {/* INÍCIO COMPONENTE: LoadingIndicator */}
+            <ActivityIndicator style={{ marginTop: 30 }} />
+            {/* FIM COMPONENTE: LoadingIndicator */}
+          </>
         ) : (
-          <FlatList
-            data={items}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderItem}
-            onRefresh={fetchItems}
-            refreshing={loading}
-            ListEmptyComponent={
-              <Text className="text-center mt-8 text-[#d1cfe8]">
-                Nenhum item encontrado.
-              </Text>
-            }
-            contentContainerStyle={{ paddingBottom: 40, paddingTop: 12 }}
-            numColumns={numColumns}
-            columnWrapperStyle={
-              numColumns > 1
-                ? { justifyContent: "space-between", paddingHorizontal: 2 * vw }
-                : undefined
-            }
-          />
+          <>
+            {/* INÍCIO COMPONENTE: ItemsGrid */}
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderItem}
+              onRefresh={fetchItems}
+              refreshing={loading}
+              ListEmptyComponent={
+                <Text className="text-center mt-8 text-[#d1cfe8]">
+                  Nenhum item encontrado.
+                </Text>
+              }
+              contentContainerStyle={{ paddingBottom: 40, paddingTop: 12 }}
+              numColumns={numColumns}
+              columnWrapperStyle={
+                numColumns > 1
+                  ? { justifyContent: "space-between", paddingHorizontal: 2 * vw }
+                  : undefined
+              }
+            />
+            {/* FIM COMPONENTE: ItemsGrid */}
+          </>
         )}
       </View>
+      {/* FIM COMPONENTE: ContentWrapper */}
 
       {/* Modal de edição com blur no fundo */}
+      {/* INÍCIO COMPONENTE: EditModal */}
       <Modal
         visible={!!editingItem}
         transparent
@@ -352,25 +348,24 @@ const EditItem: React.FC = () => {
         onRequestClose={() => setEditingItem(null)}
       >
         {/* Blur por trás */}
-        <BlurView
-          intensity={80}
-          tint="dark"
-          className="absolute inset-0 z-[1000]"
-        />
+        {/* INÍCIO COMPONENTE: BlurOverlay */}
+        <BlurView intensity={80} tint="dark" className="absolute inset-0 z-[1000]" />
+        {/* FIM COMPONENTE: BlurOverlay */}
 
+        {/* INÍCIO COMPONENTE: KeyboardAvoidingContainer */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1 justify-center items-center px-4 z-[1001]"
         >
+          {/* INÍCIO COMPONENTE: ModalCard */}
           <View className="w-full max-w-[900px] bg-[#1a1a2b] rounded-xl p-4 border border-[#7f32cc] shadow-lg">
             <RNScrollView contentContainerStyle={{ paddingBottom: 18 }}>
-              <Text className="text-white text-xl font-extrabold mb-3">
-                Editar Item
-              </Text>
+              {/* INÍCIO COMPONENTE: FormTitle */}
+              <Text className="text-white text-xl font-extrabold mb-3">Editar Item</Text>
+              {/* FIM COMPONENTE: FormTitle */}
 
-              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
-                Nome
-              </Text>
+              {/* INÍCIO COMPONENTE: LabeledInput (Nome) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Nome</Text>
               <TextInput
                 value={form.name}
                 onChangeText={(t) => setForm((s) => ({ ...s, name: t }))}
@@ -378,10 +373,10 @@ const EditItem: React.FC = () => {
                 placeholder="Nome do item"
                 placeholderTextColor="#8a87a8"
               />
+              {/* FIM COMPONENTE: LabeledInput (Nome) */}
 
-              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
-                Descrição
-              </Text>
+              {/* INÍCIO COMPONENTE: TextArea (Descrição) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Descrição</Text>
               <TextInput
                 value={form.description}
                 onChangeText={(t) => setForm((s) => ({ ...s, description: t }))}
@@ -390,13 +385,13 @@ const EditItem: React.FC = () => {
                 placeholderTextColor="#8a87a8"
                 multiline
               />
+              {/* FIM COMPONENTE: TextArea (Descrição) */}
 
+              {/* INÍCIO COMPONENTE: FormRow (Raridade e Tipo) */}
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <View style={{ flex: 1, zIndex: 99999 }}>
-                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
-                    Raridade
-                  </Text>
-
+                  {/* INÍCIO COMPONENTE: SelectField (Raridade) */}
+                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Raridade</Text>
                   <DarkSelect
                     options={RARITIES}
                     value={form.rarity || "todas"}
@@ -405,13 +400,12 @@ const EditItem: React.FC = () => {
                     containerStyle={{ zIndex: 99999 }}
                     labelStyle={{ color: "#fff" }}
                   />
+                  {/* FIM COMPONENTE: SelectField (Raridade) */}
                 </View>
 
                 <View style={{ flex: 1, zIndex: 99999 }}>
-                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
-                    Tipo
-                  </Text>
-
+                  {/* INÍCIO COMPONENTE: SelectField (Tipo) */}
+                  <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Tipo</Text>
                   <DarkSelect
                     options={TYPES}
                     value={form.type || "todos"}
@@ -420,12 +414,13 @@ const EditItem: React.FC = () => {
                     containerStyle={{ zIndex: 99999 }}
                     labelStyle={{ color: "#fff" }}
                   />
+                  {/* FIM COMPONENTE: SelectField (Tipo) */}
                 </View>
               </View>
+              {/* FIM COMPONENTE: FormRow (Raridade e Tipo) */}
 
-              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
-                Preço (mo)
-              </Text>
+              {/* INÍCIO COMPONENTE: LabeledInput (Preço) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Preço (mo)</Text>
               <TextInput
                 value={form.price}
                 onChangeText={(t) => setForm((s) => ({ ...s, price: t }))}
@@ -434,10 +429,10 @@ const EditItem: React.FC = () => {
                 placeholderTextColor="#8a87a8"
                 keyboardType="numeric"
               />
+              {/* FIM COMPONENTE: LabeledInput (Preço) */}
 
-              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
-                URL da imagem
-              </Text>
+              {/* INÍCIO COMPONENTE: LabeledInput (URL da imagem) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">URL da imagem</Text>
               <TextInput
                 value={form.image_url}
                 onChangeText={(t) => setForm((s) => ({ ...s, image_url: t }))}
@@ -446,8 +441,10 @@ const EditItem: React.FC = () => {
                 placeholderTextColor="#8a87a8"
                 autoCapitalize="none"
               />
+              {/* FIM COMPONENTE: LabeledInput (URL da imagem) */}
 
               {/* Botões */}
+              {/* INÍCIO COMPONENTE: ButtonsRow (Salvar/Cancelar) */}
               <View className="flex-row justify-end gap-2 mt-3">
                 <TouchableOpacity
                   onPress={() => setEditingItem(null)}
@@ -469,8 +466,10 @@ const EditItem: React.FC = () => {
                   )}
                 </TouchableOpacity>
               </View>
+              {/* FIM COMPONENTE: ButtonsRow (Salvar/Cancelar) */}
 
               {/* Exclusão */}
+              {/* INÍCIO COMPONENTE: DeleteSection */}
               <View style={{ marginTop: 12 }}>
                 <TouchableOpacity
                   onPress={() =>
@@ -494,8 +493,7 @@ const EditItem: React.FC = () => {
                             } catch (err: any) {
                               Alert.alert(
                                 "Erro",
-                                err?.message ||
-                                  "Não foi possível excluir o item."
+                                err?.message || "Não foi possível excluir o item."
                               );
                             } finally {
                               setDeleting(false);
@@ -511,16 +509,19 @@ const EditItem: React.FC = () => {
                   {deleting ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text className="text-white font-extrabold">
-                      Excluir item
-                    </Text>
+                    <Text className="text-white font-extrabold">Excluir item</Text>
                   )}
                 </TouchableOpacity>
               </View>
+              {/* FIM COMPONENTE: DeleteSection */}
             </RNScrollView>
           </View>
+          {/* FIM COMPONENTE: ModalCard */}
         </KeyboardAvoidingView>
+        {/* FIM COMPONENTE: KeyboardAvoidingContainer */}
       </Modal>
+      {/* FIM COMPONENTE: EditModal */}
+      {/* FIM COMPONENTE: ScreenContainer */}
     </View>
   );
 };

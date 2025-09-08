@@ -225,13 +225,18 @@ export default function Search() {
 
   /* ---------- render ---------- */
   return (
+    // INÍCIO COMPONENTE: ScreenContainer
     <View
       className="flex-1 bg-slate-50"
       style={{ paddingTop: insets.top }}
     >
+      {/* INÍCIO COMPONENTE: NavigationBar */}
       <Navigation />
+      {/* FIM COMPONENTE: NavigationBar */}
       <View className="flex-1">
+        {/* INÍCIO COMPONENTE: MainScroll */}
         <ScrollView className="py-3 md:py-7">
+          {/* INÍCIO COMPONENTE: Header */}
           <View className="items-center mb-4 md:mb-6">
             <Text className="text-2xl md:text-3xl font-extrabold">
               Buscar Itens
@@ -240,10 +245,12 @@ export default function Search() {
               Encontre o item perfeito para sua aventura
             </Text>
           </View>
+          {/* FIM COMPONENTE: Header */}
 
           {/* Filters card */}
+          {/* INÍCIO COMPONENTE: FiltersCard */}
           <View className="bg-slate-100 rounded-xl p-3 md:p-4 mb-4 border border-slate-900/10 shadow-md md:flex-row md:items-end md:gap-3">
-            {/* Search input */}
+            {/* INÍCIO COMPONENTE: SearchInput */}
             <View className="mb-2 md:flex-1">
               <Text className="font-bold mb-1.5 text-slate-900">Buscar</Text>
               <View className="flex-row items-center gap-2 bg-slate-200/60 rounded-lg py-2 px-2.5 border border-slate-900/10">
@@ -260,8 +267,9 @@ export default function Search() {
                 />
               </View>
             </View>
+            {/* FIM COMPONENTE: SearchInput */}
 
-            {/* Rarity picker */}
+            {/* INÍCIO COMPONENTE: RarityPicker */}
             <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
               <Text className="font-bold mb-1.5 text-slate-900">Raridade</Text>
               <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
@@ -288,8 +296,9 @@ export default function Search() {
                 </Picker>
               </View>
             </View>
+            {/* FIM COMPONENTE: RarityPicker */}
 
-            {/* Type picker */}
+            {/* INÍCIO COMPONENTE: TypePicker */}
             <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
               <Text className="font-bold mb-1.5 text-slate-900">Tipo</Text>
               <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
@@ -316,24 +325,32 @@ export default function Search() {
                 </Picker>
               </View>
             </View>
+            {/* FIM COMPONENTE: TypePicker */}
 
-            {/* Clear button on the right on desktop, below on mobile */}
+            {/* INÍCIO COMPONENTE: ClearFiltersButton */}
             <View className="mt-2 md:mt-0 ml-auto self-center">
               <Button onPress={clearFilters}>Limpar Filtros</Button>
             </View>
+            {/* FIM COMPONENTE: ClearFiltersButton */}
           </View>
+          {/* FIM COMPONENTE: FiltersCard */}
 
           {/* Results */}
+          {/* INÍCIO COMPONENTE: ErrorBanner */}
           {errorMsg ? (
             <Text className="text-red-500 mb-3">{errorMsg}</Text>
           ) : null}
+          {/* FIM COMPONENTE: ErrorBanner */}
 
           {loading ? (
+            // INÍCIO COMPONENTE: LoadingState
             <View className="items-center p-6">
               <ActivityIndicator size="large" />
               <Text style={{ marginTop: 8 }}>Carregando itens...</Text>
             </View>
+            // FIM COMPONENTE: LoadingState
           ) : items.length > 0 ? (
+            // INÍCIO COMPONENTE: ResultsGrid
             <FlatList
               data={items}
               keyExtractor={(it) => String(it.id)}
@@ -345,6 +362,7 @@ export default function Search() {
                 };
                 const isLastInRow = (index + 1) % columns === 0;
                 return (
+                  // INÍCIO COMPONENTE: GridItemWrapper
                   <View
                     style={[
                       {
@@ -367,6 +385,7 @@ export default function Search() {
                       }
                     />
                   </View>
+                  // FIM COMPONENTE: GridItemWrapper
                 );
               }}
               contentContainerStyle={[
@@ -382,7 +401,9 @@ export default function Search() {
               }
               showsVerticalScrollIndicator={false}
             />
+            // FIM COMPONENTE: ResultsGrid
           ) : (
+            // INÍCIO COMPONENTE: EmptyState
             <View className="items-center p-6">
               <Text className="text-4xl mb-2">🔍</Text>
               <Text className="text-lg font-bold">Nenhum item encontrado</Text>
@@ -393,9 +414,12 @@ export default function Search() {
                 Limpar Filtros
               </Button>
             </View>
+            // FIM COMPONENTE: EmptyState
           )}
         </ScrollView>
+        {/* FIM COMPONENTE: MainScroll */}
       </View>
     </View>
+    // FIM COMPONENTE: ScreenContainer
   );
 }

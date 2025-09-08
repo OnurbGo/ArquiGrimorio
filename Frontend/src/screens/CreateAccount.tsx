@@ -9,10 +9,10 @@ import {
   View,
 } from "react-native";
 import Navigation from "../components/Navigation";
-import ScreenContainer from "../components/ScreenContainer";
 import { createUser } from "../hooks/user/user";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// --- Helpers: validação de senha ---
 const validatePassword = (password: string): boolean => {
   const minLength = 8;
   const hasUppercase = /[A-Z]/.test(password);
@@ -22,9 +22,11 @@ const validatePassword = (password: string): boolean => {
     password.length >= minLength && hasUppercase && hasNumber && hasSpecialChar
   );
 };
+
 const evaluatePasswordStrength = (password: string): string =>
   validatePassword(password) ? "Forte" : "Fraca";
 
+// --- Tela: CreateAccount ---
 export default function CreateAccount() {
   const [formData, setFormData] = useState({
     name: "",
@@ -94,21 +96,36 @@ export default function CreateAccount() {
   };
 
   return (
-    <View style={{paddingTop: insets.top}} className="flex-1 bg-theme-bg">
+    <View style={{ paddingTop: insets.top }} className="flex-1 bg-theme-bg">
+      {/* INÍCIO COMPONENTE: ScreenContainer */}
       <Navigation />
-      <ScreenContainer style={{ backgroundColor: "transparent" }}>
-       <ScrollView
-          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}
+      {/* --- Container scroll da tela --- */}
+      {/* INÍCIO COMPONENTE: TransparentScrollWrapper */}
+      <ScrollView style={{ backgroundColor: "transparent" }}>
+        {/* --- Conteúdo centralizado --- */}
+        {/* INÍCIO COMPONENTE: CenteredContentContainer */}
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
           className="px-3 lg:px-10 py-6 lg:py-12"
           keyboardShouldPersistTaps="handled"
         >
+          {/* --- Cabeçalho --- */}
+          {/* INÍCIO COMPONENTE: BrandHeader */}
           <View className="items-center mb-3 lg:mb-7">
             <Text className="text-xl lg:text-5xl font-black text-theme-text text-center">ArquiGrimório</Text>
             <Text className="mt-1.5 text-xs lg:text-lg text-theme-muted text-center">Portal de Itens Místicos</Text>
           </View>
+          {/* FIM COMPONENTE: BrandHeader */}
 
+          {/* --- Card do formulário --- */}
+          {/* INÍCIO COMPONENTE: FormCard */}
           <View className="w-full max-w-3xl bg-cardBg p-3.5 lg:p-7 rounded-2xl shadow-lg">
             {/* Nome */}
+            {/* INÍCIO COMPONENTE: LabeledInput (Nome) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Nome</Text>
             <TextInput
               className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
@@ -117,8 +134,10 @@ export default function CreateAccount() {
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
             />
+            {/* FIM COMPONENTE: LabeledInput (Nome) */}
 
             {/* Email */}
+            {/* INÍCIO COMPONENTE: LabeledInput (Email) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Email</Text>
             <TextInput
               className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
@@ -129,8 +148,10 @@ export default function CreateAccount() {
               autoCapitalize="none"
               onChangeText={(text) => setFormData({ ...formData, email: text })}
             />
+            {/* FIM COMPONENTE: LabeledInput (Email) */}
 
             {/* Senha */}
+            {/* INÍCIO COMPONENTE: PasswordInputWithToggle (Senha) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Senha</Text>
             <View className="relative">
               <TextInput
@@ -155,6 +176,8 @@ export default function CreateAccount() {
                 )}
               </TouchableOpacity>
             </View>
+            {/* FIM COMPONENTE: PasswordInputWithToggle (Senha) */}
+            {/* INÍCIO COMPONENTE: PasswordStrengthBadge */}
             {passwordStrength && (
               <Text
                 className={`text-xs lg:text-base mt-1.5 font-bold ${
@@ -166,8 +189,10 @@ export default function CreateAccount() {
                 Senha {passwordStrength}
               </Text>
             )}
+            {/* FIM COMPONENTE: PasswordStrengthBadge */}
 
             {/* Confirmar Senha */}
+            {/* INÍCIO COMPONENTE: PasswordInputWithToggle (Confirmar Senha) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Confirmar Senha</Text>
             <View className="relative">
               <TextInput
@@ -191,8 +216,10 @@ export default function CreateAccount() {
                 )}
               </TouchableOpacity>
             </View>
+            {/* FIM COMPONENTE: PasswordInputWithToggle (Confirmar Senha) */}
 
             {/* URL da imagem */}
+            {/* INÍCIO COMPONENTE: LabeledInput (URL da Imagem) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">URL da Imagem</Text>
             <TextInput
               className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5"
@@ -203,8 +230,10 @@ export default function CreateAccount() {
                 setFormData({ ...formData, url_img: text })
               }
             />
+            {/* FIM COMPONENTE: LabeledInput (URL da Imagem) */}
 
             {/* Descrição */}
+            {/* INÍCIO COMPONENTE: TextArea (Descrição) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Descrição</Text>
             <TextInput
               className="bg-cardBg rounded-lg p-3 text-base lg:text-lg text-theme-text mb-2 border border-white/5 h-20 lg:h-40"
@@ -216,9 +245,14 @@ export default function CreateAccount() {
                 setFormData({ ...formData, description: text })
               }
             />
+            {/* FIM COMPONENTE: TextArea (Descrição) */}
 
+            {/* --- Mensagens de erro/sucesso --- */}
+            {/* INÍCIO COMPONENTE: InlineError */}
             {error ? <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center">{error}</Text> : null}
+            {/* FIM COMPONENTE: InlineError */}
 
+            {/* INÍCIO COMPONENTE: PrimaryButton */}
             <TouchableOpacity
               className="bg-theme-accent rounded-lg py-2.5 lg:py-4 items-center mt-3"
               onPress={handleSubmit}
@@ -230,20 +264,29 @@ export default function CreateAccount() {
                 Cadastrar
               </Text>
             </TouchableOpacity>
+            {/* FIM COMPONENTE: PrimaryButton */}
 
+            {/* INÍCIO COMPONENTE: SuccessMessage */}
             {success ? (
               <Text className="text-theme-success text-xs lg:text-base mt-2.5 text-center font-bold">
                 Usuário cadastrado com sucesso!
               </Text>
             ) : null}
+            {/* FIM COMPONENTE: SuccessMessage */}
+            {/* INÍCIO COMPONENTE: ErrorAlert */}
             {errorAlert && !success ? (
               <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center font-bold">
                 {error || "Erro ao registrar. Tente novamente."}
               </Text>
             ) : null}
+            {/* FIM COMPONENTE: ErrorAlert */}
           </View>
+          {/* FIM COMPONENTE: FormCard */}
         </ScrollView>
-      </ScreenContainer>
+        {/* FIM COMPONENTE: CenteredContentContainer */}
+      </ScrollView>
+      {/* FIM COMPONENTE: TransparentScrollWrapper */}
+      {/* FIM COMPONENTE: ScreenContainer */}
     </View>
   );
 }

@@ -31,6 +31,7 @@ export default function LoginAccount() {
   const insets = useSafeAreaInsets();
   const passwordRef = useRef<TextInput | null>(null);
 
+  // INÍCIO COMPONENTE: GetErrorMessage
   const getErrorMessage = (err: unknown): string => {
     if (isAxiosError(err)) {
       const msg = err.response?.data?.message ?? err.response?.data ?? err.message;
@@ -39,7 +40,9 @@ export default function LoginAccount() {
     if (err instanceof Error) return err.message;
     return "Erro ao autenticar";
   };
+  // FIM COMPONENTE: GetErrorMessage
 
+  // INÍCIO COMPONENTE: HandleSubmit
   const handleSubmit = useCallback(async () => {
     if (!email.trim() || !password) {
       setError("Preencha email e senha.");
@@ -64,23 +67,26 @@ export default function LoginAccount() {
       setLoading(false);
     }
   }, [email, password, login, navigation]);
+  // FIM COMPONENTE: HandleSubmit
 
   return (
-    // TODO(comp): Extrair um ScreenContainer que aplique SafeArea + paddingTop dinâmico
-    // e incorpore o KeyboardAvoidingView internamente para reuso em outras telas.
+    // INÍCIO COMPONENTE: ScreenContainer
     <View
       className="flex-1 bg-[#0b1220]"
       style={[{ paddingTop: insets.top }]}
     >
+      {/* INÍCIO COMPONENTE: NavigationBar */}
       <Navigation />
+      {/* FIM COMPONENTE: NavigationBar */}
       <View className="flex-1">
-        {/* TODO(comp): Tornar parte do ScreenContainer (KeyboardAwareContainer) */}
+        {/* INÍCIO COMPONENTE: KeyboardAwareContainer */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
+          {/* INÍCIO COMPONENTE: CenteredContentContainer */}
           <View className="flex-1 justify-center items-center p-4">
-            {/* TODO(comp): Extrair <AuthHeader title subtitle /> para padronizar cabeçalhos */}
+            {/* INÍCIO COMPONENTE: AuthHeader */}
             <View className="items-center mb-4">
               <Text className="text-4xl font-black text-slate-200 text-center">
                 ArquiGrimório
@@ -89,13 +95,14 @@ export default function LoginAccount() {
                 Portal de Itens Místicos
               </Text>
             </View>
+            {/* FIM COMPONENTE: AuthHeader */}
 
-            {/* TODO(comp): Extrair <FormCard> para agrupar conteúdos de formulário com padding/elevação */}
+            {/* INÍCIO COMPONENTE: FormCard */}
             <View className="w-full max-w-md bg-[#071525] p-6 rounded-2xl shadow-lg">
+              {/* INÍCIO COMPONENTE: LabeledInput (Email) */}
               <Text className="text-base font-bold text-slate-200 mb-1.5">
                 Email
               </Text>
-              {/* TODO(comp): Extrair <LabeledInput label="Email" .../> ou <InputField .../> */}
               <TextInput
                 value={email}
                 onChangeText={(t) => {
@@ -115,11 +122,12 @@ export default function LoginAccount() {
                 accessible
                 accessibilityLabel="Email"
               />
+              {/* FIM COMPONENTE: LabeledInput (Email) */}
 
               <Text className="text-base font-bold text-slate-200 mb-1.5 mt-3">
                 Senha
               </Text>
-              {/* TODO(comp): Extrair <PasswordField value onChange onSubmit /> com botão de mostrar/ocultar */}
+              {/* INÍCIO COMPONENTE: PasswordField */}
               <View className="relative">
                 <TextInput
                   ref={passwordRef}
@@ -141,7 +149,7 @@ export default function LoginAccount() {
                   accessible
                   accessibilityLabel="Senha"
                 />
-                {/* TODO(comp): Dentro de PasswordField, extrair <ToggleVisibilityButton /> */}
+                {/* INÍCIO COMPONENTE: ToggleVisibilityButton */}
                 <TouchableOpacity
                   onPress={() => setSecure((s) => !s)}
                   accessibilityLabel="alternar visibilidade senha"
@@ -154,9 +162,11 @@ export default function LoginAccount() {
                     <EyeOff size={20} color={"#9ca3af"} />
                   )}
                 </TouchableOpacity>
+                {/* FIM COMPONENTE: ToggleVisibilityButton */}
               </View>
+              {/* FIM COMPONENTE: PasswordField */}
 
-              {/* OK: Já é um componente. Opcional: <FormSubmitButton loading>Entrar</FormSubmitButton> */}
+              {/* INÍCIO COMPONENTE: FormSubmitButton */}
               <Button
                 onPress={handleSubmit}
                 loading={loading}
@@ -164,16 +174,19 @@ export default function LoginAccount() {
               >
                 Entrar
               </Button>
+              {/* FIM COMPONENTE: FormSubmitButton */}
 
-              {/* TODO(comp): Extrair <FormError message={error} /> */}
+              {/* INÍCIO COMPONENTE: FormError */}
               {error ? (
                 <Text className="mt-2.5 text-rose-400 text-center font-semibold">
                   {error}
                 </Text>
               ) : null}
+              {/* FIM COMPONENTE: FormError */}
             </View>
+            {/* FIM COMPONENTE: FormCard */}
 
-            {/* TODO(comp): Extrair <SignUpPrompt onPress={...}/> */}
+            {/* INÍCIO COMPONENTE: SignUpPrompt */}
             <View className="mt-4 items-center">
               <Text className="text-base text-slate-400">
                 Não tem conta?{" "}
@@ -186,9 +199,13 @@ export default function LoginAccount() {
                 </Text>{" "}
               </Text>
             </View>
+            {/* FIM COMPONENTE: SignUpPrompt */}
           </View>
+          {/* FIM COMPONENTE: CenteredContentContainer */}
         </KeyboardAvoidingView>
+        {/* FIM COMPONENTE: KeyboardAwareContainer */}
       </View>
     </View>
+    // FIM COMPONENTE: ScreenContainer
   );
 }

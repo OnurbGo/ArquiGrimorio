@@ -117,11 +117,14 @@ export default function CreateItem() {
 
   return (
     <View style={{ flex: 1, paddingTop: insets.top }} className="bg-slate-50">
+      {/* INÍCIO COMPONENTE: ScreenContainer */}
       <Navigation />
+      {/* INÍCIO COMPONENTE: KeyboardAvoidingContainer */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
+        {/* INÍCIO COMPONENTE: CenteredScrollContent */}
         <ScrollView
           className="flex-1"
           contentContainerStyle={{
@@ -131,7 +134,9 @@ export default function CreateItem() {
             paddingBottom: 48,
           }}
         >
+          {/* INÍCIO COMPONENTE: FormCard */}
           <View className="w-full max-w-3xl bg-white rounded-2xl p-4 border border-indigo-500/10 shadow-lg">
+            {/* INÍCIO COMPONENTE: FormHeader */}
             <View className="flex-row items-center mb-3">
               <View className="w-14 h-14 rounded-xl bg-violet-900/10 items-center justify-center mr-3">
                 <Text className="text-violet-700 font-extrabold text-xl">✦</Text>
@@ -145,8 +150,10 @@ export default function CreateItem() {
                 </Text>
               </View>
             </View>
+            {/* FIM COMPONENTE: FormHeader */}
 
             {/* Nome */}
+            {/* INÍCIO COMPONENTE: LabeledInput (Nome do Item) */}
             <View className="w-full mb-3">
               <Text className="text-sm font-bold text-slate-900 mb-1.5">
                 Nome do Item *
@@ -159,9 +166,12 @@ export default function CreateItem() {
                 className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
               />
             </View>
+            {/* FIM COMPONENTE: LabeledInput (Nome do Item) */}
 
             {/* Raridade e Tipo */}
+            {/* INÍCIO COMPONENTE: Row (Raridade e Tipo) */}
             <View className="flex-row w-full mb-3">
+              {/* INÍCIO COMPONENTE: PickerField (Raridade) */}
               <View className="flex-1 mr-2">
                 <Text className="text-sm font-bold text-slate-900 mb-1.5">
                   Raridade *
@@ -191,7 +201,9 @@ export default function CreateItem() {
                   </Picker>
                 </View>
               </View>
+              {/* FIM COMPONENTE: PickerField (Raridade) */}
 
+              {/* INÍCIO COMPONENTE: PickerField (Tipo) */}
               <View className="flex-1">
                 <Text className="text-sm font-bold text-slate-900 mb-1.5">
                   Tipo *
@@ -221,9 +233,12 @@ export default function CreateItem() {
                   </Picker>
                 </View>
               </View>
+              {/* FIM COMPONENTE: PickerField (Tipo) */}
             </View>
+            {/* FIM COMPONENTE: Row (Raridade e Tipo) */}
 
             {/* Descrição */}
+            {/* INÍCIO COMPONENTE: TextArea (Descrição e Efeitos) */}
             <View className="w-full mb-3">
               <Text className="text-sm font-bold text-slate-900 mb-1.5">
                 Descrição e Efeitos *
@@ -237,9 +252,12 @@ export default function CreateItem() {
                 className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900 h-32 align-top"
               />
             </View>
+            {/* FIM COMPONENTE: TextArea (Descrição e Efeitos) */}
 
             {/* Preço e Imagem */}
+            {/* INÍCIO COMPONENTE: Row (Preço e Imagem) */}
             <View className="flex-row w-full mb-3">
+              {/* INÍCIO COMPONENTE: LabeledInput (Preço) */}
               <View className="flex-1 mr-2">
                 <Text className="text-sm font-bold text-slate-900 mb-1.5">
                   Preço (Opcional)
@@ -253,7 +271,9 @@ export default function CreateItem() {
                   className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
                 />
               </View>
+              {/* FIM COMPONENTE: LabeledInput (Preço) */}
 
+              {/* INÍCIO COMPONENTE: LabeledInput (URL da Imagem) */}
               <View className="flex-1">
                 <Text className="text-sm font-bold text-slate-900 mb-1.5">
                   URL da Imagem (Opcional)
@@ -266,9 +286,12 @@ export default function CreateItem() {
                   className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
                 />
               </View>
+              {/* FIM COMPONENTE: LabeledInput (URL da Imagem) */}
             </View>
+            {/* FIM COMPONENTE: Row (Preço e Imagem) */}
 
             {/* Prévia da imagem */}
+            {/* INÍCIO COMPONENTE: ImagePreview */}
             {formData.imageUrl ? (
               <View className="w-full mb-3">
                 <Text className="text-sm font-bold text-slate-900 mb-1.5">
@@ -288,10 +311,13 @@ export default function CreateItem() {
                 </View>
               </View>
             ) : null}
+            {/* FIM COMPONENTE: ImagePreview */}
 
             {/* Botões */}
+            {/* INÍCIO COMPONENTE: ButtonsRow */}
             <View className="flex-row w-full mt-2">
               <View className="flex-1 mr-2">
+                {/* INÍCIO COMPONENTE: PrimaryButton (Criar Item) */}
                 <Button
                   onPress={handleSubmit}
                   disabled={!isFormValid || isSubmitting}
@@ -302,16 +328,24 @@ export default function CreateItem() {
                     "Criar Item"
                   )}
                 </Button>
+                {/* FIM COMPONENTE: PrimaryButton (Criar Item) */}
               </View>
               <View className="flex-1">
+                {/* INÍCIO COMPONENTE: SecondaryButton (Cancelar) */}
                 <Button onPress={() => navigation.navigate("Home")}>
                   Cancelar
                 </Button>
+                {/* FIM COMPONENTE: SecondaryButton (Cancelar) */}
               </View>
             </View>
+            {/* FIM COMPONENTE: ButtonsRow */}
           </View>
+          {/* FIM COMPONENTE: FormCard */}
         </ScrollView>
+        {/* FIM COMPONENTE: CenteredScrollContent */}
       </KeyboardAvoidingView>
+      {/* FIM COMPONENTE: KeyboardAvoidingContainer */}
+      {/* FIM COMPONENTE: ScreenContainer */}
     </View>
   );
 }
