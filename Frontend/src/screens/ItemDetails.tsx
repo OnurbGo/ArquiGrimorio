@@ -3,13 +3,12 @@ import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
+  Dimensions,
   View,
 } from "react-native";
 import Svg, {
@@ -35,6 +34,7 @@ import {
 } from "../hooks/itens/itemLike";
 import api from "../services/api";
 import { useAuth } from "../utils/AuthContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ItemDetailsRouteProp = RouteProp<RootStackParamList, "ItemDetails">;
 
@@ -46,13 +46,13 @@ type ItemWithExtras = Item & {
   created_at?: string;
 };
 
-const WIN = Dimensions.get("window");
+
 
 export default function ItemDetails() {
+  
   const route = useRoute<ItemDetailsRouteProp>();
   const navigation = useNavigation<any>();
   const { token, user: authUser } = useAuth();
-
   const rawId = route.params?.id as unknown;
   const id =
     rawId == null
@@ -74,6 +74,7 @@ export default function ItemDetails() {
     v: number;
     label: string;
   } | null>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (id == null || Number.isNaN(id)) {
@@ -157,6 +158,7 @@ export default function ItemDetails() {
     };
   }, [id, token, authUser]);
 
+  // INÍCIO COMPONENTE: LikeToggleHandler
   async function handleLikeToggle(itemId: number) {
     if (!token || likeLoading) return;
     setLikeLoading(true);
@@ -199,10 +201,13 @@ export default function ItemDetails() {
       setLikeLoading(false);
     }
   }
+  // FIM COMPONENTE: LikeToggleHandler
 
   // line chart path generation + points
+  // INÍCIO COMPONENTE: ChartDataBuilder
   const chart = useMemo(() => {
     const data = likesHistory || [];
+    const WIN = Dimensions.get("window");
     const w = Math.min(WIN.width - 64, 420);
     const h = 140;
     const padding = 12;
@@ -228,32 +233,44 @@ export default function ItemDetails() {
 
     return { w, h, path, points, max, padding };
   }, [likesHistory]);
+  // FIM COMPONENTE: ChartDataBuilder
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+        {/* INÍCIO COMPONENTE: LoadingState */}
         <ActivityIndicator size="large" color="#6d28d9" />
+        {/* FIM COMPONENTE: LoadingState */}
       </SafeAreaView>
     );
   }
 
   if (error || !item) {
     return (
-      <SafeAreaView style={[styles.containerRoot, { backgroundColor: "#fff" }]}>
+      <SafeAreaView
+        className="flex-1 bg-white"
+        style={[{ paddingTop: insets.top }]}
+      >
+  {/* INÍCIO COMPONENTE: ErrorState */}
+        {/* INÍCIO COMPONENTE: NavigationBar */}
         <Navigation />
-        <View style={styles.centerBox}>
-          <View style={styles.errorCard}>
-            <Text style={styles.errorText}>
+        {/* FIM COMPONENTE: NavigationBar */}
+        <View className="flex-1 items-center justify-center p-5">
+          {/* INÍCIO COMPONENTE: ErrorCard */}
+          <View className="bg-white p-4 rounded-xl border border-[#eee]">
+            <Text className="text-red-500 font-bold mb-2">
               {error ?? "Item não encontrado"}
             </Text>
             <TouchableOpacity
-              style={styles.backButton}
+              className="mt-2 bg-indigo-50 px-3 py-2 rounded-lg"
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.backButtonText}>Voltar</Text>
+              <Text className="text-indigo-600 font-semibold">Voltar</Text>
             </TouchableOpacity>
           </View>
+          {/* FIM COMPONENTE: ErrorCard */}
         </View>
+  {/* FIM COMPONENTE: ErrorState */}
       </SafeAreaView>
     );
   }
@@ -277,98 +294,122 @@ export default function ItemDetails() {
   }
 
   return (
-    <SafeAreaView style={[styles.containerRoot, { backgroundColor: "#fff" }]}>
+    <View className="flex-1 bg-white" style={[{ paddingTop: insets.top }]}>
+      {/* INÍCIO COMPONENTE: ScreenContainer */}
+      {/* INÍCIO COMPONENTE: NavigationBar */}
       <Navigation />
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.heroCard}>
-          {/* --- TOP: IMAGE with like overlay --- */}
-          <View style={styles.imageWrap}>
+      {/* FIM COMPONENTE: NavigationBar */}
+      {/* INÍCIO COMPONENTE: MainScroll */}
+      <ScrollView contentContainerClassName="p-4 pb-9 bg-white">
+        {/* INÍCIO COMPONENTE: PrimaryCard */}
+        <View className="bg-white rounded-2xl p-3 border border-indigo-50 shadow-sm mb-4">
+          {/* INÍCIO COMPONENTE: ImageWithLikeOverlay */}
+          <View className="relative items-center justify-center">
             {item.image_url ? (
               <Image
                 source={{ uri: item.image_url }}
-                style={styles.heroImage}
+                className="w-full h-[220px] rounded-xl bg-slate-50"
                 resizeMode="contain"
               />
             ) : (
-              <View style={[styles.heroImage, styles.heroImagePlaceholder]} />
+              <View className="w-full h-[220px] rounded-xl bg-slate-50 items-center justify-center" />
             )}
 
             {/* overlay like (kept on image) */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => handleLikeToggle(item.id!)}
-              style={[
-                styles.overlayLike,
-                likeLoading && styles.overlayLikeDisabled,
-              ]}
+              className={`absolute top-3 right-3 bg-white px-3 py-2 rounded-full shadow-md ${
+                likeLoading && "opacity-60"
+              }`}
             >
               <Text
-                style={[
-                  styles.overlayLikeText,
-                  item.isLiked && styles.overlayLikeTextActive,
-                ]}
+                className={`font-extrabold text-slate-700 ${
+                  item.isLiked && "text-rose-800"
+                }`}
               >
                 ♥ {item.likes ?? 0}
               </Text>
             </TouchableOpacity>
           </View>
+          {/* FIM COMPONENTE: ImageWithLikeOverlay */}
 
-          {/* --- NAME and BADGES (filters) --- */}
-          <Text style={styles.itemTitle}>{item.name}</Text>
+          {/* INÍCIO COMPONENTE: NameAndBadges */}
+          <Text className="text-xl font-extrabold text-slate-900 mt-3 text-center">
+            {item.name}
+          </Text>
 
-          <View style={styles.badgesRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.rarity}</Text>
+          <View className="flex-row justify-center gap-2 mt-2.5">
+            {/* INÍCIO COMPONENTE: RarityBadge */}
+            <View className="bg-indigo-50 px-2.5 py-1.5 rounded-full mx-1.5">
+              <Text className="text-indigo-600 font-bold">{item.rarity}</Text>
             </View>
-            <View style={[styles.badge, styles.badgeOutline]}>
-              <Text style={[styles.badgeText, styles.badgeOutlineText]}>
-                {item.type}
+            {/* FIM COMPONENTE: RarityBadge */}
+            {/* INÍCIO COMPONENTE: TypeBadge */}
+            <View className="bg-white border border-[#e6e6f6] px-2.5 py-1.5 rounded-full mx-1.5">
+              <Text className="text-slate-700 font-bold">{item.type}</Text>
+            </View>
+            {/* FIM COMPONENTE: TypeBadge */}
+          </View>
+          {/* FIM COMPONENTE: NameAndBadges */}
+
+          {/* INÍCIO COMPONENTE: Description */}
+          <Text className="text-center text-slate-500 mt-3 leading-5">
+            {item.description || "—"}
+          </Text>
+          {/* FIM COMPONENTE: Description */}
+
+          {/* INÍCIO COMPONENTE: StatsRow */}
+          <View className="flex-row justify-between mt-4">
+            {/* INÍCIO COMPONENTE: StatCard (Likes) */}
+            <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
+              <Text className="text-slate-500 text-xs">Likes</Text>
+              <Text className="text-lg font-bold text-slate-900 mt-1.5">
+                {item.likes ?? 0}
               </Text>
             </View>
-          </View>
-
-          {/* --- DESCRIPTION --- */}
-          <Text style={styles.description}>{item.description || "—"}</Text>
-
-          {/* --- STATS LINE: likes | price | desc chars --- */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Likes</Text>
-              <Text style={styles.statNumber}>{item.likes ?? 0}</Text>
+            {/* FIM COMPONENTE: StatCard (Likes) */}
+            {/* INÍCIO COMPONENTE: StatCard (Preço) */}
+            <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
+              <Text className="text-slate-500 text-xs">Preço</Text>
+              <Text className="text-lg font-bold text-slate-900 mt-1.5">
+                {priceText}
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Preço</Text>
-              <Text style={styles.statNumber}>{priceText}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Desc. (chars)</Text>
-              <Text style={styles.statNumber}>
+            {/* FIM COMPONENTE: StatCard (Preço) */}
+            {/* INÍCIO COMPONENTE: StatCard (Desc chars) */}
+            <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
+              <Text className="text-slate-500 text-xs">Desc. (chars)</Text>
+              <Text className="text-lg font-bold text-slate-900 mt-1.5">
                 {(item.description || "").length}
               </Text>
             </View>
+            {/* FIM COMPONENTE: StatCard (Desc chars) */}
           </View>
+          {/* FIM COMPONENTE: StatsRow */}
 
-          {/* --- CREATOR (left) and CHART (right) --- */}
-          <View style={styles.creatorChartRow}>
+          {/* INÍCIO COMPONENTE: CreatorAndChartRow */}
+          <View className="mt-4 md:flex-row gap-3 items-start justify-between">
             {/* left: creator */}
-            <View style={styles.creatorColumn}>
+            {/* INÍCIO COMPONENTE: CreatorCard */}
+            <View className="md:flex-[0.4] w-full">
               <TouchableOpacity
                 onPress={goToCreatorProfile}
-                style={styles.creatorRow}
+                className="flex-row items-center p-2 rounded-lg border border-slate-100 bg-white"
               >
                 {item.creator?.url_img ? (
                   <Image
                     source={{ uri: item.creator.url_img }}
-                    style={styles.creatorImg}
+                    className="w-14 h-14 rounded-full mr-3"
                   />
                 ) : (
-                  <View style={styles.creatorPlaceholder} />
+                  <View className="w-14 h-14 rounded-full bg-indigo-50 mr-3" />
                 )}
                 <View>
-                  <Text style={styles.creatorName}>
+                  <Text className="font-bold text-slate-900">
                     {item.creator?.name || "Desconhecido"}
                   </Text>
-                  <Text style={styles.creatorSubtitle}>
+                  <Text className="text-slate-500 text-xs">
                     Ver perfil do criador
                   </Text>
                 </View>
@@ -376,21 +417,26 @@ export default function ItemDetails() {
 
               {/* removed the smallLikeBtn that was next to creator (as requested) */}
             </View>
+            {/* FIM COMPONENTE: CreatorCard */}
 
             {/* right: interactive chart + aligned like button */}
-            <View style={styles.chartColumn}>
-              <Text style={styles.chartTitle}>Evolução de Likes</Text>
+            {/* INÍCIO COMPONENTE: LikesChartCard */}
+            <View className="md:flex-[0.6] w-full">
+              <Text className="font-bold text-slate-900 mb-2">
+                Evolução de Likes
+              </Text>
 
               <View
-                style={styles.chartTouchWrap}
+                className="rounded-xl p-2 border border-slate-100 bg-white"
                 onStartShouldSetResponder={() => {
                   setSelectedPoint(null);
                   return false;
                 }}
               >
+                {/* INÍCIO COMPONENTE: LikesChart */}
                 <Svg width={chart.w} height={chart.h}>
                   <G>
-                    {/* grid lines */}
+                    {/* INÍCIO COMPONENTE: GridLines */}
                     {[0, 0.5, 1].map((t, i) => {
                       const y =
                         chart.padding + t * (chart.h - chart.padding * 2);
@@ -406,8 +452,9 @@ export default function ItemDetails() {
                         />
                       );
                     })}
+                    {/* FIM COMPONENTE: GridLines */}
 
-                    {/* path */}
+                    {/* INÍCIO COMPONENTE: LinePath */}
                     {chart.path ? (
                       <Path
                         d={chart.path}
@@ -417,8 +464,9 @@ export default function ItemDetails() {
                         strokeLinecap="round"
                       />
                     ) : null}
+                    {/* FIM COMPONENTE: LinePath */}
 
-                    {/* points */}
+                    {/* INÍCIO COMPONENTE: Points */}
                     {chart.points.map((p, idx) => (
                       <G key={`pt-${idx}`}>
                         <Circle
@@ -441,8 +489,9 @@ export default function ItemDetails() {
                         />
                       </G>
                     ))}
+                    {/* FIM COMPONENTE: Points */}
 
-                    {/* tooltip */}
+                    {/* INÍCIO COMPONENTE: Tooltip */}
                     {selectedPoint
                       ? (() => {
                           const text = String(selectedPoint.v);
@@ -481,282 +530,77 @@ export default function ItemDetails() {
                           );
                         })()
                       : null}
+                    {/* FIM COMPONENTE: Tooltip */}
                   </G>
                 </Svg>
+                {/* FIM COMPONENTE: LikesChart */}
 
-                {/* axis labels: first and last */}
-                <View style={styles.chartLabelsRow}>
-                  <Text style={styles.chartLabelText}>
+                {/* INÍCIO COMPONENTE: AxisLabels */}
+                <View className="flex-row justify-between w-full mt-1.5">
+                  <Text className="text-slate-500 text-[11px]">
                     {chart.points[0]?.label ?? ""}
                   </Text>
-                  <Text style={styles.chartLabelText}>
+                  <Text className="text-slate-500 text-[11px]">
                     {chart.points[chart.points.length - 1]?.label ?? ""}
                   </Text>
                 </View>
+                {/* FIM COMPONENTE: AxisLabels */}
 
-                {/* HERE: aligned like button under the chart (replaces the old smallLikeBtn by creator) */}
-                <View style={styles.chartLikeWrap}>
+                {/* INÍCIO COMPONENTE: LikeButtonUnderChart */}
+                <View className="mt-2.5 items-center">
                   <TouchableOpacity
                     onPress={() => handleLikeToggle(item.id!)}
                     disabled={likeLoading}
-                    style={[
-                      styles.chartLikeBtn,
-                      likeLoading && styles.likeButtonDisabled,
-                    ]}
+                    className={`bg-slate-100 px-4 py-2.5 rounded-lg ${
+                      likeLoading && "opacity-60"
+                    }`}
                   ></TouchableOpacity>
                 </View>
+                {/* FIM COMPONENTE: LikeButtonUnderChart */}
               </View>
             </View>
+            {/* FIM COMPONENTE: LikesChartCard */}
           </View>
+          {/* FIM COMPONENTE: CreatorAndChartRow */}
         </View>
+        {/* FIM COMPONENTE: PrimaryCard */}
 
-        {/* extra details */}
-        <View style={styles.extraCard}>
-          <Text style={styles.sectionTitle}>Detalhes</Text>
-          <Text style={styles.sectionText}>
+        {/* INÍCIO COMPONENTE: ExtraDetailsCard */}
+        <View className="bg-white rounded-xl p-3.5 border border-indigo-50 mt-3">
+          {/* INÍCIO COMPONENTE: DetailsHeader */}
+          <Text className="font-extrabold text-base text-slate-900 mb-2">
+            Detalhes
+          </Text>
+          {/* FIM COMPONENTE: DetailsHeader */}
+          {/* INÍCIO COMPONENTE: DetailsText */}
+          <Text className="text-slate-600 leading-5">
             {item.description || "Sem descrição adicional."}
           </Text>
+          {/* FIM COMPONENTE: DetailsText */}
 
-          <View style={styles.actionsRow}>
+          {/* INÍCIO COMPONENTE: ActionButtonsRow */}
+          <View className="flex-row mt-3">
             <TouchableOpacity
-              style={styles.secondaryBtn}
+              className="bg-white px-3 py-2 rounded-lg border border-[#e6e6f6] mr-2"
               onPress={() =>
                 navigation.navigate("ItemDetails", { id: item.id })
               }
             >
-              <Text style={styles.secondaryBtnText}>Compartilhar</Text>
+              <Text className="text-indigo-600 font-bold">Compartilhar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => {}}>
-              <Text style={styles.secondaryBtnText}>Denunciar</Text>
+            <TouchableOpacity
+              className="bg-white px-3 py-2 rounded-lg border border-[#e6e6f6] mr-2"
+              onPress={() => {}}
+            >
+              <Text className="text-indigo-600 font-bold">Denunciar</Text>
             </TouchableOpacity>
           </View>
+          {/* FIM COMPONENTE: ActionButtonsRow */}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+        {/* FIM COMPONENTE: ExtraDetailsCard */}
+  </ScrollView>
+      {/* FIM COMPONENTE: MainScroll */}
+  {/* FIM COMPONENTE: ScreenContainer */}
+    </View>
   );
 }
-
-/* ---------- styles ---------- */
-const styles = StyleSheet.create({
-  containerRoot: { flex: 1 },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  container: { padding: 16, paddingBottom: 36, backgroundColor: "#fff" },
-
-  centerBox: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  errorCard: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#eee",
-  },
-  errorText: { color: "#ef4444", fontWeight: "700", marginBottom: 8 },
-  backButton: {
-    marginTop: 8,
-    backgroundColor: "#eef2ff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  backButtonText: { color: "#4f46e5", fontWeight: "600" },
-
-  heroCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#eef2ff",
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    marginBottom: 16,
-  },
-
-  imageWrap: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroImage: {
-    width: "100%",
-    height: 220,
-    borderRadius: 12,
-    backgroundColor: "#f8fafc",
-  },
-  heroImagePlaceholder: { alignItems: "center", justifyContent: "center" },
-
-  overlayLike: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-  },
-  overlayLikeDisabled: { opacity: 0.6 },
-  overlayLikeText: { fontWeight: "800", color: "#374151" },
-  overlayLikeTextActive: { color: "#9f1239" },
-
-  itemTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#0f172a",
-    marginTop: 12,
-    textAlign: "center",
-  },
-
-  badgesRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 10,
-  },
-  badge: {
-    backgroundColor: "#eef2ff",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    marginHorizontal: 6,
-  },
-  badgeText: { color: "#4f46e5", fontWeight: "700" },
-  badgeOutline: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e6e6f6",
-  },
-  badgeOutlineText: { color: "#374151" },
-
-  description: {
-    textAlign: "center",
-    color: "#6b7280",
-    marginTop: 12,
-    lineHeight: 20,
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 16,
-  },
-  statCard: {
-    flex: 1,
-    padding: 12,
-    marginHorizontal: 4,
-    borderRadius: 10,
-    backgroundColor: "#fbfbff",
-    alignItems: "center",
-  },
-  statLabel: { color: "#6b7280", fontSize: 12 },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0f172a",
-    marginTop: 6,
-  },
-
-  // creator + chart row
-  creatorChartRow: {
-    marginTop: 16,
-    flexDirection: WIN.width > 700 ? "row" : "column",
-    gap: 12,
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  creatorColumn: { flex: WIN.width > 700 ? 0.4 : 1 },
-  chartColumn: { flex: WIN.width > 700 ? 0.6 : 1 },
-
-  creatorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    backgroundColor: "#fff",
-  },
-  creatorImg: { width: 56, height: 56, borderRadius: 28, marginRight: 12 },
-  creatorPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#eef2ff",
-    marginRight: 12,
-  },
-  creatorName: { fontWeight: "700", color: "#0f172a" },
-  creatorSubtitle: { color: "#6b7280", fontSize: 12 },
-
-  // removed smallLikeBtn next to creator — no style needed here
-
-  chartTitle: { fontWeight: "700", color: "#0f172a", marginBottom: 8 },
-  chartTouchWrap: {
-    borderRadius: 12,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "#f3f4f6",
-    backgroundColor: "#fff",
-  },
-  chartLabelsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 6,
-  },
-  chartLabelText: { color: "#6b7280", fontSize: 11 },
-
-  // new: chart-aligned like button
-  chartLikeWrap: { marginTop: 10, alignItems: "center" },
-  chartLikeBtn: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  likeButtonDisabled: {
-    opacity: 0.6,
-  },
-  chartLikeText: { fontWeight: "800", color: "#374151" },
-  chartLikeTextActive: { color: "#9f1239" },
-
-  extraCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#eef2ff",
-    marginTop: 12,
-  },
-  sectionTitle: {
-    fontWeight: "800",
-    fontSize: 16,
-    color: "#0f172a",
-    marginBottom: 8,
-  },
-  sectionText: { color: "#475569", lineHeight: 20 },
-
-  actionsRow: { flexDirection: "row", marginTop: 12 },
-  secondaryBtn: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e6e6f6",
-    marginRight: 8,
-  },
-  secondaryBtnText: { color: "#4f46e5", fontWeight: "700" },
-});

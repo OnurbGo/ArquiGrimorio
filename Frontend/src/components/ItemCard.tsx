@@ -1,9 +1,22 @@
 // ItemCard.tsx — name allowed 2 linhas, descrição truncada, imagem sem corte, cards uniformes
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import type { Item } from "../interface/Item";
 import { toggleItemLike } from "../hooks/itens/itemLike";
 import { useAuth } from "../utils/AuthContext";
+
+const DESCRIPTION_LINES = 3; // linhas da descrição antes de "..."
+const CARD_HEIGHT = 320; // altura fixa do card (uniformiza grid)
+const IMAGE_HEIGHT = 110; // altura da imagem dentro do card
+
+const rarityClasses: Record<string, string> = {
+  comum: "bg-gray-200 text-gray-800",
+  incomum: "bg-green-200 text-green-800",
+  raro: "bg-blue-500 text-white",
+  "muito-raro": "bg-purple-600 text-white",
+  lendario: "bg-yellow-400 text-black",
+  artefato: "bg-amber-500 text-white",
+};
 
 type ItemWithExtras = Item & {
   likes?: number;
@@ -18,21 +31,6 @@ interface Props {
   onLike?: (id: number) => void;
 }
 
-/* Ajustáveis */
-const DESCRIPTION_LINES = 3; // linhas da descrição antes de "..."
-const CARD_HEIGHT = 320; // altura fixa do card (uniformiza grid)
-const IMAGE_HEIGHT = 110; // altura da imagem dentro do card
-/* --------- */
-
-const rarityColors: Record<string, { backgroundColor: string; color: string }> =
-  {
-    comum: { backgroundColor: "#e5e7eb", color: "#374151" },
-    incomum: { backgroundColor: "#bbf7d0", color: "#166534" },
-    raro: { backgroundColor: "#3b82f6", color: "#fff" },
-    épico: { backgroundColor: "#7c3aed", color: "#fff" },
-    lendário: { backgroundColor: "#facc15", color: "#000" },
-  };
-
 export default function ItemCard({ item, onView, onLike }: Props) {
   const { token } = useAuth();
   const [localItem, setLocalItem] = useState<ItemWithExtras>(item);
@@ -42,7 +40,7 @@ export default function ItemCard({ item, onView, onLike }: Props) {
   }, [item]);
 
   const rarityKey = String(localItem.rarity ?? "").toLowerCase();
-  const rarityStyle = rarityColors[rarityKey] ?? rarityColors.comum;
+  const rarityClassName = rarityClasses[rarityKey] ?? rarityClasses.comum;
   const priceText =
     localItem.price != null
       ? `${Number(localItem.price).toLocaleString("pt-BR")} mo`
@@ -90,197 +88,97 @@ export default function ItemCard({ item, onView, onLike }: Props) {
   }
 
   return (
-    <View style={styles.card}>
-      <View style={styles.content}>
+    <View
+      className="bg-white rounded-xl p-3 mb-3 shadow-sm items-stretch justify-between"
+      style={{ height: CARD_HEIGHT }}
+    >
+      <View className="flex-shrink">
         {localItem.image_url ? (
-          <View style={styles.imageContainer}>
+          <View
+            className="w-full rounded-lg overflow-hidden border border-gray-200 mb-2 items-center justify-center bg-slate-50"
+            style={{ height: IMAGE_HEIGHT }}
+          >
             <Image
               source={{ uri: localItem.image_url }}
-              style={styles.image}
+              className="w-full h-full"
               resizeMode="contain" // evita corte
             />
           </View>
         ) : (
-          <View style={[styles.imageContainer, styles.imagePlaceholder]} />
+          <View
+            className="w-full rounded-lg overflow-hidden border border-gray-200 mb-2 items-center justify-center bg-slate-100"
+            style={{ height: IMAGE_HEIGHT }}
+          />
         )}
 
         {/* name agora pode quebrar em até 2 linhas (não é cortado em 1 linha) */}
-        <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+        <Text
+          className="text-base font-bold text-gray-900 mb-1.5 leading-tight"
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           {localItem.name}
         </Text>
 
-        <View style={styles.row}>
+        <View className="flex-row items-center mb-1.5">
           <Text
-            style={[
-              styles.rarity,
-              {
-                backgroundColor: rarityStyle.backgroundColor,
-                color: rarityStyle.color,
-              },
-            ]}
+            className={`px-2 py-1 rounded-md text-xs font-semibold mr-2 ${rarityClassName}`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
             {localItem.rarity}
           </Text>
-          <Text style={styles.type} numberOfLines={1} ellipsizeMode="tail">
+          <Text
+            className="px-2 py-1 rounded-md text-xs border border-gray-300 text-gray-700"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {localItem.type}
           </Text>
         </View>
 
         <Text
-          style={styles.description}
+          className="text-sm text-gray-500 leading-snug mb-1.5"
           numberOfLines={DESCRIPTION_LINES}
           ellipsizeMode="tail"
         >
           {localItem.description}
         </Text>
 
-        <Text style={styles.price}>{priceText}</Text>
+        <Text className="text-sm font-bold text-gray-800 mb-1.5">
+          {priceText}
+        </Text>
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.creator} numberOfLines={1} ellipsizeMode="tail">
+      <View className="flex-row items-center justify-between border-t border-slate-100 pt-2 mt-1.5">
+        <Text
+          className="text-xs text-gray-500 flex-1"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           por {creatorName}
         </Text>
 
-        <View style={styles.footerActions}>
-          <TouchableOpacity onPress={handleLike} style={styles.likeButton}>
-            <Text style={{ color: localItem.isLiked ? "#dc2626" : "#374151" }}>
+        <View className="flex-row items-center ml-2">
+          <TouchableOpacity
+            onPress={handleLike}
+            className="px-2.5 py-1.5 rounded-lg bg-gray-100 mr-2"
+          >
+            <Text
+              style={{ color: localItem.isLiked ? "#dc2626" : "#374151" }}
+            >
               ♥ {localItem.likes ?? 0}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => onView?.(localItem.id)}
-            style={styles.viewButton}
+            className="px-2.5 py-1.5 rounded-lg bg-blue-100"
           >
-            <Text style={{ color: "#2563eb" }}>Ver</Text>
+            <Text className="text-blue-600">Ver</Text>
           </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    height: CARD_HEIGHT,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-    alignItems: "stretch",
-    justifyContent: "space-between", // garante footer na base
-  },
-
-  content: {
-    flexShrink: 1,
-  },
-
-  imageContainer: {
-    width: "100%",
-    height: IMAGE_HEIGHT,
-    borderRadius: 8,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    marginBottom: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f8fafc",
-  },
-  imagePlaceholder: { backgroundColor: "#f1f5f9" },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-
-  name: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 6,
-    lineHeight: 18,
-  },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-
-  rarity: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    fontSize: 12,
-    fontWeight: "600",
-    marginRight: 8,
-  },
-  type: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    fontSize: 12,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    color: "#374151",
-  },
-
-  description: {
-    fontSize: 13,
-    color: "#6b7280",
-    lineHeight: 18,
-    marginBottom: 6,
-  },
-
-  price: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1f2937",
-    marginBottom: 6,
-  },
-
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderTopWidth: 1,
-    borderTopColor: "#eef2f6",
-    paddingTop: 8,
-    marginTop: 6,
-  },
-
-  creator: {
-    fontSize: 12,
-    color: "#6b7280",
-    flex: 1,
-  },
-
-  footerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-
-  likeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#f3f4f6",
-    marginRight: 8,
-  },
-
-  viewButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#eaf2ff",
-  },
-});

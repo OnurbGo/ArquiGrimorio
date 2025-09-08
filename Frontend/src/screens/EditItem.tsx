@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  FlatList,
   KeyboardAvoidingView,
   LayoutAnimation,
   Modal,
@@ -13,8 +12,6 @@ import {
   Pressable,
   Modal as RNModal,
   ScrollView as RNScrollView,
-  SafeAreaView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -27,6 +24,12 @@ import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
 import { deleteItem, getItems, updateItem } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ItemsGridEdit from "../components/itemedit/ItemsGridEdit";
+import DeleteSection from "../components/itemedit/DeleteSection";
+import SaveCancel from "@/components/itemedit/SaveCancel";
+import RarityType from "@/components/itemedit/RarityType";
+import ImageInput from "@/components/itemedit/ImageInput";
 
 // cap width como na Home para evitar escalonamento exagerado em web muito larga
 const WIN = Dimensions.get("window");
@@ -67,13 +70,9 @@ if (
 
 /**
  * DarkSelect - dropdown customizado para usar dentro do modal.
- * - options: {value,label}[]
- * - value: string
- * - onChange: (value)=>void
- * - labelStyle / containerStyle opcionais
- *
  * Implementado inline para evitar dependências externas e garantir estilo escuro.
  */
+// INÍCIO COMPONENTE: DarkSelect
 function DarkSelect({
   options,
   value,
@@ -121,12 +120,12 @@ function DarkSelect({
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={toggle}
-          style={styles.customPickerButton}
+          className="flex-row items-center justify-between bg-[#0f0f1a] border border-[#2b2b45] px-2.5 py-2 rounded-lg"
         >
-          <Text style={[styles.customPickerLabel, labelStyle]}>
+          <Text className="text-white font-semibold" style={labelStyle}>
             {selected ? selected.label : placeholder ?? "Selecionar"}
           </Text>
-          <Text style={styles.customPickerCaret}>{open ? "▴" : "▾"}</Text>
+          <Text className="text-[#8a87a8] ml-2">{open ? "▴" : "▾"}</Text>
         </TouchableOpacity>
       </View>
       {/* Dropdown como modal/portal */}
@@ -137,18 +136,16 @@ function DarkSelect({
         onRequestClose={() => setOpen(false)}
       >
         <Pressable
-          style={styles.pickerModalOverlay}
+          className="absolute inset-0 bg-black/20 z-[99999]"
           onPress={() => setOpen(false)}
         />
         <View
+          className="absolute bg-[#0f0f1a] border border-[#2b2b45] rounded-lg z-[99999] shadow-lg overflow-hidden"
           style={[
-            styles.pickerModalDropdown,
             {
               top: dropdownPos.top,
               left: dropdownPos.left,
               width: dropdownPos.width,
-              right: undefined,
-              alignSelf: undefined,
             },
           ]}
         >
@@ -161,12 +158,9 @@ function DarkSelect({
               <Pressable
                 key={opt.value}
                 onPress={() => handlePick(opt.value)}
-                style={({ pressed }) => [
-                  styles.customPickerOption,
-                  pressed && { backgroundColor: "#262635" },
-                ]}
+                className="py-2.5 px-3 active:bg-[#262635]"
               >
-                <Text style={styles.customPickerOptionText}>{opt.label}</Text>
+                <Text className="text-white">{opt.label}</Text>
               </Pressable>
             ))}
           </RNScrollView>
@@ -175,6 +169,7 @@ function DarkSelect({
     </View>
   );
 }
+// FIM COMPONENTE: DarkSelect
 
 const EditItem: React.FC = () => {
   const { user } = useAuth();
@@ -199,6 +194,7 @@ const EditItem: React.FC = () => {
 
   // responsivo: 1 / 2 / 3 colunas
   const numColumns = width >= 1024 ? 3 : width >= 768 ? 2 : 1;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchItems();
@@ -225,10 +221,7 @@ const EditItem: React.FC = () => {
       const my = user ? all.filter((it: Item) => it.user_id === user.id) : [];
       setItems(my);
     } catch (err: any) {
-      Alert.alert(
-        "Erro",
-        err?.message || "Não foi possível carregar os itens."
-      );
+      Alert.alert("Erro", err?.message || "Não foi possível carregar os itens.");
     } finally {
       setLoading(false);
     }
@@ -241,7 +234,6 @@ const EditItem: React.FC = () => {
 
   // Remove item (usado no card e também após confirmação no modal)
   const handleDelete = async (itemId: number) => {
-    // confirmação padrão
     Alert.alert(
       "Excluir Item",
       "Tem certeza que deseja excluir este item?",
@@ -257,10 +249,7 @@ const EditItem: React.FC = () => {
               setItems((prev) => prev.filter((i) => i.id !== itemId));
               if (editingItem?.id === itemId) setEditingItem(null);
             } catch (err: any) {
-              Alert.alert(
-                "Erro",
-                err?.message || "Não foi possível excluir o item."
-              );
+              Alert.alert("Erro", err?.message || "Não foi possível excluir o item.");
             } finally {
               setDeleting(false);
             }
@@ -291,9 +280,7 @@ const EditItem: React.FC = () => {
     try {
       setSaving(true);
       const updated = await updateItem(editingItem.id, payload);
-      setItems((prev) =>
-        prev.map((it) => (it.id === updated.id ? updated : it))
-      );
+      setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
       setEditingItem(null);
     } catch (err: any) {
       Alert.alert("Erro", err?.message || "Não foi possível salvar o item.");
@@ -307,41 +294,39 @@ const EditItem: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View className="flex-1 bg-[#07070a]" style={{ paddingTop: insets.top }}>
+      {/* INÍCIO COMPONENTE: ScreenContainer */}
       <Navigation />
 
-      <View style={[styles.container, { paddingHorizontal: 5 * vw }]}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title}>Meus Itens</Text>
-          <Text style={styles.count}>
+      {/* INÍCIO COMPONENTE: ContentWrapper */}
+      <View className="flex-1 pt-2.5" style={{ paddingHorizontal: 5 * vw }}>
+        {/* INÍCIO COMPONENTE: HeaderBar */}
+        <View className="flex-row items-baseline justify-between mb-2.5">
+          <Text className="text-2xl font-extrabold text-white">Meus Itens</Text>
+          <Text className="text-[#d1cfe8] font-semibold">
             {items.length} item{items.length !== 1 ? "s" : ""}
           </Text>
         </View>
+        {/* FIM COMPONENTE: HeaderBar */}
 
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 30 }} />
+          <>
+            {/* INÍCIO COMPONENTE: LoadingIndicator */}
+            <ActivityIndicator style={{ marginTop: 30 }} />
+            {/* FIM COMPONENTE: LoadingIndicator */}
+          </>
         ) : (
-          <FlatList
-            data={items}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderItem}
-            onRefresh={fetchItems}
-            refreshing={loading}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>Nenhum item encontrado.</Text>
-            }
-            contentContainerStyle={{ paddingBottom: 40, paddingTop: 12 }}
-            numColumns={numColumns}
-            columnWrapperStyle={
-              numColumns > 1
-                ? { justifyContent: "space-between", paddingHorizontal: 2 * vw }
-                : undefined
-            }
-          />
+          <>
+            {/* INÍCIO COMPONENTE: ItemsGrid */}
+            <ItemsGridEdit items={items} renderItem={renderItem} fetchItems={fetchItems} loading={loading} numColumns={numColumns} vw={vw} />
+            {/* FIM COMPONENTE: ItemsGrid */}
+          </>
         )}
       </View>
+      {/* FIM COMPONENTE: ContentWrapper */}
 
       {/* Modal de edição com blur no fundo */}
+      {/* INÍCIO COMPONENTE: EditModal */}
       <Modal
         visible={!!editingItem}
         transparent
@@ -349,357 +334,74 @@ const EditItem: React.FC = () => {
         onRequestClose={() => setEditingItem(null)}
       >
         {/* Blur por trás */}
-        <BlurView intensity={80} tint="dark" style={styles.blurBackground} />
+        {/* INÍCIO COMPONENTE: BlurOverlay */}
+        <BlurView intensity={80} tint="dark" className="absolute inset-0 z-[1000]" />
+        {/* FIM COMPONENTE: BlurOverlay */}
 
+        {/* INÍCIO COMPONENTE: KeyboardAvoidingContainer */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.modalWrapper}
+          className="flex-1 justify-center items-center px-4 z-[1001]"
         >
-          <View style={styles.modalCard}>
+          {/* INÍCIO COMPONENTE: ModalCard */}
+          <View className="w-full max-w-[900px] bg-[#1a1a2b] rounded-xl p-4 border border-[#7f32cc] shadow-lg">
             <RNScrollView contentContainerStyle={{ paddingBottom: 18 }}>
-              <Text style={styles.modalTitle}>Editar Item</Text>
+              {/* INÍCIO COMPONENTE: FormTitle */}
+              <Text className="text-white text-xl font-extrabold mb-3">Editar Item</Text>
+              {/* FIM COMPONENTE: FormTitle */}
 
-              <Text style={styles.label}>Nome</Text>
+              {/* INÍCIO COMPONENTE: LabeledInput (Nome) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Nome</Text>
               <TextInput
                 value={form.name}
                 onChangeText={(t) => setForm((s) => ({ ...s, name: t }))}
-                style={styles.input}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg"
                 placeholder="Nome do item"
                 placeholderTextColor="#8a87a8"
               />
+              {/* FIM COMPONENTE: LabeledInput (Nome) */}
 
-              <Text style={styles.label}>Descrição</Text>
+              {/* INÍCIO COMPONENTE: TextArea (Descrição) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Descrição</Text>
               <TextInput
                 value={form.description}
                 onChangeText={(t) => setForm((s) => ({ ...s, description: t }))}
-                style={[styles.input, { height: 100 }]}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg h-[100px]"
                 placeholder="Descrição do item"
                 placeholderTextColor="#8a87a8"
                 multiline
               />
+              {/* FIM COMPONENTE: TextArea (Descrição) */}
 
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <View style={{ flex: 1, zIndex: 99999 }}>
-                  <Text style={styles.label}>Raridade</Text>
-
-                  <DarkSelect
-                    options={RARITIES}
-                    value={form.rarity || "todas"}
-                    onChange={(val) => setForm((s) => ({ ...s, rarity: val }))}
-                    placeholder="Selecione raridade"
-                    containerStyle={{ zIndex: 99999 }}
-                    labelStyle={{ color: "#fff" }}
-                  />
-                </View>
-
-                <View style={{ flex: 1, zIndex: 99999 }}>
-                  <Text style={styles.label}>Tipo</Text>
-
-                  <DarkSelect
-                    options={TYPES}
-                    value={form.type || "todos"}
-                    onChange={(val) => setForm((s) => ({ ...s, type: val }))}
-                    placeholder="Selecione tipo"
-                    containerStyle={{ zIndex: 99999 }}
-                    labelStyle={{ color: "#fff" }}
-                  />
-                </View>
-              </View>
-
-              <Text style={styles.label}>Preço (mo)</Text>
+              <RarityType form={form} setForm={setForm} RARITIES={RARITIES} TYPES={TYPES} DarkSelect={DarkSelect} />  
+              {/* INÍCIO COMPONENTE: LabeledInput (Preço) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Preço (mo)</Text>
               <TextInput
                 value={form.price}
                 onChangeText={(t) => setForm((s) => ({ ...s, price: t }))}
-                style={styles.input}
+                className="bg-[#0f0f1a] border border-[#2b2b45] text-white px-3 py-2 rounded-lg"
                 placeholder="0"
                 placeholderTextColor="#8a87a8"
                 keyboardType="numeric"
               />
+              {/* FIM COMPONENTE: LabeledInput (Preço) */}
 
-              <Text style={styles.label}>URL da imagem</Text>
-              <TextInput
-                value={form.image_url}
-                onChangeText={(t) => setForm((s) => ({ ...s, image_url: t }))}
-                style={styles.input}
-                placeholder="https://..."
-                placeholderTextColor="#8a87a8"
-                autoCapitalize="none"
-              />
-
-              {/* Botões */}
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  onPress={() => setEditingItem(null)}
-                  style={[styles.modalBtn, styles.cancelBtn]}
-                  disabled={saving || deleting}
-                >
-                  <Text style={styles.modalBtnText}>Cancelar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleSave}
-                  style={[styles.modalBtn, styles.saveBtn]}
-                  disabled={saving || deleting}
-                >
-                  {saving ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.modalBtnText}>Salvar</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {/* Exclusão */}
-              <View style={{ marginTop: 12 }}>
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      "Excluir item",
-                      "Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.",
-                      [
-                        { text: "Cancelar", style: "cancel" },
-                        {
-                          text: "Sim, excluir",
-                          style: "destructive",
-                          onPress: async () => {
-                            if (!editingItem) return;
-                            try {
-                              setDeleting(true);
-                              await deleteItem(editingItem.id);
-                              setItems((prev) =>
-                                prev.filter((i) => i.id !== editingItem.id)
-                              );
-                              setEditingItem(null);
-                            } catch (err: any) {
-                              Alert.alert(
-                                "Erro",
-                                err?.message ||
-                                  "Não foi possível excluir o item."
-                              );
-                            } finally {
-                              setDeleting(false);
-                            }
-                          },
-                        },
-                      ]
-                    )
-                  }
-                  style={styles.deleteBigBtn}
-                  disabled={saving || deleting}
-                >
-                  {deleting ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.deleteBigText}>Excluir item</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+              {/* INÍCIO COMPONENTE: LabeledInput (URL da imagem) */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">URL da imagem</Text>
+              <ImageInput form={form} setForm={setForm} />
+              {/* FIM COMPONENTE: LabeledInput (URL da imagem) */}
+              <SaveCancel handleSave={handleSave} saving={saving} deleting={deleting} setEditingItem={setEditingItem} />
+              <DeleteSection editingItem={editingItem} setEditingItem={setEditingItem} deleteItem={deleteItem} setItems={setItems} saving={saving} deleting={deleting} setDeleting={setDeleting} />
             </RNScrollView>
           </View>
+          {/* FIM COMPONENTE: ModalCard */}
         </KeyboardAvoidingView>
+        {/* FIM COMPONENTE: KeyboardAvoidingContainer */}
       </Modal>
-    </SafeAreaView>
+      {/* FIM COMPONENTE: EditModal */}
+      {/* FIM COMPONENTE: ScreenContainer */}
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#07070a",
-  },
-
-  container: {
-    flex: 1,
-    paddingTop: Platform.OS === "ios" ? 12 : 10,
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#fff",
-  },
-
-  count: {
-    color: "#d1cfe8",
-    fontWeight: "600",
-  },
-
-  emptyText: {
-    textAlign: "center",
-    marginTop: 32,
-    color: "#d1cfe8",
-  },
-
-  // modal / blur
-  blurBackground: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
-  },
-
-  modalWrapper: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    zIndex: 1001,
-  },
-
-  modalCard: {
-    width: "100%",
-    maxWidth: 900,
-    backgroundColor: "#1a1a2b",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#7f32cc",
-    shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-
-  modalTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 12,
-  },
-
-  label: {
-    color: "#d1cfe8",
-    marginBottom: 6,
-    marginTop: 6,
-    fontWeight: "600",
-  },
-
-  input: {
-    backgroundColor: "#0f0f1a",
-    borderWidth: 1,
-    borderColor: "#2b2b45",
-    color: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-
-  /* Custom select (dark) */
-  customPickerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#0f0f1a",
-    borderWidth: 1,
-    borderColor: "#2b2b45",
-    paddingHorizontal: 10,
-    paddingVertical: Platform.OS === "web" ? 10 : 8,
-    borderRadius: 10,
-  },
-  customPickerLabel: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  customPickerCaret: {
-    color: "#8a87a8",
-    marginLeft: 8,
-  },
-  customPickerDropdown: {
-    position: "absolute",
-    top: 52,
-    left: 0,
-    right: 0,
-    backgroundColor: "#0f0f1a",
-    borderWidth: 1,
-    borderColor: "#2b2b45",
-    borderRadius: 10,
-    marginTop: 6,
-    zIndex: 99999,
-    elevation: 999,
-    shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    overflow: "hidden",
-  },
-  customPickerOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  customPickerOptionText: {
-    color: "#fff",
-  },
-
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 12,
-  },
-
-  modalBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 96,
-    alignItems: "center",
-  },
-
-  cancelBtn: {
-    backgroundColor: "#2b2b45",
-  },
-
-  saveBtn: {
-    backgroundColor: "#7f32cc",
-  },
-
-  modalBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-
-  deleteBigBtn: {
-    marginTop: 6,
-    backgroundColor: "#ef4444",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-
-  deleteBigText: {
-    color: "#fff",
-    fontWeight: "800",
-  },
-
-  pickerModalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    zIndex: 99999,
-  },
-  pickerModalDropdown: {
-    position: "absolute",
-    top: Platform.OS === "web" ? "35%" : "30%",
-    left: Platform.OS === "web" ? "30%" : 20,
-    right: Platform.OS === "web" ? "30%" : 20,
-    minWidth: Platform.OS === "web" ? 320 : undefined,
-    maxWidth: Platform.OS === "web" ? 400 : undefined,
-    backgroundColor: "#0f0f1a",
-    borderWidth: 1,
-    borderColor: "#2b2b45",
-    borderRadius: 10,
-    zIndex: 99999,
-    elevation: 999,
-    shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    overflow: "hidden",
-    padding: 8,
-    alignSelf: Platform.OS === "web" ? "center" : undefined,
-  },
-});
 
 export default EditItem;

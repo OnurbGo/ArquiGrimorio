@@ -1,25 +1,21 @@
 import React from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView } from "react-native";
+import { cn } from "../utils/cn";
 
 interface ScreenContainerProps {
   children: React.ReactNode;
-  style?: object;
+  className?: string;
 }
 
 export default function ScreenContainer({
   children,
-  style,
+  className,
 }: ScreenContainerProps) {
   return (
-    <ScrollView contentContainerStyle={[styles.container, style]}>
+    <ScrollView
+      contentContainerClassName={cn("flex-grow p-4", className)}
+    >
       {children}
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 16,
-  },
-});

@@ -2,7 +2,6 @@ import React from "react";
 import {
   ActivityIndicator,
   GestureResponderEvent,
-  StyleSheet,
   Text,
   TextStyle,
   TouchableOpacity,
@@ -36,28 +35,21 @@ export default function Button({
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      style={[styles.button, isDisabled ? { opacity: 0.7 } : null, style]}
+      className={`mt-[18px] py-3 rounded-lg items-center bg-blue-600 ${
+        isDisabled ? "opacity-70" : ""
+      }`}
+      style={style}
     >
       {loading ? (
         <ActivityIndicator size="small" color="#ffffff" />
       ) : (
-        <Text style={[styles.buttonText, textStyle]}>{children}</Text>
+        <Text
+          className="text-white font-bold text-base"
+          style={textStyle}
+        >
+          {children}
+        </Text>
       )}
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    marginTop: 18,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    backgroundColor: "#2563eb",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-});

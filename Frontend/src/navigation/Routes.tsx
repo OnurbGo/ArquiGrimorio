@@ -106,7 +106,7 @@ export default function Routes() {
             </PrivateRoute>
           )}
         </Stack.Screen>
-        <Stack.Screen name="NotFound" options={{ headerShown: false }}>
+        <Stack.Screen name="NotFound" options={{ headerShown: true }}>
           {() => <NotFound />}
         </Stack.Screen>
       </Stack.Navigator>
