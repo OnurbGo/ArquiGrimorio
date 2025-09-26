@@ -35,18 +35,15 @@ export default function Button({
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className={`mt-[18px] py-3 rounded-lg items-center bg-blue-600 ${
-        isDisabled ? "opacity-70" : ""
+      className={`mt-[18px] py-3 px-6 rounded-lg items-center${
+        isDisabled ? " opacity-70" : ""
       }`}
-      style={style}
+      style={[{ backgroundColor: "#8b5cf6" }, style]}
     >
       {loading ? (
         <ActivityIndicator size="small" color="#ffffff" />
       ) : (
-        <Text
-          className="text-white font-bold text-base"
-          style={textStyle}
-        >
+        <Text className="text-white font-bold text-base" style={textStyle}>
           {children}
         </Text>
       )}

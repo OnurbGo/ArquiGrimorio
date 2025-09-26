@@ -1,8 +1,8 @@
 // ItemCard.tsx — name allowed 2 linhas, descrição truncada, imagem sem corte, cards uniformes
 import { useEffect, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import type { Item } from "../interface/Item";
 import { toggleItemLike } from "../hooks/itens/itemLike";
+import type { Item } from "../interface/Item";
 import { useAuth } from "../utils/AuthContext";
 
 const DESCRIPTION_LINES = 3; // linhas da descrição antes de "..."
@@ -100,15 +100,29 @@ export default function ItemCard({ item, onView, onLike }: Props) {
           >
             <Image
               source={{ uri: localItem.image_url }}
-              className="w-full h-full"
-              resizeMode="contain" // evita corte
+              style={{
+                width: "100%",
+                height: "100%",
+                maxHeight: IMAGE_HEIGHT,
+                maxWidth: "100%",
+                objectFit: "contain",
+              }}
+              resizeMode="contain"
+              // Não remove a imagem do estado, apenas loga o erro
+              onError={() => {
+                // Se quiser mostrar um fallback visual, pode setar um flag de erro aqui
+                // mas não apaga a image_url para sempre tentar mostrar
+                // Exemplo: setLocalItem((prev) => ({ ...prev, imageError: true }));
+              }}
             />
           </View>
         ) : (
           <View
             className="w-full rounded-lg overflow-hidden border border-gray-200 mb-2 items-center justify-center bg-slate-100"
             style={{ height: IMAGE_HEIGHT }}
-          />
+          >
+            <Text style={{ color: "#888", fontSize: 16 }}>Sem imagem</Text>
+          </View>
         )}
 
         {/* name agora pode quebrar em até 2 linhas (não é cortado em 1 linha) */}
@@ -164,9 +178,7 @@ export default function ItemCard({ item, onView, onLike }: Props) {
             onPress={handleLike}
             className="px-2.5 py-1.5 rounded-lg bg-gray-100 mr-2"
           >
-            <Text
-              style={{ color: localItem.isLiked ? "#dc2626" : "#374151" }}
-            >
+            <Text style={{ color: localItem.isLiked ? "#dc2626" : "#374151" }}>
               ♥ {localItem.likes ?? 0}
             </Text>
           </TouchableOpacity>
