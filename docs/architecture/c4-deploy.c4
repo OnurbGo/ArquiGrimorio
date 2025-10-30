@@ -1,0 +1,106 @@
+// --- Modelo C4 de Deploy (Infraestrutura/Runtime) ---
+// Baseado na topologia Docker Local e cenário Cloud planejado.
+
+// ====================================================================
+// 1. ESPECIFICAÇÃO E ELEMENTOS COMUNS
+// ====================================================================
+
+specification {
+    // Elemento para representar o usuário
+    element person { style { shape person } }
+    // Elementos utilitários para o deploy sem deploymentNode
+    element container { style { shape rectangle } }
+    element database { style { shape cylinder } }
+    // Serviço externo genérico (ex.: S3/Cloudinary, Observabilidade)
+    element storage { style { shape storage } }
+}
+
+// ====================================================================
+// 2. AMBIENTE LOCAL (DOCKER-COMPOSE)
+// ====================================================================
+
+model {
+    // Ambiente Local (sem deploymentNode)
+    LocalUser = person 'Usuário' 'Acessando via app mobile (Expo)'
+
+    Nginx = container 'Nginx (Reverse Proxy)' 'Ponto de entrada' 'nginx:alpine | :8080'
+    Backend = container 'Backend (Express)' 'API principal' 'Node/Express | :3000'
+    ServiceImage = container 'Service-Image (NestJS)' 'Microserviço de Imagens' 'NestJS | :3001→3000'
+    MainDB = database 'Database (MySQL)' 'Persistência principal' 'mysql:8.0 | :3306'
+    ImageDB = database 'Image-DB (MySQL)' 'Persistência de imagens' 'mysql:8.0 | :3306 (host 3307)'
+
+    // Relacionamentos Locais
+    LocalUser -> Nginx 'Acessa' 'HTTP 8080'
+    Nginx -> Backend 'Roteia rota /' 'HTTP'
+    Nginx -> ServiceImage 'Roteia rota /image/' 'HTTP'
+    Backend -> MainDB 'Acessa dados' 'TCP 3306 (Interno)'
+    ServiceImage -> ImageDB 'Acessa metadados' 'TCP 3306 (Interno)'
+
+// ====================================================================
+// 3. AMBIENTE CLOUD (PLANEJADO/PRODUÇÃO)
+// ====================================================================
+
+    // Ambiente Cloud (sem deploymentNode)
+    CloudUser = person 'Usuário' 'Usuário final (mobile)'
+
+    ReverseProxy = container 'Nginx/Proxy' 'Terminação TLS' 'VPS/Fly.io | HTTPS 443'
+    BackendCloud = container 'Backend (Express)' 'API principal' 'Render/Railway/Fly.io'
+    ImgSvcCloud = container 'Microserviço de Imagens (NestJS)' 'Serviço de imagens' 'Render/Railway/Fly.io'
+    MainDBCloud = database 'MySQL Principal' 'Banco gerenciado' 'RDS/PlanetScale'
+    ImgDBCloud = database 'MySQL Imagens' 'Banco gerenciado' 'RDS/PlanetScale'
+    ImageStorage = storage 'Armazenamento/CDN' 'Cloudinary / AWS S3 + CloudFront'
+    Observability = storage 'Observabilidade' 'Prometheus/Grafana / Logs Cloud'
+    FrontendCloud = container 'Frontend Mobile' 'Distribuição OTA' 'Expo'
+
+    // Relacionamentos Cloud
+    CloudUser -> ReverseProxy 'Acessa' 'HTTPS 443 (TLS)'
+    ReverseProxy -> BackendCloud 'Encaminha rota /' 'HTTP Interno'
+    ReverseProxy -> ImgSvcCloud 'Encaminha rota /image/' 'HTTP Interno'
+    BackendCloud -> MainDBCloud 'Acessa dados' 'Rede Privada'
+    ImgSvcCloud -> ImgDBCloud 'Acessa metadados' 'Rede Privada'
+    ImgSvcCloud -> ImageStorage 'Faz Upload/Armazena' 'API Cloud'
+    FrontendCloud -> ImageStorage 'Exibe Imagens' 'HTTPS (CDN)'
+    BackendCloud -> Observability 'Envia Logs e Métricas'
+    ImgSvcCloud -> Observability 'Envia Logs e Métricas'
+}
+
+// ====================================================================
+// 4. VISTAS (VIEWS)
+// ====================================================================
+
+views {
+    // Vista do Ambiente Local (Docker)
+    view LocalDeployment {
+        title 'Deployment Local (Docker)'
+        description 'Topologia de runtime usando Docker-Compose (sem deploymentNode).'
+        include LocalUser
+        include Nginx
+        include Backend
+        include ServiceImage
+        include MainDB
+        include ImageDB
+    autoLayout LeftRight
+    }
+
+    // Vista do Ambiente Cloud (Produção)
+    view CloudDeployment {
+        title 'Deployment Cloud (Produção)'
+        description 'Cenário planejado de deploy em nuvem (sem deploymentNode).'
+        include CloudUser
+        include ReverseProxy
+        include BackendCloud
+        include ImgSvcCloud
+        include MainDBCloud
+        include ImgDBCloud
+        include ImageStorage
+        include Observability
+        include FrontendCloud
+    autoLayout LeftRight
+    }
+
+    // Estilos
+    style BackendCloud { color primary }
+    style ImgSvcCloud { color primary }
+    style ImageStorage { color green }
+    style ReverseProxy { color amber }
+}

@@ -1,0 +1,41 @@
+// --- C4 - Containers (LikeC4) ---
+// Conversão do conteúdo de c4-container.md para código LikeC4
+
+model {
+  // Reutiliza elementos já definidos em c4-deploy.c4 (Nginx, Backend, ServiceImage, MainDB, ImageDB, ImageStorage)
+  // e adiciona os externos planejados e o cliente mobile.
+
+  Frontend = container 'Frontend (React Native / Expo)' 'Cliente mobile' 'Expo'
+  OAuth = storage 'Login Social' 'SSO/OAuth'
+  Firebase = storage 'Firebase (Push/Analytics)' 'Push/Analytics'
+  // ImageStorage já existe no deploy; será reutilizado na view.
+
+  // Relações (Containers principais + externos)
+  Frontend -> Nginx 'HTTP' '8080'
+  Nginx -> Backend 'Roteia "/"' 'HTTP'
+  Nginx -> ServiceImage 'Roteia "/image/"' 'HTTP'
+
+  Backend -> MainDB 'Persistência' 'MySQL'
+  ServiceImage -> ImageDB 'Persistência' 'MySQL'
+
+  Backend -> OAuth 'SSO'
+  Frontend -> Firebase 'push/analytics'
+  ServiceImage -> ImageStorage 'upload/CDN'
+}
+
+views {
+  view ContainersOverview {
+    title 'C4 - Containers'
+    description 'Nginx, Backend, service-image, bancos e integrações externas.'
+    include Frontend
+    include Nginx
+    include Backend
+    include ServiceImage
+    include MainDB
+    include ImageDB
+    include OAuth
+    include Firebase
+    include ImageStorage
+    autoLayout LeftRight
+  }
+}

@@ -1,0 +1,79 @@
+// --- C4 - Componentes (LikeC4) ---
+// Representa componentes internos do Backend (Express) e do Microserviço de Imagens (NestJS)
+
+specification {
+  // Definição do tipo 'component' para este arquivo
+  element component { style { shape rectangle } }
+}
+
+model {
+
+  // ----------------------------
+  // Backend (Express)
+  // ----------------------------
+  App = component 'app.ts' 'Ponto de entrada / middlewares' 'Express App'
+  AuthRoutes = component 'Auth (LoginRoutes)' 'Autenticação (POST /login)' 'Router'
+  UserRoutes = component 'Usuários (UserRoutes)' 'Operações com usuários' 'Router'
+  ItemRoutes = component 'Itens (ItemRouter)' 'CRUD de itens' 'Router'
+  ItemLikeRoutes = component 'Interações (ItemLikeRouter)' 'Likes de itens' 'Router'
+  AuthMiddleware = component 'authMiddleware' 'Proteção de rotas' 'Middleware'
+  SequelizeModels = component 'Sequelize Models' 'Mapeamento ORM' 'ORM'
+
+  // Estrutura e relações internas do Backend
+  App -> AuthRoutes 'registra'
+  App -> UserRoutes 'registra'
+  App -> ItemRoutes 'registra'
+  App -> ItemLikeRoutes 'registra'
+
+  AuthRoutes -> SequelizeModels 'consulta/persiste'
+  UserRoutes -> SequelizeModels 'consulta/persiste'
+  ItemRoutes -> SequelizeModels 'consulta/persiste'
+  ItemLikeRoutes -> SequelizeModels 'consulta/persiste'
+
+  UserRoutes -> AuthMiddleware 'usa'
+  ItemRoutes -> AuthMiddleware 'usa'
+  ItemLikeRoutes -> AuthMiddleware 'usa'
+
+  // ----------------------------
+  // Microserviço de Imagens (NestJS)
+  // ----------------------------
+  ImageUserController = component 'ImageUserController' 'GET /image-user → "hello world"' 'Controller'
+  ImageItemController = component 'ImageItemController' 'CRUD/Handlers de imagem de item' 'Controller'
+  ImageItemService = component 'ImageItemService' 'Regras de negócio de imagem de item' 'Service'
+  UploadAdapter = component 'Upload Adapter (Cloudinary/S3)' 'Upload/CDN (planejado)' 'Adapter'
+
+  ImageItemController -> ImageItemService 'chama'
+  ImageItemService -> UploadAdapter 'usa (planejado)'
+}
+
+views {
+  // Visão de Componentes do Backend
+  view BackendComponents {
+    title 'Componentes - Backend (Express)'
+    description 'App, Rotas, Middleware e ORM do Backend.'
+    include Backend
+    include App
+    include AuthRoutes
+    include UserRoutes
+    include ItemRoutes
+    include ItemLikeRoutes
+    include AuthMiddleware
+    include SequelizeModels
+    autoLayout LeftRight
+  }
+
+  // Visão de Componentes do Microserviço de Imagens
+  view ImageServiceComponents {
+    title 'Componentes - service-image (NestJS)'
+    description 'Controllers e Service; integração de upload (planejada).'
+    include ServiceImage
+    include ImageUserController
+    include ImageItemController
+    include ImageItemService
+    include UploadAdapter
+    autoLayout LeftRight
+  }
+
+  // Estilos auxiliares
+  style UploadAdapter { color gray }
+}
