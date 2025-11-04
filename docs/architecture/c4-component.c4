@@ -18,6 +18,8 @@ model {
   ItemLikeRoutes = component 'Interações (ItemLikeRouter)' 'Likes de itens' 'Router'
   AuthMiddleware = component 'authMiddleware' 'Proteção de rotas' 'Middleware'
   SequelizeModels = component 'Sequelize Models' 'Mapeamento ORM' 'ORM'
+  MulterMemory = component 'multer.memoryStorage' 'Recebe multipart/form-data' 'Middleware'
+  ImageUploadUtil = component 'utils/imageUpload.ts' 'Envia arquivo para Service-Image (axios + FormData)' 'Utilitário'
 
   // Estrutura e relações internas do Backend
   App -> AuthRoutes 'registra'
@@ -34,6 +36,13 @@ model {
   ItemRoutes -> AuthMiddleware 'usa'
   ItemLikeRoutes -> AuthMiddleware 'usa'
 
+  // Upload flow no Backend
+  UserRoutes -> MulterMemory 'processa multipart'
+  ItemRoutes -> MulterMemory 'processa multipart'
+  UserRoutes -> ImageUploadUtil 'delegação de upload'
+  ItemRoutes -> ImageUploadUtil 'delegação de upload'
+  ImageUploadUtil -> ServiceImage 'HTTP (axios) via IMAGE_SERVICE_URL'
+
   // ----------------------------
   // Microserviço de Imagens (NestJS)
   // ----------------------------
@@ -41,9 +50,16 @@ model {
   ImageItemController = component 'ImageItemController' 'CRUD/Handlers de imagem de item' 'Controller'
   ImageItemService = component 'ImageItemService' 'Regras de negócio de imagem de item' 'Service'
   UploadAdapter = component 'Upload Adapter (Cloudinary/S3)' 'Upload/CDN (planejado)' 'Adapter'
+  FileInterceptor = component 'FileInterceptor (Multer)' 'Extrai arquivo do multipart' 'Interceptor'
+  StaticServe = component 'Static /uploads' 'Serviço estático (ServeStaticModule)' 'Infra'
+  DiskStorage = component 'Uploads (/uploads)' 'Armazenamento local em disco' 'Storage'
 
   ImageItemController -> ImageItemService 'chama'
   ImageItemService -> UploadAdapter 'usa (planejado)'
+  ImageUserController -> FileInterceptor 'usa'
+  ImageItemController -> FileInterceptor 'usa'
+  ImageItemService -> DiskStorage 'grava/lê'
+  ServiceImage -> StaticServe 'expõe /image/uploads/*'
 }
 
 views {
@@ -59,6 +75,10 @@ views {
     include ItemLikeRoutes
     include AuthMiddleware
     include SequelizeModels
+    include MulterMemory
+    include ImageUploadUtil
+    // mostrar dependência externa direta
+    include ServiceImage
     autoLayout LeftRight
   }
 
@@ -71,6 +91,9 @@ views {
     include ImageItemController
     include ImageItemService
     include UploadAdapter
+    include FileInterceptor
+    include StaticServe
+    include DiskStorage
     autoLayout LeftRight
   }
 

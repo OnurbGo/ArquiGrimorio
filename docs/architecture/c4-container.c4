@@ -15,12 +15,18 @@ model {
   Nginx -> Backend 'Roteia "/"' 'HTTP'
   Nginx -> ServiceImage 'Roteia "/image/"' 'HTTP'
 
+  // Delegação direta do Backend para o microserviço (rede interna docker)
+  Backend -> ServiceImage 'Delegação de upload (axios/FormData via IMAGE_SERVICE_URL)' 'HTTP interno'
+
   Backend -> MainDB 'Persistência' 'MySQL'
   ServiceImage -> ImageDB 'Persistência' 'MySQL'
 
   Backend -> OAuth 'SSO'
   Frontend -> Firebase 'push/analytics'
   ServiceImage -> ImageStorage 'upload/CDN'
+
+  // Armazenamento local de uploads (definido no deploy); apenas referenciado aqui
+  ServiceImage -> UploadsVolume 'serve estaticamente /image/uploads/*'
 }
 
 views {
@@ -36,6 +42,7 @@ views {
     include OAuth
     include Firebase
     include ImageStorage
+    include UploadsVolume
     autoLayout LeftRight
   }
 }

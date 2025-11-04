@@ -28,6 +28,7 @@ model {
     ServiceImage = container 'Service-Image (NestJS)' 'Microserviço de Imagens' 'NestJS | :3001→3000'
     MainDB = database 'Database (MySQL)' 'Persistência principal' 'mysql:8.0 | :3306'
     ImageDB = database 'Image-DB (MySQL)' 'Persistência de imagens' 'mysql:8.0 | :3306 (host 3307)'
+    UploadsVolume = storage 'Uploads (/uploads)' 'Volume Docker persistente'
 
     // Relacionamentos Locais
     LocalUser -> Nginx 'Acessa' 'HTTP 8080'
@@ -35,6 +36,7 @@ model {
     Nginx -> ServiceImage 'Roteia rota /image/' 'HTTP'
     Backend -> MainDB 'Acessa dados' 'TCP 3306 (Interno)'
     ServiceImage -> ImageDB 'Acessa metadados' 'TCP 3306 (Interno)'
+    ServiceImage -> UploadsVolume 'Salva/serve estático /image/uploads/*'
 
 // ====================================================================
 // 3. AMBIENTE CLOUD (PLANEJADO/PRODUÇÃO)
@@ -72,13 +74,14 @@ views {
     // Vista do Ambiente Local (Docker)
     view LocalDeployment {
         title 'Deployment Local (Docker)'
-        description 'Topologia de runtime usando Docker-Compose (sem deploymentNode).'
+        description 'Topologia local com Nginx (client_max_body_size ajustado) roteando / → Backend e /image/ → Service-Image; Service-Image persiste arquivos em volume /uploads.'
         include LocalUser
         include Nginx
         include Backend
         include ServiceImage
         include MainDB
         include ImageDB
+        include UploadsVolume
     autoLayout LeftRight
     }
 
