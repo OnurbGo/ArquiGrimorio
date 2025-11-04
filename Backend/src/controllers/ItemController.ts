@@ -3,6 +3,7 @@ import ItemModel from "../models/ItemModel";
 import UserModel from "../models/UserModel";
 import ItemLikeModel from "../models/ItemLikeModel";
 import { Op } from "sequelize";
+import { uploadToImageService } from "../utils/imageUpload"; // <— adicionado
 
 export const createItem = async (req: Request, res: Response) => {
   try {
@@ -13,6 +14,14 @@ export const createItem = async (req: Request, res: Response) => {
     if (!name || !rarity || !type || !description)
       return res.status(400).json({ error: "Missing required fields" });
 
+    // Upload opcional de arquivo
+    let finalImageUrl: string | null = image_url ?? null;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      const up = await uploadToImageService(file, "item");
+      finalImageUrl = up.urlNginx || up.url || null;
+    }
+
     const item = await ItemModel.create({
       user_id: userId,
       name,
@@ -20,7 +29,7 @@ export const createItem = async (req: Request, res: Response) => {
       type,
       description,
       price: price ?? null,
-      image_url: image_url ?? null,
+      image_url: finalImageUrl,
     });
 
     return res.status(201).json(item);
@@ -132,7 +141,15 @@ export const updateItem = async (
     if (type !== undefined) item.type = type;
     if (description !== undefined) item.description = description;
     if (price !== undefined) item.price = price ?? null;
-    if (image_url !== undefined) item.image_url = image_url ?? null;
+
+    // Upload opcional: arquivo tem prioridade; senão usa image_url do body (se definido)
+    let newImageUrl: string | null | undefined = image_url;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      const up = await uploadToImageService(file, "item");
+      newImageUrl = up.urlNginx || up.url || null;
+    }
+    if (newImageUrl !== undefined) item.image_url = newImageUrl ?? null;
 
     await item.save();
     return res.status(200).json(item);

@@ -10,8 +10,7 @@ services:
       - MYSQL_ROOT_HOST=${MYSQL_ROOT_HOST}
     volumes:
       - db_data:/var/lib/mysql
-    networks:
-      - app-network
+    networks: [app-network]   # <- ADD
     
   service-image:
     build: ./microservice
@@ -42,9 +41,8 @@ services:
       - "3307:3306"
     volumes:
       - users_data:/var/lib/mysql
-    networks:
-      - app-network
-
+    networks: [app-network]   # <- ADD
+    
   backend:
     build: ./Backend
     container_name: backend
@@ -52,11 +50,13 @@ services:
       - ./Backend/.env
     depends_on:
       - database
+      - service-image        # <- ADD (garante ordem)
+    environment:
+      IMAGE_SERVICE_URL: http://service-image:3000   # <- ADD
     ports:
       - "3000:3000"
-    networks:
-      - app-network
-
+    networks: [app-network]   # <- ADD
+    
   test:
     build: ./Backend
     container_name: backend-test
@@ -65,9 +65,8 @@ services:
     depends_on:
       - database
     command: ["npm", "test"]
-    networks:
-      - app-network
-
+    networks: [app-network]   # <- ADD
+    
   nginx:
     image: nginx:alpine
     restart: always

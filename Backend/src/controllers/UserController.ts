@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import UserModel from "../models/UserModel";
 import ItemModel from "../models/ItemModel";
+import { uploadToImageService } from "../utils/imageUpload"; // <— adicionado
 
 export const getUserCount = async (req: Request, res: Response) => {
   try {
@@ -73,11 +74,19 @@ export const createUser = async (req: Request, res: Response) => {
     if (existing)
       return res.status(409).json({ error: "Email already in use" });
 
+    // Se veio arquivo, envia ao microserviço
+    let finalUrlImg: string | null = url_img || null;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      const up = await uploadToImageService(file, "user");
+      finalUrlImg = up.urlNginx || up.url || null;
+    }
+
     const user = await UserModel.create({
       name: name || null,
       email,
       password,
-      url_img: url_img || null,
+      url_img: finalUrlImg,
       description: description || null,
     });
 
@@ -123,8 +132,15 @@ export const updateUser = async (
       user.password = password; // hook de hash fará o resto
     }
 
-    if (url_img !== undefined) {
-      user.url_img = url_img || null;
+    // Tratar imagem: prioriza upload de arquivo; se não, usa url_img do body (se fornecida)
+    let newUrlImg: string | null | undefined = url_img;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      const up = await uploadToImageService(file, "user");
+      newUrlImg = up.urlNginx || up.url || null;
+    }
+    if (newUrlImg !== undefined) {
+      user.url_img = newUrlImg || null;
     }
 
     if (description !== undefined) {
