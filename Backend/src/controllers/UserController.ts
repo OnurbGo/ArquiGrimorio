@@ -3,6 +3,13 @@ import UserModel from "../models/UserModel";
 import ItemModel from "../models/ItemModel";
 import { uploadToImageService } from "../utils/imageUpload"; // <— adicionado
 
+const toBool = (v: any) =>
+  typeof v === 'boolean'
+    ? v
+    : typeof v === 'string'
+    ? ['true', '1', 'yes', 'on'].includes(v.toLowerCase())
+    : Boolean(v);
+
 export const getUserCount = async (req: Request, res: Response) => {
   try {
     const count = await UserModel.count();
@@ -58,7 +65,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, url_img, description } = req.body;
+    const { name, email, password, url_img, description, admin } = req.body; // <— admin do body
 
     if (!email || !emailRegex.test(email))
       return res.status(400).json({ error: "Invalid email format" });
@@ -74,7 +81,7 @@ export const createUser = async (req: Request, res: Response) => {
     if (existing)
       return res.status(409).json({ error: "Email already in use" });
 
-    // Se veio arquivo, envia ao microserviço
+    // Upload opcional
     let finalUrlImg: string | null = url_img || null;
     const file = (req as any).file as Express.Multer.File | undefined;
     if (file) {
@@ -88,9 +95,8 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       url_img: finalUrlImg,
       description: description || null,
+      admin: admin !== undefined ? toBool(admin) : false, // <— usa escolha do cliente
     });
-
-    // defaultScope remove password; ainda assim usar toJSON para garantir
     return res.status(201).json(user.toJSON());
   } catch (error) {
     console.error("createUser error:", error);
@@ -113,7 +119,7 @@ export const updateUser = async (
         .json({ error: "Forbidden: only owner can update profile" });
     }
 
-    const { name, password, url_img, description } = req.body;
+    const { name, password, url_img, description, admin } = req.body; // <— admin do body
 
     if (name !== undefined) {
       if (!String(name).trim()) {
@@ -132,7 +138,7 @@ export const updateUser = async (
       user.password = password; // hook de hash fará o resto
     }
 
-    // Tratar imagem: prioriza upload de arquivo; se não, usa url_img do body (se fornecida)
+    // Imagem
     let newUrlImg: string | null | undefined = url_img;
     const file = (req as any).file as Express.Multer.File | undefined;
     if (file) {
@@ -147,8 +153,12 @@ export const updateUser = async (
       user.description = description || null;
     }
 
-    await user.save();
+    // Permite trocar admin diretamente
+    if (admin !== undefined) {
+      (user as any).admin = toBool(admin);
+    }
 
+    await user.save();
     return res.status(200).json(user.toJSON());
   } catch (error) {
     console.error("updateUser error:", error);

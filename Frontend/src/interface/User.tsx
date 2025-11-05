@@ -4,6 +4,7 @@ export interface User {
   email: string;
   url_img: string;
   description?: string;
+  admin?: boolean; // <— ADD
   createdAt: string;
   updatedAt: string;
 }
