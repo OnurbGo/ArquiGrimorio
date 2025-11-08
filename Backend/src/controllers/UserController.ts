@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import UserModel from "../models/UserModel";
 import ItemModel from "../models/ItemModel";
-import { uploadToImageService } from "../utils/imageUpload"; // <— adicionado
+import { uploadToImageService, ImageUploadError } from "../utils/imageUpload"; // <- importa o erro
 
 const toBool = (v: any) =>
   typeof v === 'boolean'
@@ -65,7 +65,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, url_img, description, admin } = req.body; // <— admin do body
+    const { name, email, password, url_img, description, admin } = req.body;
 
     if (!email || !emailRegex.test(email))
       return res.status(400).json({ error: "Invalid email format" });
@@ -73,7 +73,7 @@ export const createUser = async (req: Request, res: Response) => {
     if (!password || !passwordRegex.test(password))
       return res.status(400).json({
         error:
-          "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula, um número e um caractere especial",
+          "The password must have at least 8 characters, one uppercase letter, one number, and one special character.",
       });
 
     // Verifica email duplicado
@@ -95,11 +95,14 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       url_img: finalUrlImg,
       description: description || null,
-      admin: admin !== undefined ? toBool(admin) : false, // <— usa escolha do cliente
+      admin: admin !== undefined ? toBool(admin) : false,
     });
     return res.status(201).json(user.toJSON());
   } catch (error) {
     console.error("createUser error:", error);
+    if (error instanceof ImageUploadError) {
+      return res.status(error.status).json({ error: error.code, message: error.message });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -119,7 +122,7 @@ export const updateUser = async (
         .json({ error: "Forbidden: only owner can update profile" });
     }
 
-    const { name, password, url_img, description, admin } = req.body; // <— admin do body
+    const { name, password, url_img, description, admin } = req.body;
 
     if (name !== undefined) {
       if (!String(name).trim()) {
@@ -132,7 +135,7 @@ export const updateUser = async (
       if (!passwordRegex.test(password)) {
         return res.status(400).json({
           error:
-            "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula, um número e um caractere especial",
+            "The password must have at least 8 characters, one uppercase letter, one number, and one special character.",
         });
       }
       user.password = password; // hook de hash fará o resto
@@ -162,6 +165,9 @@ export const updateUser = async (
     return res.status(200).json(user.toJSON());
   } catch (error) {
     console.error("updateUser error:", error);
+    if (error instanceof ImageUploadError) {
+      return res.status(error.status).json({ error: error.code, message: error.message });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, BadRequestException } from '@nestjs/common';
 import { ImageUserController } from './image-user.controller';
 import { ImageUserService } from './image-user.service';
 import { MulterModule } from '@nestjs/platform-express';
@@ -12,11 +12,29 @@ import { randomUUID } from 'crypto';
       storage: diskStorage({
         destination: join(__dirname, '..', '..', 'uploads'),
         filename: (_req, file, cb) => {
-          const ext = extname(file.originalname || '');
+          const ext = extname(file.originalname || '').toLowerCase();
           cb(null, `${randomUUID()}${ext}`);
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+      fileFilter: (_req, file, cb) => {
+        const allowedMimes = ['image/png', 'image/jpeg'];
+        const allowedExts = ['.png', '.jpg', '.jpeg'];
+        const ext = extname(file.originalname || '').toLowerCase();
+
+        if (
+          !allowedMimes.includes(file.mimetype) ||
+          !allowedExts.includes(ext)
+        ) {
+          return cb(
+            new BadRequestException(
+              'Invalid file type. Please upload only PNG or JPEG (.png, .jpg, .jpeg).',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
     }),
   ],
   controllers: [ImageUserController],

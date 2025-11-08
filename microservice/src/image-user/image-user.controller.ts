@@ -4,6 +4,7 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -18,15 +19,13 @@ export class ImageUserController {
   @UseInterceptors(FileInterceptor('file'))
   upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
-      return { error: 'no file received' };
+      throw new BadRequestException('File not provided.');
     }
     return {
       filename: file.filename,
       mimetype: file.mimetype,
       size: file.size,
-      // Acesso direto no serviço:
       url: `/uploads/${file.filename}`,
-      // Acesso via Nginx:
       urlNginx: `/image/uploads/${file.filename}`,
     };
   }
