@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Backend API
+  version: 1.0.0
+  description: API principal (Users, Auth, Items, ItemLikes). Rotas protegidas usam JWT Bearer.
+servers:
+  - url: http://localhost:8080
+    description: Via Nginx (compose)
+  - url: http://localhost:3000
+    description: Direto (desenvolvimento)
+tags:
+  - name: Auth
+  - name: Users
+  - name: Items
+  - name: ItemLikes
+paths:
+  /login:
+    post:
+      tags: [Auth]
+      summary: Login do usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login OK
+        '400':
+          description: Credenciais inválidas
+        '401':
+          description: Não autorizado
+  /users:
+    post:
+      tags: [Users]
+      summary: Cria usuário (pode incluir upload de avatar)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+                admin: { type: string, enum: [true, false] }
+                description: { type: string }
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201': { description: Criado }
+        '400': { description: Dados inválidos }
+    get:
+      tags: [Users]
+      summary: Lista usuários (requer auth)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Não autorizado }
+  /users/count:
+    get:
+      tags: [Users]
+      summary: Retorna contagem de usuários
+      responses:
+        '200': { description: OK }
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Obtém usuário por ID
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { description: Não encontrado }
+    put:
+      tags: [Users]
+      summary: Atualiza usuário (pode trocar avatar)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200': { description: Atualizado }
+        '400': { description: Dados inválidos }
+        '403': { description: Acesso negado }
+        '404': { description: Não encontrado }
+    delete:
+      tags: [Users]
+      summary: Remove usuário
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Removido }
+        '403': { description: Acesso negado }
+        '404': { description: Não encontrado }
+  /users/{id}/item:
+    get:
+      tags: [Users]
+      summary: Lista itens de um usuário
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { description: Usuário não encontrado }
+  /item:
+    get:
+      tags: [Items]
+      summary: Lista itens
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Items]
+      summary: Cria item (upload de imagem opcional)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                price: { type: number }
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: Criado }
+        '400': { description: Dados inválidos }
+        '401': { description: Não autorizado }
+  /item/{id}:
+    get:
+      tags: [Items]
+      summary: Obtém item por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { description: Não encontrado }
+    put:
+      tags: [Items]
+      summary: Atualiza item (upload opcional)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                price: { type: number }
+                file: { type: string, format: binary }
+      responses:
+        '200': { description: Atualizado }
+        '400': { description: Dados inválidos }
+        '401': { description: Não autorizado }
+        '404': { description: Não encontrado }
+    delete:
+      tags: [Items]
+      summary: Remove item
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Removido }
+        '401': { description: Não autorizado }
+        '404': { description: Não encontrado }
+  # TODO: Adicionar rotas reais de likes de ItemLikeRouter quando disponíveis
+  /item-like/TODO:
+    get:
+      tags: [ItemLikes]
+      summary: TODO substituir pelas rotas reais de likes
+      responses:
+        '200': { description: Placeholder }
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
