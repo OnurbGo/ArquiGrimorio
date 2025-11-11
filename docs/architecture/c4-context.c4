@@ -1,25 +1,32 @@
 // --- C4 - Contexto (LikeC4) ---
-// Conversão do conteúdo de c4-context.md para código LikeC4
+// Versão atual: inclui Redis para cache e mensageria (notificações de itens)
 
 model {
-  // Ator principal
   UserCtx = person 'Usuário' 'Mobile'
 
-  // Relações de alto nível reutilizando elementos já definidos em outros arquivos .c4
-  UserCtx -> Frontend 'Interage'
+  // Infra principal
   Frontend -> Nginx 'HTTP'
-  Nginx -> Backend '"/" (sem prefixo)'
-  Nginx -> ServiceImage '"/image/" (prefixo removido)'
-  // Delegação explícita do Backend para o microserviço nas operações de upload
-  Backend -> ServiceImage 'Delegação de upload (axios + FormData via IMAGE_SERVICE_URL)'
+  Nginx -> Backend '"/"'
+  Nginx -> ServiceImage '"/image/"'
+
+  // Upload delegação
+  Backend -> ServiceImage 'Upload (axios + FormData)'
+
+  // Persistência principal
   Backend -> MainDB 'ORM/MySQL'
   ServiceImage -> ImageDB 'MySQL'
+
+  // Redis para cache e pub/sub
+  Backend -> Redis 'Cache contagem usuários / PubSub (item.created)'
+
+  // Notificações admin (consomem lista em Redis)
+  Backend -> Redis 'Lista admin:notifications'
 }
 
 views {
   view SystemContext {
     title 'C4 - Contexto do Sistema'
-    description 'Usuário mobile via Nginx; Backend mapeado em "/" e delega uploads ao Service-Image ("/image/"). Imagens servidas estaticamente em /image/uploads/*.'
+    description 'Frontend via Nginx → Backend; uploads delegados ao Service-Image; Redis para cache e mensageria.'
     include UserCtx
     include Frontend
     include Nginx
@@ -27,6 +34,7 @@ views {
     include ServiceImage
     include MainDB
     include ImageDB
+    include Redis
     autoLayout LeftRight
   }
 }

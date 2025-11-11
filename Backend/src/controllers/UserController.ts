@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import UserModel from "../models/UserModel";
 import ItemModel from "../models/ItemModel";
-import { uploadToImageService, ImageUploadError } from "../utils/imageUpload"; // <- importa o erro
+import { uploadToImageService, ImageUploadError } from "../utils/imageUpload";
+import { redisGet, redisSet, redisDel } from "../utils/redis"; // <- novo import
 
 const toBool = (v: any) =>
   typeof v === 'boolean'
@@ -11,9 +12,16 @@ const toBool = (v: any) =>
     : Boolean(v);
 
 export const getUserCount = async (req: Request, res: Response) => {
+  const CACHE_KEY = "userCount:v1";
   try {
+    const cached = await redisGet(CACHE_KEY);
+    if (cached !== null) {
+      return res.status(200).json({ count: Number(cached), cached: true });
+    }
     const count = await UserModel.count();
-    return res.status(200).json({ count });
+    // TTL 60 segundos (ajuste conforme necessidade)
+    await redisSet(CACHE_KEY, String(count), 60);
+    return res.status(200).json({ count, cached: false });
   } catch (error) {
     console.error("getUserCount error:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -97,6 +105,8 @@ export const createUser = async (req: Request, res: Response) => {
       description: description || null,
       admin: admin !== undefined ? toBool(admin) : false,
     });
+    // Invalida cache
+    await redisDel("userCount:v1");
     return res.status(201).json(user.toJSON());
   } catch (error) {
     console.error("createUser error:", error);
@@ -188,6 +198,8 @@ export const destroyUserById = async (
     }
 
     await user.destroy();
+    // Invalida cache
+    await redisDel("userCount:v1");
     return res.status(204).send();
   } catch (error) {
     console.error("destroyUserById error:", error);

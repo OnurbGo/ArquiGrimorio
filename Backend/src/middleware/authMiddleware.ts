@@ -19,7 +19,7 @@ export const authMiddleware = (
     return res.status(401).json({ error: "Access denied. Invalid token" });
   }
 
-  // Atacha apenas o id
-  (req as any).user = { id: decoded.id };
+  // Atacha id e admin do token
+  (req as any).user = { id: decoded.id, admin: !!decoded.admin };
   next();
 };

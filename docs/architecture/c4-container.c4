@@ -1,48 +1,52 @@
-// --- C4 - Containers (LikeC4) ---
-// Conversão do conteúdo de c4-container.md para código LikeC4
+// --- C4 - Containers ---
+// Acrescentado Redis como container de Cache/Mensageria
 
 model {
-  // Reutiliza elementos já definidos em c4-deploy.c4 (Nginx, Backend, ServiceImage, MainDB, ImageDB, ImageStorage)
-  // e adiciona os externos planejados e o cliente mobile.
-
   Frontend = container 'Frontend (React Native / Expo)' 'Cliente mobile' 'Expo'
+  NginxProxy = container 'Nginx (Reverse Proxy)' 'Roteamento / TLS' 'nginx'
+  BackendAPI = container 'Backend (Express)' 'API principal' 'Node'
+  ImageService = container 'Service-Image (NestJS)' 'Imagens' 'NestJS'
+  MainDatabase = database 'Database (MySQL)' 'Dados principais' 'mysql:8.0'
+  ImageDBMeta = database 'Image-DB (MySQL)' 'Metadados imagens' 'mysql:8.0'
+  Redis = container 'Redis (Cache/Mensageria)' 'Cache + Pub/Sub' 'redis:7'
+  ImageStorageCDN = storage 'CDN/Storage (Planejado)' 'Cloudinary/S3'
+  LocalUploadsVolume = storage 'Uploads (/uploads)' 'Volume local'
   OAuth = storage 'Login Social' 'SSO/OAuth'
   Firebase = storage 'Firebase (Push/Analytics)' 'Push/Analytics'
-  // ImageStorage já existe no deploy; será reutilizado na view.
 
-  // Relações (Containers principais + externos)
-  Frontend -> Nginx 'HTTP' '8080'
-  Nginx -> Backend 'Roteia "/"' 'HTTP'
-  Nginx -> ServiceImage 'Roteia "/image/"' 'HTTP'
+  Frontend -> NginxProxy 'HTTP 8080'
+  NginxProxy -> BackendAPI '"/"'
+  NginxProxy -> ImageService '"/image/"'
+  BackendAPI -> ImageService 'Upload delegação' 'HTTP interno'
 
-  // Delegação direta do Backend para o microserviço (rede interna docker)
-  Backend -> ServiceImage 'Delegação de upload (axios/FormData via IMAGE_SERVICE_URL)' 'HTTP interno'
+  BackendAPI -> MainDatabase 'MySQL'
+  ImageService -> ImageDBMeta 'MySQL'
 
-  Backend -> MainDB 'Persistência' 'MySQL'
-  ServiceImage -> ImageDB 'Persistência' 'MySQL'
+  // Redis usos
+  BackendAPI -> Redis 'Cache (userCount) / PubSub (item.created)'
+  BackendAPI -> Redis 'Lista admin:notifications (rPush/lRange)'
 
-  Backend -> OAuth 'SSO'
+  BackendAPI -> OAuth 'SSO'
   Frontend -> Firebase 'push/analytics'
-  ServiceImage -> ImageStorage 'upload/CDN'
-
-  // Armazenamento local de uploads (definido no deploy); apenas referenciado aqui
-  ServiceImage -> UploadsVolume 'serve estaticamente /image/uploads/*'
+  ImageService -> ImageStorageCDN 'upload/CDN'
+  ImageService -> LocalUploadsVolume 'serve /image/uploads/*'
 }
 
 views {
   view ContainersOverview {
     title 'C4 - Containers'
-    description 'Nginx, Backend, service-image, bancos e integrações externas.'
+    description 'Inclui Redis para cache/mensageria e rota admin notifications.'
     include Frontend
     include Nginx
-    include Backend
-    include ServiceImage
-    include MainDB
+    include BackendAPI
+    include ImageService
+    include MainDatabase
     include ImageDB
+    include Redis
     include OAuth
     include Firebase
-    include ImageStorage
-    include UploadsVolume
+    include ImageStorageCDN
+    include LocalUploadsVolume
     autoLayout LeftRight
   }
 }

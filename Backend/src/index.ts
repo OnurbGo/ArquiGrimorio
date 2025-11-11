@@ -1,5 +1,6 @@
 import sequelize from "./config/database";
 import app from "./app";
+import { initItemCreatedSubscriber } from "./utils/messageBus";
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
@@ -43,4 +44,6 @@ async function establishConnectionWithRetry(maxRetries = 10, delayMs = 2000) {
   app.listen(port, () => {
     console.log("Server is running on port:", port);
   });
+
+  initItemCreatedSubscriber();
 })();

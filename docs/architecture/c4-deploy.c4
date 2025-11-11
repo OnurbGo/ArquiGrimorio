@@ -1,5 +1,7 @@
-// --- Modelo C4 de Deploy (Infraestrutura/Runtime) ---
-// Baseado na topologia Docker Local e cenário Cloud planejado.
+// --- Deploy ---
+// Atualizado com Redis no ambiente local e cloud
+
+// Duplicate element declarations removed; element kinds are defined once below in the subsequent specification block.
 
 // ====================================================================
 // 1. ESPECIFICAÇÃO E ELEMENTOS COMUNS
@@ -28,6 +30,7 @@ model {
     ServiceImage = container 'Service-Image (NestJS)' 'Microserviço de Imagens' 'NestJS | :3001→3000'
     MainDB = database 'Database (MySQL)' 'Persistência principal' 'mysql:8.0 | :3306'
     ImageDB = database 'Image-DB (MySQL)' 'Persistência de imagens' 'mysql:8.0 | :3306 (host 3307)'
+    RedisLocal = container 'Redis (Cache/Mensageria)' 'Redis local' 'redis:alpine | :6379'
     UploadsVolume = storage 'Uploads (/uploads)' 'Volume Docker persistente'
 
     // Relacionamentos Locais
@@ -37,6 +40,8 @@ model {
     Backend -> MainDB 'Acessa dados' 'TCP 3306 (Interno)'
     ServiceImage -> ImageDB 'Acessa metadados' 'TCP 3306 (Interno)'
     ServiceImage -> UploadsVolume 'Salva/serve estático /image/uploads/*'
+    Backend -> RedisLocal 'Cache + Pub/Sub' 'TCP 6379 (Interno)'
+    RedisLocal -> Backend 'Eventos item.created / list admin:notifications' 'TCP 6379 (Interno)'
 
 // ====================================================================
 // 3. AMBIENTE CLOUD (PLANEJADO/PRODUÇÃO)
@@ -50,6 +55,7 @@ model {
     ImgSvcCloud = container 'Microserviço de Imagens (NestJS)' 'Serviço de imagens' 'Render/Railway/Fly.io'
     MainDBCloud = database 'MySQL Principal' 'Banco gerenciado' 'RDS/PlanetScale'
     ImgDBCloud = database 'MySQL Imagens' 'Banco gerenciado' 'RDS/PlanetScale'
+    RedisCloud = container 'Redis Gerenciado' 'Cache/Mensageria' 'redis:alpine'
     ImageStorage = storage 'Armazenamento/CDN' 'Cloudinary / AWS S3 + CloudFront'
     Observability = storage 'Observabilidade' 'Prometheus/Grafana / Logs Cloud'
     FrontendCloud = container 'Frontend Mobile' 'Distribuição OTA' 'Expo'
@@ -60,6 +66,7 @@ model {
     ReverseProxy -> ImgSvcCloud 'Encaminha rota /image/' 'HTTP Interno'
     BackendCloud -> MainDBCloud 'Acessa dados' 'Rede Privada'
     ImgSvcCloud -> ImgDBCloud 'Acessa metadados' 'Rede Privada'
+    BackendCloud -> RedisCloud 'Cache/PubSub' 'Rede Privada'
     ImgSvcCloud -> ImageStorage 'Faz Upload/Armazena' 'API Cloud'
     FrontendCloud -> ImageStorage 'Exibe Imagens' 'HTTPS (CDN)'
     BackendCloud -> Observability 'Envia Logs e Métricas'
@@ -81,6 +88,7 @@ views {
         include ServiceImage
         include MainDB
         include ImageDB
+        include RedisLocal
         include UploadsVolume
     autoLayout LeftRight
     }
@@ -95,15 +103,18 @@ views {
         include ImgSvcCloud
         include MainDBCloud
         include ImgDBCloud
+        include RedisCloud
         include ImageStorage
         include Observability
         include FrontendCloud
     autoLayout LeftRight
     }
 
-    // Estilos
+// Estilos
     style BackendCloud { color primary }
     style ImgSvcCloud { color primary }
     style ImageStorage { color green }
     style ReverseProxy { color amber }
+    style RedisCloud { color amber }
+    style RedisLocal { color amber }
 }

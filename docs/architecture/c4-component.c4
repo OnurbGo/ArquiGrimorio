@@ -1,91 +1,110 @@
-// --- C4 - Componentes (LikeC4) ---
-// Representa componentes internos do Backend (Express) e do Microserviço de Imagens (NestJS)
+// --- C4 - Componentes ---
+// Atualizado com Redis util, MessageBus e AdminNotificationController
 
 specification {
-  // Definição do tipo 'component' para este arquivo
   element component { style { shape rectangle } }
 }
 
 model {
-
-  // ----------------------------
   // Backend (Express)
-  // ----------------------------
-  App = component 'app.ts' 'Ponto de entrada / middlewares' 'Express App'
-  AuthRoutes = component 'Auth (LoginRoutes)' 'Autenticação (POST /login)' 'Router'
-  UserRoutes = component 'Usuários (UserRoutes)' 'Operações com usuários' 'Router'
-  ItemRoutes = component 'Itens (ItemRouter)' 'CRUD de itens' 'Router'
-  ItemLikeRoutes = component 'Interações (ItemLikeRouter)' 'Likes de itens' 'Router'
-  AuthMiddleware = component 'authMiddleware' 'Proteção de rotas' 'Middleware'
+  App = component 'app.ts' 'Bootstrap / middlewares' 'Express'
+  AuthRoutes = component 'Auth (LoginRoutes)' 'POST /login' 'Router'
+  UserRoutes = component 'UserRoutes' 'CRUD usuários + /users/count' 'Router'
+  ItemRoutes = component 'ItemRouter' 'CRUD itens' 'Router'
+  ItemLikeRoutes = component 'ItemLikeRouter' 'Likes de itens' 'Router'
+  AdminNotifRoutes = component 'AdminNotificationRoute' 'GET /admin/notifications' 'Router'
+  AuthMiddleware = component 'authMiddleware' 'JWT + attach user/admin' 'Middleware'
   SequelizeModels = component 'Sequelize Models' 'Mapeamento ORM' 'ORM'
-  MulterMemory = component 'multer.memoryStorage' 'Recebe multipart/form-data' 'Middleware'
-  ImageUploadUtil = component 'utils/imageUpload.ts' 'Envia arquivo para Service-Image (axios + FormData)' 'Utilitário'
+  MulterMemory = component 'multer.memoryStorage' 'Multipart handling' 'Middleware'
+  ImageUploadUtil = component 'utils/imageUpload.ts' 'Delegação de upload (axios)' 'Util'
+  RedisUtil = component 'utils/redis.ts' 'Conexão get/set/del' 'Util'
+  MessageBusUtil = component 'utils/messageBus.ts' 'Pub/Sub item.created' 'Util'
+  AdminNotificationController = component 'AdminNotificationController.ts' 'Lista notificações' 'Controller'
 
-  // Estrutura e relações internas do Backend
+  // Microserviço Imagens
+  ImageUserController = component 'ImageUserController' 'GET /image-user' 'Controller'
+  ImageItemController = component 'ImageItemController' 'Upload/CRUD imagem item' 'Controller'
+  ImageItemService = component 'ImageItemService' 'Regras imagem item' 'Service'
+  FileInterceptor = component 'FileInterceptor (Multer)' 'Extrai arquivo' 'Interceptor'
+  StaticServe = component 'Static /uploads' 'Serve arquivos' 'Infra'
+  DiskStorage = component 'Uploads (/uploads)' 'Armazenamento local' 'Storage'
+  UploadAdapter = component 'Upload Adapter (Planejado)' 'CDN futura' 'Adapter'
+
+  // Registros
   App -> AuthRoutes 'registra'
   App -> UserRoutes 'registra'
   App -> ItemRoutes 'registra'
   App -> ItemLikeRoutes 'registra'
+  App -> AdminNotifRoutes 'registra'
 
-  AuthRoutes -> SequelizeModels 'consulta/persiste'
-  UserRoutes -> SequelizeModels 'consulta/persiste'
-  ItemRoutes -> SequelizeModels 'consulta/persiste'
-  ItemLikeRoutes -> SequelizeModels 'consulta/persiste'
+  // ORM
+  AuthRoutes -> SequelizeModels
+  UserRoutes -> SequelizeModels
+  ItemRoutes -> SequelizeModels
+  ItemLikeRoutes -> SequelizeModels
+  AdminNotifRoutes -> SequelizeModels
 
-  UserRoutes -> AuthMiddleware 'usa'
-  ItemRoutes -> AuthMiddleware 'usa'
-  ItemLikeRoutes -> AuthMiddleware 'usa'
+  // Auth
+  UserRoutes -> AuthMiddleware
+  ItemRoutes -> AuthMiddleware
+  ItemLikeRoutes -> AuthMiddleware
+  AdminNotifRoutes -> AuthMiddleware
 
-  // Upload flow no Backend
-  UserRoutes -> MulterMemory 'processa multipart'
-  ItemRoutes -> MulterMemory 'processa multipart'
-  UserRoutes -> ImageUploadUtil 'delegação de upload'
-  ItemRoutes -> ImageUploadUtil 'delegação de upload'
-  ImageUploadUtil -> ServiceImage 'HTTP (axios) via IMAGE_SERVICE_URL'
+  // Upload flow
+  UserRoutes -> MulterMemory
+  ItemRoutes -> MulterMemory
+  UserRoutes -> ImageUploadUtil
+  ItemRoutes -> ImageUploadUtil
+  ImageUploadUtil -> ServiceImage 'HTTP (axios)'
 
-  // ----------------------------
-  // Microserviço de Imagens (NestJS)
-  // ----------------------------
-  ImageUserController = component 'ImageUserController' 'GET /image-user → "hello world"' 'Controller'
-  ImageItemController = component 'ImageItemController' 'CRUD/Handlers de imagem de item' 'Controller'
-  ImageItemService = component 'ImageItemService' 'Regras de negócio de imagem de item' 'Service'
-  UploadAdapter = component 'Upload Adapter (Cloudinary/S3)' 'Upload/CDN (planejado)' 'Adapter'
-  FileInterceptor = component 'FileInterceptor (Multer)' 'Extrai arquivo do multipart' 'Interceptor'
-  StaticServe = component 'Static /uploads' 'Serviço estático (ServeStaticModule)' 'Infra'
-  DiskStorage = component 'Uploads (/uploads)' 'Armazenamento local em disco' 'Storage'
+  // Redis cache contagem de usuários
+  UserRoutes -> RedisUtil 'get/set userCount'
 
-  ImageItemController -> ImageItemService 'chama'
-  ImageItemService -> UploadAdapter 'usa (planejado)'
-  ImageUserController -> FileInterceptor 'usa'
-  ImageItemController -> FileInterceptor 'usa'
-  ImageItemService -> DiskStorage 'grava/lê'
-  ServiceImage -> StaticServe 'expõe /image/uploads/*'
+  // Pub/Sub item.created
+  ItemRoutes -> MessageBusUtil 'publish item.created'
+  MessageBusUtil -> RedisUtil 'usa conexão pub/sub'
+
+  // Admin notifications list
+  AdminNotifRoutes -> RedisUtil 'lRange admin:notifications'
+
+  // Subscriber grava notificações
+  MessageBusUtil -> RedisUtil 'rPush admin:notifications'
+
+  // Microserviço
+  ImageUserController -> FileInterceptor
+  ImageItemController -> FileInterceptor
+  ImageItemController -> ImageItemService
+  ImageItemService -> DiskStorage
+  ServiceImage -> StaticServe
+  ImageItemService -> UploadAdapter 'planejado'
+
 }
 
 views {
-  // Visão de Componentes do Backend
   view BackendComponents {
-    title 'Componentes - Backend (Express)'
-    description 'App, Rotas, Middleware e ORM do Backend.'
+    title 'Componentes - Backend'
+    description 'Inclui RedisUtil, MessageBus e AdminNotificationController.'
     include Backend
     include App
     include AuthRoutes
     include UserRoutes
     include ItemRoutes
     include ItemLikeRoutes
+    include AdminNotifRoutes
     include AuthMiddleware
     include SequelizeModels
     include MulterMemory
     include ImageUploadUtil
-    // mostrar dependência externa direta
+    include RedisUtil
+    include MessageBusUtil
+    include AdminNotificationController
     include ServiceImage
     autoLayout LeftRight
   }
 
-  // Visão de Componentes do Microserviço de Imagens
   view ImageServiceComponents {
-    title 'Componentes - service-image (NestJS)'
-    description 'Controllers e Service; integração de upload (planejada).'
+    title 'Componentes - service-image'
+    description 'Upload e serviço de imagens.'
     include ServiceImage
     include ImageUserController
     include ImageItemController
@@ -97,6 +116,5 @@ views {
     autoLayout LeftRight
   }
 
-  // Estilos auxiliares
   style UploadAdapter { color gray }
 }

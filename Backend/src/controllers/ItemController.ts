@@ -4,6 +4,7 @@ import UserModel from "../models/UserModel";
 import ItemLikeModel from "../models/ItemLikeModel";
 import { Op } from "sequelize";
 import { uploadToImageService, ImageUploadError } from "../utils/imageUpload"; // <— garantir que ImageUploadError está importado
+import { publishItemCreated } from "../utils/messageBus";
 
 export const createItem = async (req: Request, res: Response) => {
   try {
@@ -30,6 +31,8 @@ export const createItem = async (req: Request, res: Response) => {
       price: price ?? null,
       image_url: finalImageUrl,
     });
+
+    publishItemCreated({ id: item.id, name: item.name, user_id: item.user_id });
 
     return res.status(201).json(item);
   } catch (error: any) {

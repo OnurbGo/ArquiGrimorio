@@ -43,6 +43,13 @@ services:
       - users_data:/var/lib/mysql
     networks: [app-network]   # <- ADD
     
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks: [app-network]
+
   backend:
     build: ./Backend
     container_name: backend
@@ -50,7 +57,8 @@ services:
       - ./Backend/.env
     depends_on:
       - database
-      - service-image        # <- ADD (garante ordem)
+      - service-image
+      - redis            # <- add
     environment:
       IMAGE_SERVICE_URL: http://service-image:3000   # <- ADD
     ports:

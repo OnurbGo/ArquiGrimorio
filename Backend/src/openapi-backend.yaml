@@ -13,6 +13,7 @@ tags:
   - name: Users
   - name: Items
   - name: ItemLikes
+  - name: Admin
 paths:
   /login:
     post:
@@ -45,31 +46,55 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required: [email, password]
               properties:
                 name: { type: string }
                 email: { type: string, format: email }
                 password: { type: string }
-                admin: { type: string, enum: [true, false] }
+                admin: { type: boolean, description: "Define se o usuário é admin (default false)" }
                 description: { type: string }
                 file:
                   type: string
                   format: binary
+                url_img:
+                  type: string
+                  format: uri
       responses:
-        '201': { description: Criado }
+        '201': 
+          description: Criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
         '400': { description: Dados inválidos }
+        '409': { description: Email já em uso }
     get:
       tags: [Users]
       summary: Lista usuários (requer auth)
       security: [{ BearerAuth: [] }]
       responses:
-        '200': { description: OK }
+        '200': 
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/User' }
         '401': { description: Não autorizado }
   /users/count:
     get:
       tags: [Users]
-      summary: Retorna contagem de usuários
+      summary: Retorna contagem de usuários (cacheado em Redis)
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  cached: { type: boolean, description: "true se veio do cache Redis" }
   /users/{id}:
     get:
       tags: [Users]
@@ -81,11 +106,16 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK }
+        '200': 
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { description: Não autorizado }
         '404': { description: Não encontrado }
     put:
       tags: [Users]
-      summary: Atualiza usuário (pode trocar avatar)
+      summary: Atualiza usuário (pode trocar avatar / senha / admin)
       security: [{ BearerAuth: [] }]
       parameters:
         - name: id
@@ -100,15 +130,20 @@ paths:
               type: object
               properties:
                 name: { type: string }
-                email: { type: string, format: email }
                 password: { type: string }
-                file:
-                  type: string
-                  format: binary
+                admin: { type: boolean, description: "Atualiza flag admin (somente próprio usuário conforme lógica atual)" }
+                description: { type: string }
+                file: { type: string, format: binary }
+                url_img: { type: string, format: uri }
       responses:
-        '200': { description: Atualizado }
+        '200': 
+          description: Atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
         '400': { description: Dados inválidos }
-        '403': { description: Acesso negado }
+        '401': { description: Não autorizado }
+        '403': { description: Acesso negado (não é o dono) }
         '404': { description: Não encontrado }
     delete:
       tags: [Users]
@@ -121,6 +156,7 @@ paths:
           schema: { type: integer }
       responses:
         '204': { description: Removido }
+        '401': { description: Não autorizado }
         '403': { description: Acesso negado }
         '404': { description: Não encontrado }
   /users/{id}/item:
@@ -134,14 +170,27 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Item' }
+        '401': { description: Não autorizado }
         '404': { description: Usuário não encontrado }
   /item:
     get:
       tags: [Items]
       summary: Lista itens
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Item' }
     post:
       tags: [Items]
       summary: Cria item (upload de imagem opcional)
@@ -152,13 +201,21 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required: [name, rarity, type]
               properties:
-                title: { type: string }
+                name: { type: string }
                 description: { type: string }
+                rarity: { type: string, description: "Ex: comum, raro, épico..." }
+                type: { type: string, description: "Categoria do item" }
                 price: { type: number }
+                image_url: { type: string, format: uri }
                 file: { type: string, format: binary }
       responses:
-        '201': { description: Criado }
+        '201': 
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
         '400': { description: Dados inválidos }
         '401': { description: Não autorizado }
   /item/{id}:
@@ -171,7 +228,11 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: OK }
+        '200': 
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
         '404': { description: Não encontrado }
     put:
       tags: [Items]
@@ -189,12 +250,19 @@ paths:
             schema:
               type: object
               properties:
-                title: { type: string }
+                name: { type: string }
                 description: { type: string }
+                rarity: { type: string }
+                type: { type: string }
                 price: { type: number }
+                image_url: { type: string, format: uri }
                 file: { type: string, format: binary }
       responses:
-        '200': { description: Atualizado }
+        '200': 
+          description: Atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
         '400': { description: Dados inválidos }
         '401': { description: Não autorizado }
         '404': { description: Não encontrado }
@@ -211,7 +279,22 @@ paths:
         '204': { description: Removido }
         '401': { description: Não autorizado }
         '404': { description: Não encontrado }
-  # TODO: Adicionar rotas reais de likes de ItemLikeRouter quando disponíveis
+  /admin/notifications:
+    get:
+      tags: [Admin]
+      summary: Lista notificações (eventos de criação de itens) para admins
+      description: Retorna últimas notificações armazenadas no Redis.
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Notification' }
+        '403': { description: Requer privilégio admin }
+        '401': { description: Não autorizado }
   /item-like/TODO:
     get:
       tags: [ItemLikes]
@@ -224,3 +307,36 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, nullable: true }
+        email: { type: string, format: email }
+        url_img: { type: string, format: uri, nullable: true }
+        description: { type: string, nullable: true }
+        admin: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Item:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        rarity: { type: string }
+        type: { type: string }
+        price: { type: number, nullable: true }
+        image_url: { type: string, format: uri, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Notification:
+      type: object
+      properties:
+        type: { type: string, example: "ITEM_CREATED" }
+        item_id: { type: integer }
+        item_name: { type: string }
+        creator_user_id: { type: integer }
+        timestamp: { type: integer, description: "Epoch ms" }
