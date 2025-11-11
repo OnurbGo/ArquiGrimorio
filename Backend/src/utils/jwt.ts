@@ -8,13 +8,14 @@ const JWT_EXPIRES_IN = "7d";
 export type JwtPayload = {
   id: number;
   email: string;
+  admin?: boolean; // <- add
   iat?: number;
   exp?: number;
 };
 
-export const generateToken = (user: { id: number; email: string }): string => {
-  // Gera um payload mínimo
-  const payload = { id: user.id, email: user.email };
+export const generateToken = (user: { id: number; email: string; admin?: boolean }): string => {
+  // Gera um payload mínimo + admin
+  const payload = { id: user.id, email: user.email, admin: !!user.admin };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 

@@ -1,0 +1,120 @@
+// --- C4 - Componentes ---
+// Atualizado com Redis util, MessageBus e AdminNotificationController
+
+specification {
+  element component { style { shape rectangle } }
+}
+
+model {
+  // Backend (Express)
+  App = component 'app.ts' 'Bootstrap / middlewares' 'Express'
+  AuthRoutes = component 'Auth (LoginRoutes)' 'POST /login' 'Router'
+  UserRoutes = component 'UserRoutes' 'CRUD usuários + /users/count' 'Router'
+  ItemRoutes = component 'ItemRouter' 'CRUD itens' 'Router'
+  ItemLikeRoutes = component 'ItemLikeRouter' 'Likes de itens' 'Router'
+  AdminNotifRoutes = component 'AdminNotificationRoute' 'GET /admin/notifications' 'Router'
+  AuthMiddleware = component 'authMiddleware' 'JWT + attach user/admin' 'Middleware'
+  SequelizeModels = component 'Sequelize Models' 'Mapeamento ORM' 'ORM'
+  MulterMemory = component 'multer.memoryStorage' 'Multipart handling' 'Middleware'
+  ImageUploadUtil = component 'utils/imageUpload.ts' 'Delegação de upload (axios)' 'Util'
+  RedisUtil = component 'utils/redis.ts' 'Conexão get/set/del' 'Util'
+  MessageBusUtil = component 'utils/messageBus.ts' 'Pub/Sub item.created' 'Util'
+  AdminNotificationController = component 'AdminNotificationController.ts' 'Lista notificações' 'Controller'
+
+  // Microserviço Imagens
+  ImageUserController = component 'ImageUserController' 'GET /image-user' 'Controller'
+  ImageItemController = component 'ImageItemController' 'Upload/CRUD imagem item' 'Controller'
+  ImageItemService = component 'ImageItemService' 'Regras imagem item' 'Service'
+  FileInterceptor = component 'FileInterceptor (Multer)' 'Extrai arquivo' 'Interceptor'
+  StaticServe = component 'Static /uploads' 'Serve arquivos' 'Infra'
+  DiskStorage = component 'Uploads (/uploads)' 'Armazenamento local' 'Storage'
+  UploadAdapter = component 'Upload Adapter (Planejado)' 'CDN futura' 'Adapter'
+
+  // Registros
+  App -> AuthRoutes 'registra'
+  App -> UserRoutes 'registra'
+  App -> ItemRoutes 'registra'
+  App -> ItemLikeRoutes 'registra'
+  App -> AdminNotifRoutes 'registra'
+
+  // ORM
+  AuthRoutes -> SequelizeModels
+  UserRoutes -> SequelizeModels
+  ItemRoutes -> SequelizeModels
+  ItemLikeRoutes -> SequelizeModels
+  AdminNotifRoutes -> SequelizeModels
+
+  // Auth
+  UserRoutes -> AuthMiddleware
+  ItemRoutes -> AuthMiddleware
+  ItemLikeRoutes -> AuthMiddleware
+  AdminNotifRoutes -> AuthMiddleware
+
+  // Upload flow
+  UserRoutes -> MulterMemory
+  ItemRoutes -> MulterMemory
+  UserRoutes -> ImageUploadUtil
+  ItemRoutes -> ImageUploadUtil
+  ImageUploadUtil -> ServiceImage 'HTTP (axios)'
+
+  // Redis cache contagem de usuários
+  UserRoutes -> RedisUtil 'get/set userCount'
+
+  // Pub/Sub item.created
+  ItemRoutes -> MessageBusUtil 'publish item.created'
+  MessageBusUtil -> RedisUtil 'usa conexão pub/sub'
+
+  // Admin notifications list
+  AdminNotifRoutes -> RedisUtil 'lRange admin:notifications'
+
+  // Subscriber grava notificações
+  MessageBusUtil -> RedisUtil 'rPush admin:notifications'
+
+  // Microserviço
+  ImageUserController -> FileInterceptor
+  ImageItemController -> FileInterceptor
+  ImageItemController -> ImageItemService
+  ImageItemService -> DiskStorage
+  ServiceImage -> StaticServe
+  ImageItemService -> UploadAdapter 'planejado'
+
+}
+
+views {
+  view BackendComponents {
+    title 'Componentes - Backend'
+    description 'Inclui RedisUtil, MessageBus e AdminNotificationController.'
+    include Backend
+    include App
+    include AuthRoutes
+    include UserRoutes
+    include ItemRoutes
+    include ItemLikeRoutes
+    include AdminNotifRoutes
+    include AuthMiddleware
+    include SequelizeModels
+    include MulterMemory
+    include ImageUploadUtil
+    include RedisUtil
+    include MessageBusUtil
+    include AdminNotificationController
+    include ServiceImage
+    autoLayout LeftRight
+  }
+
+  view ImageServiceComponents {
+    title 'Componentes - service-image'
+    description 'Upload e serviço de imagens.'
+    include ServiceImage
+    include ImageUserController
+    include ImageItemController
+    include ImageItemService
+    include UploadAdapter
+    include FileInterceptor
+    include StaticServe
+    include DiskStorage
+    autoLayout LeftRight
+  }
+
+  style UploadAdapter { color gray }
+}

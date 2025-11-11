@@ -1,0 +1,52 @@
+// --- C4 - Containers ---
+// Acrescentado Redis como container de Cache/Mensageria
+
+model {
+  Frontend = container 'Frontend (React Native / Expo)' 'Cliente mobile' 'Expo'
+  NginxProxy = container 'Nginx (Reverse Proxy)' 'Roteamento / TLS' 'nginx'
+  BackendAPI = container 'Backend (Express)' 'API principal' 'Node'
+  ImageService = container 'Service-Image (NestJS)' 'Imagens' 'NestJS'
+  MainDatabase = database 'Database (MySQL)' 'Dados principais' 'mysql:8.0'
+  ImageDBMeta = database 'Image-DB (MySQL)' 'Metadados imagens' 'mysql:8.0'
+  Redis = container 'Redis (Cache/Mensageria)' 'Cache + Pub/Sub' 'redis:7'
+  ImageStorageCDN = storage 'CDN/Storage (Planejado)' 'Cloudinary/S3'
+  LocalUploadsVolume = storage 'Uploads (/uploads)' 'Volume local'
+  OAuth = storage 'Login Social' 'SSO/OAuth'
+  Firebase = storage 'Firebase (Push/Analytics)' 'Push/Analytics'
+
+  Frontend -> NginxProxy 'HTTP 8080'
+  NginxProxy -> BackendAPI '"/"'
+  NginxProxy -> ImageService '"/image/"'
+  BackendAPI -> ImageService 'Upload delegação' 'HTTP interno'
+
+  BackendAPI -> MainDatabase 'MySQL'
+  ImageService -> ImageDBMeta 'MySQL'
+
+  // Redis usos
+  BackendAPI -> Redis 'Cache (userCount) / PubSub (item.created)'
+  BackendAPI -> Redis 'Lista admin:notifications (rPush/lRange)'
+
+  BackendAPI -> OAuth 'SSO'
+  Frontend -> Firebase 'push/analytics'
+  ImageService -> ImageStorageCDN 'upload/CDN'
+  ImageService -> LocalUploadsVolume 'serve /image/uploads/*'
+}
+
+views {
+  view ContainersOverview {
+    title 'C4 - Containers'
+    description 'Inclui Redis para cache/mensageria e rota admin notifications.'
+    include Frontend
+    include Nginx
+    include BackendAPI
+    include ImageService
+    include MainDatabase
+    include ImageDB
+    include Redis
+    include OAuth
+    include Firebase
+    include ImageStorageCDN
+    include LocalUploadsVolume
+    autoLayout LeftRight
+  }
+}

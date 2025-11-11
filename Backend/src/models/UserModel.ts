@@ -9,6 +9,7 @@ export interface UserAttributes {
   password: string;
   url_img?: string | null;
   description?: string | null;
+  admin?: boolean; // <— ADD (se ainda não existir)
 }
 
 interface UserCreationAttributes
@@ -24,6 +25,7 @@ class UserModel
   public password!: string;
   public url_img?: string | null;
   public description?: string | null;
+  public admin?: boolean; // <— ADD (se ainda não existir)
 
   // Hash da senha antes de salvar
   public async hashPassword(): Promise<void> {
@@ -79,6 +81,11 @@ UserModel.init(
       type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
+    },
+    admin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {

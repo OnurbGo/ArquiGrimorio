@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: Service-Image API
+  version: 1.0.0
+  description: Microserviço de Imagens (NestJS). Upload e acesso a metadados. Arquivos estáticos servidos em /uploads/*.
+servers:
+  - url: http://localhost:3000
+    description: Porta direta do microserviço
+  - url: http://localhost:8080/image
+    description: Via Nginx (prefixo /image)
+tags:
+  - name: ImageUser
+  - name: ImageItem
+  - name: Health
+paths:
+  /image-user:
+    get:
+      tags: [ImageUser]
+      summary: Ping / info do serviço de imagens de usuário (exemplo hello world)
+      responses:
+        '200': { description: OK }
+  /image-user/upload:
+    post:
+      tags: [ImageUser]
+      summary: Upload de imagem de usuário (avatar)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201': { description: Upload concluído }
+        '400': { description: Tipo inválido ou ausência de arquivo }
+        '500': { description: Erro interno }
+  /image-item/upload:
+    post:
+      tags: [ImageItem]
+      summary: Upload de imagem de item
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201': { description: Upload concluído }
+        '400': { description: Tipo inválido ou ausência de arquivo }
+        '500': { description: Erro interno }
+  # TODO: Incluir demais rotas CRUD de image-item.controller (listar, obter, deletar) quando confirmadas
+  /image-item/TODO:
+    get:
+      tags: [ImageItem]
+      summary: TODO substituir pelas rotas reais (listar imagens de item)
+      responses:
+        '200': { description: Placeholder }
+  /health:
+    get:
+      tags: [Health]
+      summary: Healthcheck (adicionar se existir)
+      responses:
+        '200': { description: OK }
+components:
+  schemas:
+    ImageUploadResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        filename: { type: string }
+        url: { type: string }
+        mimeType: { type: string }
+        size: { type: integer }
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode: { type: integer }
+        error: { type: string }
+        message: { type: string }

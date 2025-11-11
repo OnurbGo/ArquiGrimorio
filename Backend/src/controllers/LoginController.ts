@@ -22,7 +22,11 @@ export const LoginUser = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Email or Password are invalid" });
   }
 
-  const token = generateToken(user);
+  const token = generateToken({
+    id: user.id,
+    email: user.email,
+    admin: (user as any).admin === true,
+  });
 
   res.cookie("authToken", token, {
     httpOnly: false,

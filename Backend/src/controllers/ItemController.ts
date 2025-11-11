@@ -3,6 +3,8 @@ import ItemModel from "../models/ItemModel";
 import UserModel from "../models/UserModel";
 import ItemLikeModel from "../models/ItemLikeModel";
 import { Op } from "sequelize";
+import { uploadToImageService, ImageUploadError } from "../utils/imageUpload"; // <— garantir que ImageUploadError está importado
+import { publishItemCreated } from "../utils/messageBus";
 
 export const createItem = async (req: Request, res: Response) => {
   try {
@@ -13,6 +15,13 @@ export const createItem = async (req: Request, res: Response) => {
     if (!name || !rarity || !type || !description)
       return res.status(400).json({ error: "Missing required fields" });
 
+    let finalImageUrl: string | null = image_url ?? null;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      const up = await uploadToImageService(file, "item");
+      finalImageUrl = up.urlNginx || up.url || null;
+    }
+
     const item = await ItemModel.create({
       user_id: userId,
       name,
@@ -20,12 +29,24 @@ export const createItem = async (req: Request, res: Response) => {
       type,
       description,
       price: price ?? null,
-      image_url: image_url ?? null,
+      image_url: finalImageUrl,
     });
 
+    publishItemCreated({ id: item.id, name: item.name, user_id: item.user_id });
+
     return res.status(201).json(item);
-  } catch (error) {
+  } catch (error: any) {
     console.error("createItem error:", error);
+    if (error instanceof ImageUploadError) {
+      return res
+        .status(error.status)
+        .json({ error: error.code, message: error.message });
+    }
+    if (error?.code === "LIMIT_FILE_SIZE") {
+      return res
+        .status(413)
+        .json({ error: "FILE_TOO_LARGE", message: "File too large" });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -110,10 +131,7 @@ export const getItemById = async (
   }
 };
 
-export const updateItem = async (
-  req: Request<{ id: string }>,
-  res: Response
-) => {
+export const updateItem = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const item = await ItemModel.findByPk(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
@@ -126,18 +144,34 @@ export const updateItem = async (
     }
 
     const { name, rarity, type, description, price, image_url } = req.body;
-
     if (name !== undefined) item.name = name;
     if (rarity !== undefined) item.rarity = rarity;
     if (type !== undefined) item.type = type;
     if (description !== undefined) item.description = description;
     if (price !== undefined) item.price = price ?? null;
-    if (image_url !== undefined) item.image_url = image_url ?? null;
+
+    let newImageUrl: string | null | undefined = image_url;
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file) {
+      const up = await uploadToImageService(file, "item");
+      newImageUrl = up.urlNginx || up.url || null;
+    }
+    if (newImageUrl !== undefined) item.image_url = newImageUrl ?? null;
 
     await item.save();
     return res.status(200).json(item);
-  } catch (error) {
+  } catch (error: any) {
     console.error("updateItem error:", error);
+    if (error instanceof ImageUploadError) {
+      return res
+        .status(error.status)
+        .json({ error: error.code, message: error.message });
+    }
+    if (error?.code === "LIMIT_FILE_SIZE") {
+      return res
+        .status(413)
+        .json({ error: "FILE_TOO_LARGE", message: "File too large" });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
