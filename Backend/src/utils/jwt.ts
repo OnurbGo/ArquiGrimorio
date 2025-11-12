@@ -1,29 +1,17 @@
+import dotenv from 'dotenv';
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import UserModel from "../models/UserModel";
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "Secret_key";
-const JWT_EXPIRES_IN = "7d";
 
-export type JwtPayload = {
-  id: number;
-  email: string;
-  admin?: boolean; // <- add
-  iat?: number;
-  exp?: number;
-};
+const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_EXPIRES_IN = "7d"
 
-export const generateToken = (user: { id: number; email: string; admin?: boolean }): string => {
-  // Gera um payload mínimo + admin
-  const payload = { id: user.id, email: user.email, admin: !!user.admin };
+export const generateToken = (user: UserModel): string => {
+  const payload = { id: (user as any).id, admin: (user as any).admin };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-export const verifyToken = (token: string): JwtPayload | null => {
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    return decoded;
-  } catch (error) {
-    return null;
-  }
+export const verifyToken = (token: string) : any => {
+  return jwt.verify(token, JWT_SECRET);
 };
