@@ -26,7 +26,7 @@ export const LoginUser = async (req: Request, res: Response) => {
     id: user.id,
     email: user.email,
     admin: (user as any).admin === true,
-  });
+  } as UserModel);
 
   res.cookie("authToken", token, {
     httpOnly: false,
