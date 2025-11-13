@@ -1,5 +1,5 @@
-import { verifyToken } from "../utils/jwt";
 import { NextFunction, Request, Response } from "express";
+import { verifyToken } from "../utils/jwt";
 
 declare global {
   namespace Express {
@@ -14,13 +14,17 @@ declare global {
   }
 }
 
+/*
+  * Middleware de autenticação para proteger rotas.
+  * Requer token JWT válido no cabeçalho Authorization.
+*/
 export const authMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
 
+  const authHeader = req.headers.authorization?.trim();
   if (!authHeader) {
     return res.status(401).json({ message: "Token não fornecido" });
   }
@@ -32,13 +36,17 @@ export const authMiddleware = (
 
   try {
     const decoded = verifyToken(token);
-    const user = decoded.user ?? decoded;
-    console.log("Decoded Token:", decoded);
+    console.log(decoded);
+
+    if (!decoded.id) {
+      return res.status(403).json({ message: "Acesso negado. Usuário não autenticado." });
+    }
+
     req.user = {
-      id: Number(user.id),
-      name: user.name,
-      email: user.email,
-      admin: !!user.admin,
+      id: decoded.id,
+      name: decoded.name ?? "",
+      email: decoded.email ?? "",
+      admin: !!decoded.admin,
     };
 
     next();
@@ -64,24 +72,34 @@ export const requireAdmin = (
   });
 };
 
-export const requireSelfOrAdmin = (
+/**
+ * Middleware para permitir acesso do usuario comum quanto do admin a dados pessoais de um usuario
+ * requer o id do usuario no parametro da rota
+*/
+export const authMiddlewareUserOrAdmin = ({id}: {id: string}) => (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   return authMiddleware(req, res, () => {
-    console.log("Request Params:", req.params, req.user);
-    const paramId = Number(req.params.id) ?? null;
-    const tokenUserId = Number(req.user?.id);
-    console.log("Token User ID:", tokenUserId);
 
-    if (!Number.isFinite(paramId)) {
-      return res.status(400).json({ message: "Parâmetro id inválido" });
+    const isAdmin = Boolean(req.user?.admin);
+    const isIdToken = Number(req.user?.id);
+    const isIdParam = Number(req.params[id]);
+    console.log('isIdToken:', isIdToken, 'isIdParam:', isIdParam);
+
+    if (!isIdParam) {
+      return res.status(401).json({ mensage: "Chave enviada é invalido" });
     }
 
-    if (!(req.user?.admin)) {
+    if (!isIdToken) {
+      return res.status(401).json({ mensage: "Id do Usuario nao foi informado" });
+    }
+
+
+    if (!isAdmin && isIdToken !== isIdParam) {
       return res.status(403).json({
-        message: "Acesso negado. Você só pode acessar o próprio recurso."
+        message: "Acesso negado. Você só pode acessar o próprio recurso.",
       });
     }
 
