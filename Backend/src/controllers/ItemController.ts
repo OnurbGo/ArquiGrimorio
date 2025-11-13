@@ -136,13 +136,6 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
     const item = await ItemModel.findByPk(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
 
-    const loggedUserId = (req as any).user?.id;
-    if (!loggedUserId || Number(loggedUserId) !== Number(item.user_id)) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: only owner can edit item" });
-    }
-
     const { name, rarity, type, description, price, image_url } = req.body;
     if (name !== undefined) item.name = name;
     if (rarity !== undefined) item.rarity = rarity;
@@ -183,13 +176,6 @@ export const deleteItem = async (
   try {
     const item = await ItemModel.findByPk(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
-
-    const loggedUserId = (req as any).user?.id;
-    if (!loggedUserId || Number(loggedUserId) !== Number(item.user_id)) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: only owner can delete item" });
-    }
 
     await item.destroy();
     return res.status(204).send();

@@ -5,14 +5,14 @@ import {
   getLikesByUser,
   getLikesByItem,
 } from "../controllers/ItemLikeController";
-import { authMiddleware, requireSelfOrAdmin } from "../middleware/authMiddleware";
+import { authMiddleware, authMiddlewareUserOrAdmin,  } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.post("/itemlike/:id/toggle", requireSelfOrAdmin, toggleLike);
-router.get("/itemlike/:id", requireSelfOrAdmin, getLikesForItem);
+router.post("/itemlike/:id/toggle", authMiddlewareUserOrAdmin({ id: "id" }), toggleLike);
+router.get("/itemlike/:id", authMiddlewareUserOrAdmin({ id: "id" }), getLikesForItem);
 
-router.get("/itemlike/user/:userId", requireSelfOrAdmin, getLikesByUser);
+router.get("/itemlike/user/:userId", authMiddlewareUserOrAdmin({ id: "userId" }), getLikesByUser);
 
-router.get("/itemlike/item/:itemId", requireSelfOrAdmin, getLikesByItem);
+router.get("/itemlike/item/:itemId", authMiddlewareUserOrAdmin({ id: "itemId" }), getLikesByItem);
 export default router;
