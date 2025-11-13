@@ -125,13 +125,6 @@ export const updateUser = async (
     const user = await UserModel.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const loggedUserId = (req as any).user?.id;
-    if (!loggedUserId || Number(loggedUserId) !== Number(user.id)) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: only owner can update profile" });
-    }
-
     const { name, password, url_img, description, admin } = req.body;
 
     if (name !== undefined) {
@@ -189,13 +182,6 @@ export const destroyUserById = async (
   try {
     const user = await UserModel.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
-
-    const loggedUserId = (req as any).user?.id;
-    if (!loggedUserId || Number(loggedUserId) !== Number(user.id)) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden: only owner can delete account" });
-    }
 
     await user.destroy();
     // Invalida cache
