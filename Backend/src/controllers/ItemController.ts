@@ -3,11 +3,148 @@ import ItemModel from "../models/ItemModel";
 import UserModel from "../models/UserModel";
 import ItemLikeModel from "../models/ItemLikeModel";
 import { Op } from "sequelize";
-import { uploadToImageService, ImageUploadError } from "../utils/imageUpload"; // <— garantir que ImageUploadError está importado
 import { publishItemCreated } from "../utils/messageBus";
+import { uploadItemImageViaProxy, ImageUploadError } from "../utils/imageProxy";
+import { uploadStreamToImageService } from "../utils/imageProxy";
+import Busboy from "busboy";
+
+// Helper: cria via multipart (campos + file)
+async function createItemFromMultipart(req: Request, res: Response) {
+  return new Promise<Response>((resolve) => {
+    const bb = Busboy({ headers: req.headers });
+    const fields: Record<string, any> = {};
+    let uploadPromise: Promise<any> | null = null;
+
+    bb.on("field", (name: any, val: any) => {
+      fields[name] = val;
+    });
+
+    bb.on("file", (name: any, file: any, info: any) => {
+      if (name !== "file") return file.resume();
+      const filename = info?.filename || `upload_${Date.now()}.jpg`;
+      const mimeType = info?.mimeType || "image/jpeg";
+      uploadPromise = uploadStreamToImageService(file, filename, mimeType, "item");
+    });
+
+    bb.on("close", async () => {
+      try {
+        const userId = (req as any).user?.id;
+        if (!userId) return resolve(res.status(401).json({ error: "Unauthorized" }));
+
+        const name = fields.name?.trim();
+        const rarity = fields.rarity;
+        const type = fields.type;
+        const description = fields.description?.trim();
+        const price = fields.price != null && fields.price !== "" ? Number(fields.price) : null;
+
+        if (!name || !rarity || !type || !description) {
+          return resolve(res.status(400).json({ error: "Missing required fields" }));
+        }
+
+        let finalImageUrl: string | null = fields.image_url ?? null;
+        if (uploadPromise) {
+          try {
+            const up = await uploadPromise;
+            finalImageUrl = up.urlNginx || up.url || null;
+          } catch (e) {
+            const ie = e as ImageUploadError;
+            if (ie?.status) {
+              return resolve(res.status(ie.status).json({ error: ie.message, code: ie.code, details: ie.details }));
+            }
+            return resolve(res.status(502).json({ error: "Failed to upload image" }));
+          }
+        }
+
+        const item = await ItemModel.create({
+          user_id: userId,
+          name,
+          rarity,
+          type,
+          description,
+          price,
+          image_url: finalImageUrl,
+        });
+
+        publishItemCreated({ id: item.id, name: item.name, user_id: item.user_id });
+        return resolve(res.status(201).json(item));
+      } catch (err) {
+        console.error("createItemFromMultipart error:", err);
+        return resolve(res.status(500).json({ error: "Internal server error" }));
+      }
+    });
+
+    req.pipe(bb);
+  });
+}
+
+// Helper: atualiza via multipart (campos + file)
+async function updateItemFromMultipart(req: Request<{ id: string }>, res: Response) {
+  return new Promise<Response>((resolve) => {
+    const bb = Busboy({ headers: req.headers });
+    const fields: Record<string, any> = {};
+    let uploadPromise: Promise<any> | null = null;
+
+    bb.on("field", (name: any, val: any) => {
+      fields[name] = val;
+    });
+
+    bb.on("file", (name: any, file: any, info: any) => {
+      if (name !== "file") return file.resume();
+      const filename = info?.filename || `upload_${Date.now()}.jpg`;
+      const mimeType = info?.mimeType || "image/jpeg";
+      uploadPromise = uploadStreamToImageService(file, filename, mimeType, "item");
+    });
+
+    bb.on("close", async () => {
+      try {
+        const item = await ItemModel.findByPk(req.params.id);
+        if (!item) return resolve(res.status(404).json({ error: "Item not found" }));
+
+        const { name, rarity, type, description } = fields;
+        const price = fields.price != null && fields.price !== "" ? Number(fields.price) : undefined;
+
+        if (name !== undefined) item.name = name;
+        if (rarity !== undefined) item.rarity = rarity;
+        if (type !== undefined) item.type = type;
+        if (description !== undefined) item.description = description;
+        if (price !== undefined) item.price = isNaN(price as number) ? null : (price as number);
+
+        if (fields.image_url !== undefined) item.image_url = fields.image_url || null;
+
+        if (uploadPromise) {
+          try {
+            const up = await uploadPromise;
+            const newUrl = up.urlNginx || up.url || null;
+            if (!newUrl) return resolve(res.status(502).json({ error: "Image service did not return an URL" }));
+            item.image_url = newUrl;
+          } catch (e) {
+            const ie = e as ImageUploadError;
+            if (ie?.status) {
+              return resolve(res.status(ie.status).json({ error: ie.message, code: ie.code, details: ie.details }));
+            }
+            return resolve(res.status(502).json({ error: "Failed to upload image" }));
+          }
+        }
+
+        await item.save();
+        return resolve(res.status(200).json(item));
+      } catch (err) {
+        console.error("updateItemFromMultipart error:", err);
+        return resolve(res.status(500).json({ error: "Internal server error" }));
+      }
+    });
+
+    req.pipe(bb);
+  });
+}
 
 export const createItem = async (req: Request, res: Response) => {
   try {
+    const isMultipart = String(req.headers["content-type"] || "").includes("multipart/form-data");
+    if (isMultipart) {
+      return await createItemFromMultipart(req, res);
+    }
+
     const { name, rarity, type, description, price, image_url } = req.body;
     const userId = (req as any).user?.id;
 
@@ -15,12 +152,8 @@ export const createItem = async (req: Request, res: Response) => {
     if (!name || !rarity || !type || !description)
       return res.status(400).json({ error: "Missing required fields" });
 
+    // Imagem: agora somente via URL já fornecida (sem arquivo)
     let finalImageUrl: string | null = image_url ?? null;
-    const file = (req as any).file as Express.Multer.File | undefined;
-    if (file) {
-      const up = await uploadToImageService(file, "item");
-      finalImageUrl = up.urlNginx || up.url || null;
-    }
 
     const item = await ItemModel.create({
       user_id: userId,
@@ -37,16 +170,6 @@ export const createItem = async (req: Request, res: Response) => {
     return res.status(201).json(item);
   } catch (error: any) {
     console.error("createItem error:", error);
-    if (error instanceof ImageUploadError) {
-      return res
-        .status(error.status)
-        .json({ error: error.code, message: error.message });
-    }
-    if (error?.code === "LIMIT_FILE_SIZE") {
-      return res
-        .status(413)
-        .json({ error: "FILE_TOO_LARGE", message: "File too large" });
-    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -133,6 +256,11 @@ export const getItemById = async (
 
 export const updateItem = async (req: Request<{ id: string }>, res: Response) => {
   try {
+    const isMultipart = String(req.headers["content-type"] || "").includes("multipart/form-data");
+    if (isMultipart) {
+      return await updateItemFromMultipart(req, res);
+    }
+
     const item = await ItemModel.findByPk(req.params.id);
     if (!item) return res.status(404).json({ error: "Item not found" });
 
@@ -142,29 +270,12 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
     if (type !== undefined) item.type = type;
     if (description !== undefined) item.description = description;
     if (price !== undefined) item.price = price ?? null;
-
-    let newImageUrl: string | null | undefined = image_url;
-    const file = (req as any).file as Express.Multer.File | undefined;
-    if (file) {
-      const up = await uploadToImageService(file, "item");
-      newImageUrl = up.urlNginx || up.url || null;
-    }
-    if (newImageUrl !== undefined) item.image_url = newImageUrl ?? null;
+    if (image_url !== undefined) item.image_url = image_url || null;
 
     await item.save();
     return res.status(200).json(item);
-  } catch (error: any) {
+  } catch (error) {
     console.error("updateItem error:", error);
-    if (error instanceof ImageUploadError) {
-      return res
-        .status(error.status)
-        .json({ error: error.code, message: error.message });
-    }
-    if (error?.code === "LIMIT_FILE_SIZE") {
-      return res
-        .status(413)
-        .json({ error: "FILE_TOO_LARGE", message: "File too large" });
-    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -181,6 +292,31 @@ export const deleteItem = async (
     return res.status(204).send();
   } catch (error) {
     console.error("deleteItem error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Novo: atualiza a imagem de um item existente via multipart (campo "file")
+export const updateItemPhoto = async (req: Request<{ id: string }>, res: Response) => {
+  try {
+    const item = await ItemModel.findByPk(req.params.id);
+    if (!item) return res.status(404).json({ error: "Item not found" });
+
+    const up = await uploadItemImageViaProxy(req);
+    const newUrl = (up as any).urlNginx || (up as any).url || null;
+    if (!newUrl) {
+      return res.status(502).json({ error: "Image service did not return an URL" });
+    }
+
+    item.image_url = newUrl;
+    await item.save();
+
+    return res.status(200).json(item.toJSON());
+  } catch (e) {
+    if (e instanceof ImageUploadError) {
+      return res.status(e.status).json({ error: e.message, code: e.code, details: e.details });
+    }
+    console.error("updateItemPhoto error:", e);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
