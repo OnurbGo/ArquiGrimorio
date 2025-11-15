@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import UserModel from "../models/UserModel";
 import ItemModel from "../models/ItemModel";
-import { uploadToImageService, ImageUploadError } from "../utils/imageUpload";
 import { redisGet, redisSet, redisDel } from "../utils/redis"; // <- novo import
+import { uploadUserPhotoViaProxy, ImageUploadError } from "../utils/imageProxy";
 
 const toBool = (v: any) =>
   typeof v === 'boolean'
@@ -89,13 +89,8 @@ export const createUser = async (req: Request, res: Response) => {
     if (existing)
       return res.status(409).json({ error: "Email already in use" });
 
-    // Upload opcional
+    // Upload opcional: agora somente via URL já fornecida (sem arquivo)
     let finalUrlImg: string | null = url_img || null;
-    const file = (req as any).file as Express.Multer.File | undefined;
-    if (file) {
-      const up = await uploadToImageService(file, "user");
-      finalUrlImg = up.urlNginx || up.url || null;
-    }
 
     const user = await UserModel.create({
       name: name || null,
@@ -103,24 +98,18 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       url_img: finalUrlImg,
       description: description || null,
-      admin: admin !== undefined ? toBool(admin) : false,
+      admin: !!admin,
     });
     // Invalida cache
     await redisDel("userCount:v1");
     return res.status(201).json(user.toJSON());
   } catch (error) {
     console.error("createUser error:", error);
-    if (error instanceof ImageUploadError) {
-      return res.status(error.status).json({ error: error.code, message: error.message });
-    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
 
-export const updateUser = async (
-  req: Request<{ id: string }>,
-  res: Response
-) => {
+export const updateUser = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const user = await UserModel.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -144,13 +133,8 @@ export const updateUser = async (
       user.password = password; // hook de hash fará o resto
     }
 
-    // Imagem
-    let newUrlImg: string | null | undefined = url_img;
-    const file = (req as any).file as Express.Multer.File | undefined;
-    if (file) {
-      const up = await uploadToImageService(file, "user");
-      newUrlImg = up.urlNginx || up.url || null;
-    }
+    // Imagem: agora somente via URL já fornecida (sem arquivo)
+    let newUrlImg: string | null | undefined = req.body.url_img;
     if (newUrlImg !== undefined) {
       user.url_img = newUrlImg || null;
     }
@@ -168,9 +152,6 @@ export const updateUser = async (
     return res.status(200).json(user.toJSON());
   } catch (error) {
     console.error("updateUser error:", error);
-    if (error instanceof ImageUploadError) {
-      return res.status(error.status).json({ error: error.code, message: error.message });
-    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -189,6 +170,32 @@ export const destroyUserById = async (
     return res.status(204).send();
   } catch (error) {
     console.error("destroyUserById error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const updateUserPhoto = async (req: Request<{ id: string }>, res: Response) => {
+  try {
+    const user = await UserModel.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Encaminha o multipart/form-data para o microservice
+    const up = await uploadUserPhotoViaProxy(req);
+
+    const newUrl = (up as any).urlNginx || (up as any).url || null;
+    if (!newUrl) {
+      return res.status(502).json({ error: "Image service did not return an URL" });
+    }
+
+    user.url_img = newUrl;
+    await user.save();
+
+    return res.status(200).json(user.toJSON());
+  } catch (e) {
+    if (e instanceof ImageUploadError) {
+      return res.status(e.status).json({ error: e.message, code: e.code, details: e.details });
+    }
+    console.error("updateUserPhoto error:", e);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

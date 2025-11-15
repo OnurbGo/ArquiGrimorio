@@ -36,14 +36,15 @@ paths:
           description: Credenciais inválidas
         '401':
           description: Não autorizado
+
   /users:
     post:
       tags: [Users]
-      summary: Cria usuário (pode incluir upload de avatar)
+      summary: Cria usuário (use url_img; upload de arquivo via /users/{id}/photo)
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               required: [email, password]
@@ -53,14 +54,11 @@ paths:
                 password: { type: string }
                 admin: { type: boolean, description: "Define se o usuário é admin (default false)" }
                 description: { type: string }
-                file:
-                  type: string
-                  format: binary
                 url_img:
                   type: string
                   format: uri
       responses:
-        '201': 
+        '201':
           description: Criado
           content:
             application/json:
@@ -70,10 +68,10 @@ paths:
         '409': { description: Email já em uso }
     get:
       tags: [Users]
-      summary: Lista usuários (requer auth)
+      summary: Lista usuários (apenas admin)
       security: [{ BearerAuth: [] }]
       responses:
-        '200': 
+        '200':
           description: OK
           content:
             application/json:
@@ -81,6 +79,8 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/User' }
         '401': { description: Não autorizado }
+        '403': { description: Requer privilégio admin }
+
   /users/count:
     get:
       tags: [Users]
@@ -95,6 +95,7 @@ paths:
                 properties:
                   count: { type: integer }
                   cached: { type: boolean, description: "true se veio do cache Redis" }
+
   /users/{id}:
     get:
       tags: [Users]
@@ -106,7 +107,7 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': 
+        '200':
           description: OK
           content:
             application/json:
@@ -115,7 +116,7 @@ paths:
         '404': { description: Não encontrado }
     put:
       tags: [Users]
-      summary: Atualiza usuário (pode trocar avatar / senha / admin)
+      summary: Atualiza usuário (nome/senha/admin/descrição/url_img)
       security: [{ BearerAuth: [] }]
       parameters:
         - name: id
@@ -125,18 +126,17 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
                 name: { type: string }
                 password: { type: string }
-                admin: { type: boolean, description: "Atualiza flag admin (somente próprio usuário conforme lógica atual)" }
+                admin: { type: boolean, description: "Atualiza flag admin conforme regras de autorização" }
                 description: { type: string }
-                file: { type: string, format: binary }
                 url_img: { type: string, format: uri }
       responses:
-        '200': 
+        '200':
           description: Atualizado
           content:
             application/json:
@@ -159,6 +159,43 @@ paths:
         '401': { description: Não autorizado }
         '403': { description: Acesso negado }
         '404': { description: Não encontrado }
+
+  /users/{id}/photo:
+    put:
+      tags: [Users]
+      summary: Atualiza foto do usuário via upload de arquivo (proxy para o microservice)
+      description: >
+        Envie multipart/form-data com o campo "file" (jpeg/png). O backend encaminha o upload
+        ao microservice e atualiza o campo url_img do usuário com a URL retornada.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Atualizado com sucesso
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { description: Requisição inválida }
+        '401': { description: Não autorizado }
+        '403': { description: Acesso negado }
+        '404': { description: Usuário não encontrado }
+        '502': { description: Erro ao comunicar com o microservice }
+
   /users/{id}/item:
     get:
       tags: [Users]
@@ -179,6 +216,7 @@ paths:
                 items: { $ref: '#/components/schemas/Item' }
         '401': { description: Não autorizado }
         '404': { description: Usuário não encontrado }
+
   /item:
     get:
       tags: [Items]
@@ -193,31 +231,51 @@ paths:
                 items: { $ref: '#/components/schemas/Item' }
     post:
       tags: [Items]
-      summary: Cria item (upload de imagem opcional)
+      summary: Cria item
+      description: >
+        Envie JSON com image_url OU multipart/form-data com campos e o arquivo (key "file").
+        O backend fará upload no microservice e usará a URL retornada.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
-              required: [name, rarity, type]
+              required: [name, rarity, type, description]
               properties:
                 name: { type: string }
                 description: { type: string }
-                rarity: { type: string, description: "Ex: comum, raro, épico..." }
-                type: { type: string, description: "Categoria do item" }
+                rarity: { type: string }
+                type: { type: string }
+                price: { type: number, nullable: true }
+                image_url: { type: string, format: uri, nullable: true }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, rarity, type, description]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                rarity: { type: string }
+                type: { type: string }
                 price: { type: number }
-                image_url: { type: string, format: uri }
-                file: { type: string, format: binary }
+                image_url:
+                  type: string
+                  format: uri
+                  description: Alternativa ao upload de arquivo
+                file:
+                  type: string
+                  format: binary
       responses:
-        '201': 
+        '201':
           description: Criado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Item' }
         '400': { description: Dados inválidos }
         '401': { description: Não autorizado }
+
   /item/{id}:
     get:
       tags: [Items]
@@ -228,7 +286,7 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': 
+        '200':
           description: OK
           content:
             application/json:
@@ -236,7 +294,10 @@ paths:
         '404': { description: Não encontrado }
     put:
       tags: [Items]
-      summary: Atualiza item (upload opcional)
+      summary: Atualiza item
+      description: >
+        Envie JSON com image_url OU multipart/form-data com campos e o arquivo (key "file").
+        O backend fará upload no microservice e atualizará image_url.
       security: [{ BearerAuth: [] }]
       parameters:
         - name: id
@@ -246,7 +307,7 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
@@ -256,15 +317,31 @@ paths:
                 type: { type: string }
                 price: { type: number }
                 image_url: { type: string, format: uri }
-                file: { type: string, format: binary }
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                rarity: { type: string }
+                type: { type: string }
+                price: { type: number }
+                image_url:
+                  type: string
+                  format: uri
+                  description: Alternativa ao upload de arquivo
+                file:
+                  type: string
+                  format: binary
       responses:
-        '200': 
+        '200':
           description: Atualizado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Item' }
         '400': { description: Dados inválidos }
         '401': { description: Não autorizado }
+        '403': { description: Acesso negado }
         '404': { description: Não encontrado }
     delete:
       tags: [Items]
@@ -278,7 +355,45 @@ paths:
       responses:
         '204': { description: Removido }
         '401': { description: Não autorizado }
+        '403': { description: Acesso negado }
         '404': { description: Não encontrado }
+
+  /item/{id}/photo:
+    put:
+      tags: [Items]
+      summary: Atualiza foto do item via upload de arquivo (proxy para o microservice)
+      description: >
+        Envie multipart/form-data com o campo "file" (jpeg/png). O backend encaminha o upload
+        ao microservice e atualiza o campo image_url do item com a URL retornada.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Atualizado com sucesso
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Item' }
+        '400': { description: Requisição inválida }
+        '401': { description: Não autorizado }
+        '403': { description: Acesso negado }
+        '404': { description: Item não encontrado }
+        '502': { description: Erro ao comunicar com o microservice }
+
   /admin/notifications:
     get:
       tags: [Admin]
@@ -295,12 +410,14 @@ paths:
                 items: { $ref: '#/components/schemas/Notification' }
         '403': { description: Requer privilégio admin }
         '401': { description: Não autorizado }
+
   /item-like/TODO:
     get:
       tags: [ItemLikes]
       summary: TODO substituir pelas rotas reais de likes
       responses:
         '200': { description: Placeholder }
+
 components:
   securitySchemes:
     BearerAuth:
