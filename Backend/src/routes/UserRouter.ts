@@ -10,7 +10,7 @@ import {
   updateUserPhoto, // <-- add
 } from "../controllers/UserController";
 import {  requireAdmin, authMiddlewareUserOrAdmin } from "../middleware/authMiddleware";
-import { listAdminNotifications } from "../controllers/AdminNotificationController";
+import { listAdminNotifications, deleteAllAdminNotifications, deleteAdminNotification } from "../controllers/AdminNotificationController";
 
 const router = express.Router();
 
@@ -22,11 +22,11 @@ router.get("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), getUserById);
 router.get("/users/:id/item", authMiddlewareUserOrAdmin({ id: "id" }), getUserItems);
 
 router.put("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), updateUser);
-
-// Novo: atualiza apenas a foto via multipart, sem base64 e sem Multer
 router.put("/users/:id/photo", authMiddlewareUserOrAdmin({ id: "id" }), updateUserPhoto);
 
 router.delete("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), destroyUserById);
 router.get("/admin/notifications", requireAdmin, listAdminNotifications);
+router.delete("/admin/notifications", requireAdmin, deleteAllAdminNotifications);
+router.delete("/admin/notifications/:id", requireAdmin, deleteAdminNotification);
 
 export default router;

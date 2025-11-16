@@ -111,10 +111,25 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request<{ id: string }>, res: Response) => {
   try {
+    // Bloqueia multipart (upload só na rota /users/:id/photo)
+    const contentType = String(req.headers["content-type"] || "");
+    if (contentType.includes("multipart/form-data")) {
+      return res.status(400).json({
+        error: "Upload de imagem não permitido aqui. Use PUT /users/:id/photo.",
+      });
+    }
+
+    // Bloqueia alteração de url_img neste endpoint
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "url_img")) {
+      return res.status(400).json({
+        error: "url_img não pode ser alterado em /users/:id. Use PUT /users/:id/photo.",
+      });
+    }
+
     const user = await UserModel.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const { name, password, url_img, description, admin } = req.body;
+    const { name, password, description, admin } = req.body;
 
     if (name !== undefined) {
       if (!String(name).trim()) {
@@ -130,20 +145,13 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
             "The password must have at least 8 characters, one uppercase letter, one number, and one special character.",
         });
       }
-      user.password = password; // hook de hash fará o resto
-    }
-
-    // Imagem: agora somente via URL já fornecida (sem arquivo)
-    let newUrlImg: string | null | undefined = req.body.url_img;
-    if (newUrlImg !== undefined) {
-      user.url_img = newUrlImg || null;
+      user.password = password;
     }
 
     if (description !== undefined) {
       user.description = description || null;
     }
 
-    // Permite trocar admin diretamente
     if (admin !== undefined) {
       (user as any).admin = toBool(admin);
     }

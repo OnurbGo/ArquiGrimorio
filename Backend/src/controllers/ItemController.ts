@@ -3,7 +3,7 @@ import ItemModel from "../models/ItemModel";
 import UserModel from "../models/UserModel";
 import ItemLikeModel from "../models/ItemLikeModel";
 import { Op } from "sequelize";
-import { publishItemCreated } from "../utils/messageBus";
+import { publishItemCreated, publishItemDeleted, publishItemUpdated } from "../utils/messageBus";
 import { uploadItemImageViaProxy, ImageUploadError } from "../utils/imageProxy";
 import { uploadStreamToImageService } from "../utils/imageProxy";
 import Busboy from "busboy";
@@ -126,7 +126,26 @@ async function updateItemFromMultipart(req: Request<{ id: string }>, res: Respon
           }
         }
 
+        // Compute diffs antes de salvar
+        const changedFields = item.changed() as string[] | false;
+        let changes: Record<string, { from: unknown; to: unknown }> | undefined;
+        if (changedFields && changedFields.length) {
+          changes = {};
+          for (const f of changedFields) {
+            changes[f] = { from: (item as any).previous(f), to: (item as any).get(f) };
+          }
+        }
+
         await item.save();
+
+        // Publica evento de atualização (inclui mudança de foto se houver)
+        publishItemUpdated({
+          id: item.id as unknown as number,
+          name: (item as any).name,
+          user_id: (req as any).user?.id,
+          changes,
+        });
+
         return resolve(res.status(200).json(item));
       } catch (err) {
         console.error("updateItemFromMultipart error:", err);
@@ -254,45 +273,91 @@ export const getItemById = async (
   }
 };
 
+// Exemplo: adapte dentro do handler que atualiza o item (PUT/PATCH /items/:id)
 export const updateItem = async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const isMultipart = String(req.headers["content-type"] || "").includes("multipart/form-data");
-    if (isMultipart) {
-      return await updateItemFromMultipart(req, res);
+    // Não aceita multipart neste endpoint
+    const contentType = String(req.headers["content-type"] || "");
+    if (contentType.includes("multipart/form-data")) {
+      return res.status(400).json({
+        error: "Atualização de foto não é permitida em /item/:id. Use PUT /item/:id/photo.",
+      });
     }
 
-    const item = await ItemModel.findByPk(req.params.id);
-    if (!item) return res.status(404).json({ error: "Item not found" });
+    // Bloqueia alteração de image_url por aqui
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "image_url")) {
+      return res.status(400).json({
+        error: "image_url não pode ser alterado em /item/:id. Use PUT /item/:id/photo.",
+      });
+    }
 
-    const { name, rarity, type, description, price, image_url } = req.body;
-    if (name !== undefined) item.name = name;
-    if (rarity !== undefined) item.rarity = rarity;
-    if (type !== undefined) item.type = type;
-    if (description !== undefined) item.description = description;
-    if (price !== undefined) item.price = price ?? null;
-    if (image_url !== undefined) item.image_url = image_url || null;
+    const id = Number(req.params.id);
+    const userId = (req as any).user?.id;
+
+    const item = await ItemModel.findByPk(id);
+    if (!item) return res.status(404).json({ error: "Item não encontrado" });
+    if (item.user_id !== userId) {
+      return res.status(403).json({ error: "Sem permissão para atualizar este item" });
+    }
+
+    // Campos permitidos (sem image_url)
+    const allowed = ["name", "rarity", "type", "description", "price"];
+    const payload: Record<string, any> = {};
+    for (const k of allowed) {
+      if (k in (req.body ?? {})) payload[k] = (req.body as any)[k];
+    }
+
+    // Aplique mudanças
+    item.set(payload);
+
+    // Capture diffs antes de salvar
+    const changedFields = item.changed() as string[] | false;
+    let changes: Record<string, { from: unknown; to: unknown }> | undefined;
+    if (changedFields && changedFields.length) {
+      changes = {};
+      for (const f of changedFields) {
+        changes[f] = { from: (item as any).previous(f), to: (item as any).get(f) };
+      }
+    }
 
     await item.save();
-    return res.status(200).json(item);
-  } catch (error) {
-    console.error("updateItem error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+
+    // Publica evento
+    publishItemUpdated({
+      id: item.id as unknown as number,
+      name: (item as any).name,
+      user_id: userId,
+      changes,
+    });
+
+    return res.json(item);
+  } catch (err) {
+    console.error("updateItem error:", err);
+    return res.status(500).json({ error: "Erro interno ao atualizar item" });
   }
 };
 
-export const deleteItem = async (
-  req: Request<{ id: string }>,
-  res: Response
-) => {
+export const deleteItem = async (req: Request<{ id: string }>, res: Response) => {
   try {
-    const item = await ItemModel.findByPk(req.params.id);
-    if (!item) return res.status(404).json({ error: "Item not found" });
+    const id = parseInt(req.params.id, 10);
+    const userId = (req as any).user?.id;
 
+    const item = await ItemModel.findByPk(id);
+    if (!item) return res.status(404).json({ error: "Item não encontrado" });
+    if (item.user_id !== userId) {
+      return res.status(403).json({ error: "Sem permissão para excluir este item" });
+    }
+
+    const nameBeforeDelete = item.name;
     await item.destroy();
-    return res.status(204).send();
-  } catch (error) {
-    console.error("deleteItem error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+
+    // Dispara evento de exclusão
+    publishItemDeleted({ id, name: nameBeforeDelete, user_id: userId });
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("deleteItem error:", err);
+    return res.status(500).json({ error: "Erro interno ao excluir item" });
   }
 };
 
@@ -308,8 +373,19 @@ export const updateItemPhoto = async (req: Request<{ id: string }>, res: Respons
       return res.status(502).json({ error: "Image service did not return an URL" });
     }
 
+    const prevUrl = item.image_url; // capturar anterior
     item.image_url = newUrl;
     await item.save();
+
+    // Publica item.updated se a URL mudou
+    if (prevUrl !== newUrl) {
+      publishItemUpdated({
+        id: item.id as unknown as number,
+        name: (item as any).name,
+        user_id: (req as any).user?.id,
+        changes: { image_url: { from: prevUrl, to: newUrl } },
+      });
+    }
 
     return res.status(200).json(item.toJSON());
   } catch (e) {
