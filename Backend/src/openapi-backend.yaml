@@ -40,32 +40,31 @@ paths:
   /users:
     post:
       tags: [Users]
-      summary: Cria usuário (use url_img; upload de arquivo via /users/{id}/photo)
+      summary: Cria usuário
+      description: >
+        Não envie url_img no cadastro. Para definir/alterar a imagem, use PUT /users/{id}/photo após criar a conta.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required: [name, email, password]
               properties:
                 name: { type: string }
                 email: { type: string, format: email }
                 password: { type: string }
-                admin: { type: boolean, description: "Define se o usuário é admin (default false)" }
                 description: { type: string }
-                url_img:
-                  type: string
-                  format: uri
+                admin: { type: boolean }
+              additionalProperties: false
       responses:
         '201':
-          description: Criado
+          description: Usuário criado
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/User'
+              schema: { $ref: '#/components/schemas/User' }
         '400': { description: Dados inválidos }
-        '409': { description: Email já em uso }
+        '409': { description: Email já utilizado }
     get:
       tags: [Users]
       summary: Lista usuários (apenas admin)

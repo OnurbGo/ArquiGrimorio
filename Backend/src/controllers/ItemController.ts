@@ -292,11 +292,13 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
     }
 
     const id = Number(req.params.id);
-    const userId = (req as any).user?.id;
+    const user = (req as any).user;
+    const userId = user?.id;
+    const isAdmin = !!user?.admin;
 
     const item = await ItemModel.findByPk(id);
     if (!item) return res.status(404).json({ error: "Item não encontrado" });
-    if (item.user_id !== userId) {
+    if (!isAdmin && item.user_id !== userId) {
       return res.status(403).json({ error: "Sem permissão para atualizar este item" });
     }
 
@@ -340,11 +342,13 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
 export const deleteItem = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const userId = (req as any).user?.id;
+    const user = (req as any).user;
+    const userId = user?.id;
+    const isAdmin = !!user?.admin;
 
     const item = await ItemModel.findByPk(id);
     if (!item) return res.status(404).json({ error: "Item não encontrado" });
-    if (item.user_id !== userId) {
+    if (!isAdmin && item.user_id !== userId) {
       return res.status(403).json({ error: "Sem permissão para excluir este item" });
     }
 

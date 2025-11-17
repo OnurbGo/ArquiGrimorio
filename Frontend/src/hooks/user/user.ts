@@ -5,14 +5,13 @@ export interface CreateUserPayload {
   name: string;
   email: string;
   password: string;
-  url_img: string;
   description?: string;
 }
 
-export const createUser = async (user: CreateUserPayload): Promise<User> => {
+/*export const createUser = async (user: CreateUserPayload): Promise<User> => {
   const response = await api.post("/users", user);
   return response.data;
-};
+};*/
 
 export const updateUser = async (id: number, user: User): Promise<User> => {
   const response = await api.put(`/users/${id}`, user);
@@ -39,4 +38,14 @@ export async function getUserCount(): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+export async function createUser(payload: CreateUserPayload) {
+  const res = await fetch(`${api.defaults.baseURL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Erro ao criar usuário");
+  return res.json();
 }

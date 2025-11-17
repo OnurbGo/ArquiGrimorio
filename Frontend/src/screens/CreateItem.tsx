@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -55,7 +54,6 @@ export default function CreateItem() {
     type: "",
     description: "",
     price: "",
-    imageUrl: "",
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -90,7 +88,6 @@ export default function CreateItem() {
           typeof priceParsed === "number" && !Number.isNaN(priceParsed)
             ? priceParsed
             : undefined,
-        image_url: formData.imageUrl ? formData.imageUrl.trim() : undefined,
       };
 
       const created = await createItem(payload as Item);
@@ -252,40 +249,7 @@ export default function CreateItem() {
                   className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
                 />
               </View>
-
-              <View className="flex-1">
-                <Text className="text-sm font-bold text-slate-900 mb-1.5">
-                  URL da Imagem (Opcional)
-                </Text>
-                <TextInput
-                  placeholder="https://.../imagem.png"
-                  placeholderTextColor="#9ca3af"
-                  value={formData.imageUrl}
-                  onChangeText={(t) => handleInputChange("imageUrl", t)}
-                  className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
-                />
-              </View>
             </View>
-
-            {formData.imageUrl ? (
-              <View className="w-full mb-3">
-                <Text className="text-sm font-bold text-slate-900 mb-1.5">
-                  Prévia da Imagem
-                </Text>
-                <View className="rounded-lg overflow-hidden border border-indigo-100 bg-slate-100">
-                  <Image
-                    source={{ uri: formData.imageUrl }}
-                    className="w-full h-44 object-cover"
-                    onError={() => {
-                      Alert.alert(
-                        "Aviso",
-                        "Não foi possível carregar a imagem de preview."
-                      );
-                    }}
-                  />
-                </View>
-              </View>
-            ) : null}
 
             <View className="flex-row w-full mt-2">
               <View className="flex-1 mr-2">

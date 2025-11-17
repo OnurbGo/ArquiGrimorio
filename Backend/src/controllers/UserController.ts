@@ -73,7 +73,15 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, url_img, description, admin } = req.body;
+    // Cadastro não aceita imagem; use /users/:id/photo depois.
+    const contentType = String(req.headers["content-type"] || "");
+    if (contentType.includes("multipart/form-data")) {
+      return res.status(400).json({
+        error: "Envio de imagem não permitido no cadastro. Use PUT /users/:id/photo após criar a conta.",
+      });
+    }
+
+    const { name, email, password, description, admin } = req.body;
 
     if (!email || !emailRegex.test(email))
       return res.status(400).json({ error: "Invalid email format" });
@@ -84,13 +92,11 @@ export const createUser = async (req: Request, res: Response) => {
           "The password must have at least 8 characters, one uppercase letter, one number, and one special character.",
       });
 
-    // Verifica email duplicado
     const existing = await UserModel.findOne({ where: { email } });
-    if (existing)
-      return res.status(409).json({ error: "Email already in use" });
+    if (existing) return res.status(409).json({ error: "Email already in use" });
 
-    // Upload opcional: agora somente via URL já fornecida (sem arquivo)
-    let finalUrlImg: string | null = url_img || null;
+    // url_img sempre nulo no cadastro
+    const finalUrlImg: string | null = null;
 
     const user = await UserModel.create({
       name: name || null,
@@ -98,13 +104,15 @@ export const createUser = async (req: Request, res: Response) => {
       password,
       url_img: finalUrlImg,
       description: description || null,
-      admin: !!admin,
+      admin: admin !== undefined ? toBool(admin) : false,
     });
-    // Invalida cache
     await redisDel("userCount:v1");
     return res.status(201).json(user.toJSON());
   } catch (error) {
     console.error("createUser error:", error);
+    if (error instanceof ImageUploadError) {
+      return res.status(error.status).json({ error: error.code, message: error.message });
+    }
     return res.status(500).json({ error: "Internal server error" });
   }
 };

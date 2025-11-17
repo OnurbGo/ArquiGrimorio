@@ -1,6 +1,6 @@
 import LabeledDesc from "@/components/register/LabeledDesc";
 import LabeledEmail from "@/components/register/LabeledEmail";
-import LabeledImage from "@/components/register/LabeledImage";
+// import LabeledImage from "@/components/register/LabeledImage"; // removido
 import LabeledName from "@/components/register/LabeledName";
 import LabeledPassword from "@/components/register/LabeledPassword";
 import { useEffect, useState } from "react";
@@ -30,7 +30,7 @@ export default function CreateAccount() {
     email: "",
     password: "",
     confirmPassword: "",
-    url_img: "",
+    // url_img: "", // removido
     description: "",
   });
 
@@ -71,8 +71,8 @@ export default function CreateAccount() {
     }
 
     try {
-      const { name, email, password, url_img, description } = formData;
-      await createUser({ name, email, password, url_img, description });
+      const { name, email, password, description } = formData;
+      await createUser({ name, email, password, description });
       setSuccess(true);
       setError("");
       setErrorAlert(false);
@@ -81,7 +81,7 @@ export default function CreateAccount() {
         email: "",
         password: "",
         confirmPassword: "",
-        url_img: "",
+        // url_img: "",
         description: "",
       });
       setPasswordStrength(null);
@@ -128,7 +128,7 @@ export default function CreateAccount() {
               showConfirmPassword={showConfirmPassword}
               setShowConfirmPassword={setShowConfirmPassword}
             />
-            <LabeledImage formData={formData} setFormData={setFormData} />
+            {/* Campo de URL da imagem removido do cadastro. Envie a foto em /users/{id}/photo após criar a conta. */}
             <LabeledDesc formData={formData} setFormData={setFormData} />
             {error ? (
               <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center">
