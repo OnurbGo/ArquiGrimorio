@@ -8,7 +8,7 @@ import {
   Search,
   User as UserIcon,
 } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   Pressable,
@@ -18,6 +18,8 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../utils/AuthContext";
+import useHookGetUser from "@/hooks/user/hookGetUser";
+import api from "@/services/api";
 
 const NAV_ITEMS = [
   { key: "Home", label: "Grimório", route: "Home", icon: BookOpen },
@@ -49,8 +51,10 @@ export default function Navigation() {
     }
   }
 
-  const avatarUrl = user?.url_img ?? null;
-  const profileName = user?.name ?? null;
+  const {getUser} = useHookGetUser();
+  const avatarUrl = `${api.defaults.baseURL}${getUser?.url_img}`;
+  const profileName = getUser?.name ?? null;
+  console.log("Avatar URL:", avatarUrl);
 
   return (
     <View className="w-full bg-[#181825] border-b-2 border-b-[#7f32cc] py-[2%] px-[3%] pr-5 z-50">

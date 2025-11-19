@@ -9,8 +9,8 @@ router.get("/item", listItems);
 router.get("/item/:id", getItemById);
 
 router.post("/item", authMiddleware, createItem);
-router.put("/item/:id", authMiddlewareUserOrAdmin({ id: "id" }), updateItem);
-router.delete("/item/:id", authMiddlewareUserOrAdmin({ id: "id" }), deleteItem);
-router.put("/item/:id/photo", authMiddlewareUserOrAdmin({ id: "id" }), updateItemPhoto);
+router.put("/item/:id", authMiddleware, updateItem);
+router.delete("/item/:id", authMiddleware, deleteItem);
+router.put("/item/:id/photo", authMiddleware, updateItemPhoto);
 
 export default router;

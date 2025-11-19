@@ -29,7 +29,7 @@ import ItemsGridEdit from "../components/itemedit/ItemsGridEdit";
 import DeleteSection from "../components/itemedit/DeleteSection";
 import SaveCancel from "@/components/itemedit/SaveCancel";
 import RarityType from "@/components/itemedit/RarityType";
-import ImageInput from "@/components/itemedit/ImageInput";
+//import ImageInput from "@/components/itemedit/ImageInput";
 
 // cap width como na Home para evitar escalonamento exagerado em web muito larga
 const WIN = Dimensions.get("window");
@@ -267,19 +267,17 @@ const EditItem: React.FC = () => {
       return;
     }
 
-    const payload: Item = {
-      ...editingItem,
+    const payload: Partial<Item> = {
       name: form.name,
       description: form.description,
       rarity: form.rarity,
       type: form.type,
       price: form.price ? Number(form.price) : 0,
-      image_url: form.image_url,
     };
 
     try {
       setSaving(true);
-      const updated = await updateItem(editingItem.id, payload);
+      const updated = await updateItem(editingItem.id, payload as Item);
       setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
       setEditingItem(null);
     } catch (err: any) {
@@ -386,10 +384,6 @@ const EditItem: React.FC = () => {
               />
               {/* FIM COMPONENTE: LabeledInput (Preço) */}
 
-              {/* INÍCIO COMPONENTE: LabeledInput (URL da imagem) */}
-              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">URL da imagem</Text>
-              <ImageInput form={form} setForm={setForm} />
-              {/* FIM COMPONENTE: LabeledInput (URL da imagem) */}
               <SaveCancel handleSave={handleSave} saving={saving} deleting={deleting} setEditingItem={setEditingItem} />
               <DeleteSection editingItem={editingItem} setEditingItem={setEditingItem} deleteItem={deleteItem} setItems={setItems} saving={saving} deleting={deleting} setDeleting={setDeleting} />
             </RNScrollView>

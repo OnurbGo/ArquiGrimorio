@@ -3,10 +3,7 @@ import axios, { InternalAxiosRequestConfig } from "axios";
 
 const api = axios.create({
   //LEMBRAR DE MUDAR O IP
-  baseURL: "http://10.10.21.75:3000",
-  //192.168.224.239 4g
-  //192.168.7.179 internet
-  //baseURL: "http://192.168.224.239:8081",
+  baseURL: `${process.env.BASE_URL}`,
 });
 
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
