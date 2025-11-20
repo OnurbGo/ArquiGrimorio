@@ -8,7 +8,7 @@ import {
   Search,
   User as UserIcon,
 } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Image,
   Pressable,

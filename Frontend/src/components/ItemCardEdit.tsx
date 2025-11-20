@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import type { Item } from "../interface/Item";
+import api from "@/services/api";
 
 interface Props {
   item: Item;
@@ -20,7 +21,15 @@ interface Props {
  * - Chama onEdit(item) para abrir modal de edição (pai decide o que fazer).
  */
 export default function ItemCardEdit({ item, onEdit }: Props) {
-  const thumb = item.image_url || null;
+  function toAbsoluteUrl(url?: string | null) {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return `${base}${path}`;
+  }
+
+  const thumb = toAbsoluteUrl(item.image_url) || null;
 
   const handleEdit = (e?: GestureResponderEvent) => {
     onEdit(item);

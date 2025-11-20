@@ -9,6 +9,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Navigation from "../components/Navigation";
 import { createUser } from "../hooks/user/user";
 
+import { useNavigation } from '@react-navigation/native';
+// Update the path below to the correct relative path if needed
+import { RootStackParamList } from '../navigation/Routes';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 // --- Helpers: validação de senha ---
 const validatePassword = (password: string): boolean => {
   const minLength = 8;
@@ -41,6 +47,8 @@ export default function CreateAccount() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp>();
+  
   useEffect(() => {
     if (success) {
       const t = setTimeout(() => setSuccess(false), 4000);
@@ -85,6 +93,7 @@ export default function CreateAccount() {
         description: "",
       });
       setPasswordStrength(null);
+      navigation.navigate('Login');
     } catch {
       setError("Erro ao registrar. Tente novamente.");
       setErrorAlert(true);
