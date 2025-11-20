@@ -8,7 +8,9 @@ import {
   SafeAreaView,
   Text,
   View,
+  Alert
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 
 import Button from "../components/Button";
 import ItemCard from "../components/ItemCard";
@@ -167,6 +169,57 @@ export default function UserProfile() {
   }, [routeUserId, authUser, fetchUserData]);
   // FIM COMPONENTE: OnRefreshHandler
 
+  // determine if this profile is the authenticated user's own profile
+  const isSelf = !!authUser?.id && (routeUserId == null || Number(routeUserId) === authUser.id);
+
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handleChangePhoto = useCallback(async () => {
+    if (!isSelf || !authUser?.id) return;
+
+    try {
+      setUploadingPhoto(true);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permissão necessária", "Permita acesso às fotos para trocar a imagem de perfil.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+
+      const formData = new FormData();
+      formData.append("file", {
+        // @ts-ignore - RN FormData file shape
+        uri: asset.uri,
+        name: "avatar.jpg",
+        type: "image/jpeg",
+      } as any);
+
+      const res = await api.put(`/users/${authUser.id}/photo`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // backend returns the updated user
+      setUser(res.data);
+      Alert.alert("Sucesso", "Foto de perfil atualizada!");
+    } catch (e: any) {
+      console.error("handleChangePhoto error:", e?.message ?? e);
+      Alert.alert("Erro", "Não foi possível atualizar a foto de perfil.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }, [isSelf, authUser]);
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-slate-50">
@@ -208,7 +261,7 @@ export default function UserProfile() {
       {/* INÍCIO COMPONENTE: ContentContainer */}
       <View className="flex-1 p-4">
         {/* INÍCIO COMPONENTE: ProfileHeaderCard */}
-        <ProfileHeaderCard user={user} />
+        <ProfileHeaderCard user={user} editable={isSelf} onPressEdit={handleChangePhoto} />
         {/* FIM COMPONENTE: ProfileHeaderCard */}
 
         {/* INÍCIO COMPONENTE: StatsRow */}

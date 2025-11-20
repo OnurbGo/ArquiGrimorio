@@ -1,34 +1,77 @@
-import { Image, Text, View } from "react-native";
+import { Image, Text, View, Pressable } from "react-native";
 import type { User } from "@/interface/User";
+import api from "@/services/api";
 
-export function ProfileHeaderCard({ user }: { user: User }) {
-    const initials = user.name
+export function ProfileHeaderCard({
+  user,
+  editable,
+  onPressEdit,
+}: {
+  user: User;
+  editable?: boolean;
+  onPressEdit?: () => void;
+}) {
+  const initials = user.name
     ? user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
     : "U";
 
+  console.log(user.url_img)
+    
+  let resolvedUrl = `${api.defaults.baseURL}${user.url_img}`;
+  console.log("URL do avatar antes da verificação:", resolvedUrl);
+  
+  //console.log("Resolved URL do avatar:", resolvedUrl);
+
   return (
     <View className="bg-white rounded-2xl p-4 border border-indigo-500/10 mb-3">
       <View className="flex-row items-center">
         {/* INÍCIO COMPONENTE: Avatar */}
         <View className="mr-3">
-          {user.url_img ? (
-            <Image
-              source={{ uri: user.url_img }}
-              className="w-24 h-24 rounded-full border-2 border-violet-700"
-            />
+          {editable ? (
+            <Pressable onPress={onPressEdit} className="relative">
+              {resolvedUrl ? (
+                <Image
+                  source={{ uri: resolvedUrl }}
+                  className="w-24 h-24 rounded-full border-2 border-violet-700"
+                  onError={() => {
+                    console.warn("Falha ao carregar avatar:", resolvedUrl);
+                  }}
+                />
+              ) : (
+                <View className="w-24 h-24 rounded-full bg-indigo-100 items-center justify-center border-2 border-purple-200">
+                  <Text className="text-3xl font-extrabold text-violet-700">
+                    {initials}
+                  </Text>
+                </View>
+              )}
+              <View className="absolute bottom-1 right-1 bg-violet-700 px-2 py-1 rounded-full">
+                <Text className="text-white text-[11px] font-bold">Editar</Text>
+              </View>
+            </Pressable>
           ) : (
-            <View className="w-24 h-24 rounded-full bg-indigo-100 items-center justify-center border-2 border-purple-200">
-              <Text className="text-3xl font-extrabold text-violet-700">
-                {initials}
-              </Text>
-            </View>
+            <>
+              {resolvedUrl ? (
+                <Image
+                  source={{ uri: resolvedUrl }}
+                  className="w-24 h-24 rounded-full border-2 border-violet-700"
+                  onError={() => {
+                    console.warn("Falha ao carregar avatar:", resolvedUrl);
+                  }}
+                />
+              ) : (
+                <View className="w-24 h-24 rounded-full bg-indigo-100 items-center justify-center border-2 border-purple-200">
+                  <Text className="text-3xl font-extrabold text-violet-700">
+                    {initials}
+                  </Text>
+                </View>
+              )}
+            </>
           )}
         </View>
         {/* FIM COMPONENTE: Avatar */}
-
         <View className="flex-1">
           {/* INÍCIO COMPONENTE: UserName */}
           <Text className="text-xl font-extrabold text-slate-900">

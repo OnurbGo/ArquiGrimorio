@@ -46,10 +46,7 @@ type ItemWithExtras = Item & {
   created_at?: string;
 };
 
-
-
 export default function ItemDetails() {
-  
   const route = useRoute<ItemDetailsRouteProp>();
   const navigation = useNavigation<any>();
   const { token, user: authUser } = useAuth();
@@ -293,6 +290,15 @@ export default function ItemDetails() {
       console.warn("Creator id ausente, não é possível navegar para o perfil");
   }
 
+  function toAbsoluteUrl(url?: string | null) {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return `${base}${path}`;
+  }
+
+  console.log("ItemDetails - image_url:", item.image_url);
   return (
     <View className="flex-1 bg-white" style={[{ paddingTop: insets.top }]}>
       {/* INÍCIO COMPONENTE: ScreenContainer */}
@@ -301,13 +307,11 @@ export default function ItemDetails() {
       {/* FIM COMPONENTE: NavigationBar */}
       {/* INÍCIO COMPONENTE: MainScroll */}
       <ScrollView contentContainerClassName="p-4 pb-9 bg-white">
-        {/* INÍCIO COMPONENTE: PrimaryCard */}
         <View className="bg-white rounded-2xl p-3 border border-indigo-50 shadow-sm mb-4">
-          {/* INÍCIO COMPONENTE: ImageWithLikeOverlay */}
           <View className="relative items-center justify-center">
-            {item.image_url ? (
+            {toAbsoluteUrl(item.image_url) ? (
               <Image
-                source={{ uri: item.image_url }}
+                source={{ uri: toAbsoluteUrl(item.image_url)! }}
                 className="w-full h-[220px] rounded-xl bg-slate-50"
                 resizeMode="contain"
               />

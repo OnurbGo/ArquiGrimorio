@@ -4,6 +4,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import { toggleItemLike } from "../hooks/itens/itemLike";
 import type { Item } from "../interface/Item";
 import { useAuth } from "../utils/AuthContext";
+import api from "@/services/api";
 
 const DESCRIPTION_LINES = 3; // linhas da descrição antes de "..."
 const CARD_HEIGHT = 320; // altura fixa do card (uniformiza grid)
@@ -87,19 +88,28 @@ export default function ItemCard({ item, onView, onLike }: Props) {
     }
   }
 
+  function toAbsoluteUrl(url?: string | null) {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return `${base}${path}`;
+  }
+
+  const imageUri = toAbsoluteUrl(localItem.image_url);
   return (
     <View
       className="bg-white rounded-xl p-3 mb-3 shadow-sm items-stretch justify-between"
       style={{ height: CARD_HEIGHT }}
     >
       <View className="flex-shrink">
-        {localItem.image_url ? (
+        {imageUri ? (
           <View
             className="w-full rounded-lg overflow-hidden border border-gray-200 mb-2 items-center justify-center bg-slate-50"
             style={{ height: IMAGE_HEIGHT }}
           >
             <Image
-              source={{ uri: localItem.image_url }}
+              source={{ uri: imageUri }}
               style={{
                 width: "100%",
                 height: "100%",
@@ -108,12 +118,6 @@ export default function ItemCard({ item, onView, onLike }: Props) {
                 objectFit: "contain",
               }}
               resizeMode="contain"
-              // Não remove a imagem do estado, apenas loga o erro
-              onError={() => {
-                // Se quiser mostrar um fallback visual, pode setar um flag de erro aqui
-                // mas não apaga a image_url para sempre tentar mostrar
-                // Exemplo: setLocalItem((prev) => ({ ...prev, imageError: true }));
-              }}
             />
           </View>
         ) : (

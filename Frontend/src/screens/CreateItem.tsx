@@ -16,7 +16,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Button from "../components/Button";
 import Navigation from "../components/Navigation";
-import { createItem } from "../hooks/itens/item";
+import { createItemWithFile } from "@/hooks/itens/item";
+import * as ImagePicker from "expo-image-picker";
+import { useAuth } from "@/utils/AuthContext";
 import type { Item } from "../interface/Item";
 
 type RootStackParamList = {
@@ -48,6 +50,7 @@ const ITEM_TYPES = [
 export default function CreateItem() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -55,11 +58,35 @@ export default function CreateItem() {
     type: "",
     description: "",
     price: "",
-    imageUrl: "",
   });
+  const [imageAsset, setImageAsset] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== "granted") {
+      Alert.alert("Permissão", "Conceda acesso às imagens.");
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!res.canceled) {
+      const a = res.assets[0];
+      setImageAsset({
+        uri: a.uri,
+        name: a.fileName || `item-${Date.now()}.jpg`,
+        type: a.mimeType || "image/jpeg",
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -81,6 +108,7 @@ export default function CreateItem() {
       const priceParsed = formData.price
         ? Number(String(formData.price).replace(",", "."))
         : undefined;
+
       const payload: Partial<Item> = {
         name: formData.name.trim(),
         description: formData.description.trim(),
@@ -90,17 +118,18 @@ export default function CreateItem() {
           typeof priceParsed === "number" && !Number.isNaN(priceParsed)
             ? priceParsed
             : undefined,
-        image_url: formData.imageUrl ? formData.imageUrl.trim() : undefined,
       };
 
-      const created = await createItem(payload as Item);
+      const created = await createItemWithFile(payload, imageAsset || undefined, token ?? undefined);
       Alert.alert("Sucesso", `Item "${created.name}" criado com sucesso!`);
       navigation.navigate("Home");
     } catch (err: any) {
       console.error("createItem error:", err);
       Alert.alert(
         "Erro",
-        err?.message ?? "Erro ao criar item. Tente novamente."
+        err?.response?.data?.message ||
+          err?.message ||
+          "Erro ao criar item. Tente novamente."
       );
     } finally {
       setIsSubmitting(false);
@@ -252,36 +281,38 @@ export default function CreateItem() {
                   className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
                 />
               </View>
+            </View>
 
-              <View className="flex-1">
-                <Text className="text-sm font-bold text-slate-900 mb-1.5">
-                  URL da Imagem (Opcional)
-                </Text>
-                <TextInput
-                  placeholder="https://.../imagem.png"
-                  placeholderTextColor="#9ca3af"
-                  value={formData.imageUrl}
-                  onChangeText={(t) => handleInputChange("imageUrl", t)}
-                  className="bg-slate-50 px-3 py-2 rounded-lg border border-indigo-100 text-slate-900"
-                />
+            {/* NOVO BLOCO: Seleção de Imagem */}
+            <View className="w-full mb-3">
+              <Text className="text-sm font-bold text-slate-900 mb-1.5">
+                Imagem (Opcional)
+              </Text>
+              <View className="flex-row">
+                <Button onPress={pickImage}>Escolher Imagem</Button>
+                {imageAsset ? (
+                  <View className="ml-3 flex-1">
+                    <Text className="text-xs text-slate-600" numberOfLines={1}>
+                      {imageAsset.name}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             </View>
 
-            {formData.imageUrl ? (
-              <View className="w-full mb-3">
+            {imageAsset ? (
+              <View className="w-full mb-4">
                 <Text className="text-sm font-bold text-slate-900 mb-1.5">
-                  Prévia da Imagem
+                  Prévia
                 </Text>
                 <View className="rounded-lg overflow-hidden border border-indigo-100 bg-slate-100">
                   <Image
-                    source={{ uri: formData.imageUrl }}
-                    className="w-full h-44 object-cover"
-                    onError={() => {
-                      Alert.alert(
-                        "Aviso",
-                        "Não foi possível carregar a imagem de preview."
-                      );
-                    }}
+                    source={{ uri: imageAsset.uri }}
+                    style={{ width: "100%", height: 180 }}
+                    resizeMode="contain"
+                    onError={() =>
+                      Alert.alert("Erro", "Falha ao carregar prévia da imagem.")
+                    }
                   />
                 </View>
               </View>

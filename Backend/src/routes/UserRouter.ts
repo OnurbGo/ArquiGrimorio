@@ -7,22 +7,26 @@ import {
   updateUser,
   getUserItems,
   getUserCount,
+  updateUserPhoto, // <-- add
 } from "../controllers/UserController";
 import {  requireAdmin, authMiddlewareUserOrAdmin } from "../middleware/authMiddleware";
-import multer from "multer"; // <— adicionado
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB
-import { listAdminNotifications } from "../controllers/AdminNotificationController";
+import { listAdminNotifications, deleteAllAdminNotifications, deleteAdminNotification } from "../controllers/AdminNotificationController";
 
 const router = express.Router();
 
-router.post("/users", upload.single("file"), createUser); // <— aceita file
+router.post("/users", createUser);
 
 router.get("/users/count", getUserCount);
 router.get("/users", requireAdmin, getAll);
 router.get("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), getUserById);
 router.get("/users/:id/item", authMiddlewareUserOrAdmin({ id: "id" }), getUserItems);
-router.put("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), upload.single("file"), updateUser); // <— aceita file
+
+router.put("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), updateUser);
+router.put("/users/:id/photo", authMiddlewareUserOrAdmin({ id: "id" }), updateUserPhoto);
+
 router.delete("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), destroyUserById);
 router.get("/admin/notifications", requireAdmin, listAdminNotifications);
+router.delete("/admin/notifications", requireAdmin, deleteAllAdminNotifications);
+router.delete("/admin/notifications/:id", requireAdmin, deleteAdminNotification);
 
 export default router;

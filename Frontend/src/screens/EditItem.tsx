@@ -18,18 +18,20 @@ import {
   UIManager,
   useWindowDimensions,
   View,
+  Image,
 } from "react-native";
 import ItemCardEdit from "../components/ItemCardEdit";
 import Navigation from "../components/Navigation";
 import type { Item } from "../interface/Item";
-import { deleteItem, getItems, updateItem } from "../hooks/itens/item";
+import { deleteItem, getItems, updateItem, updateItemPhoto } from "../hooks/itens/item";
 import { useAuth } from "../utils/AuthContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ItemsGridEdit from "../components/itemedit/ItemsGridEdit";
 import DeleteSection from "../components/itemedit/DeleteSection";
 import SaveCancel from "@/components/itemedit/SaveCancel";
 import RarityType from "@/components/itemedit/RarityType";
-import ImageInput from "@/components/itemedit/ImageInput";
+import * as ImagePicker from "expo-image-picker";
+import api from "@/services/api";
 
 // cap width como na Home para evitar escalonamento exagerado em web muito larga
 const WIN = Dimensions.get("window");
@@ -172,7 +174,7 @@ function DarkSelect({
 // FIM COMPONENTE: DarkSelect
 
 const EditItem: React.FC = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth(); // <— adiciona token aqui
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { width } = useWindowDimensions();
@@ -191,6 +193,12 @@ const EditItem: React.FC = () => {
     price: "",
     image_url: "",
   });
+  const [imageAsset, setImageAsset] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
+  const [imageSaving, setImageSaving] = useState(false);
 
   // responsivo: 1 / 2 / 3 colunas
   const numColumns = width >= 1024 ? 3 : width >= 768 ? 2 : 1;
@@ -211,6 +219,7 @@ const EditItem: React.FC = () => {
         price: editingItem.price != null ? String(editingItem.price) : "",
         image_url: editingItem.image_url ?? "",
       });
+      setImageAsset(null); // limpa seleção anterior
     }
   }, [editingItem]);
 
@@ -260,6 +269,45 @@ const EditItem: React.FC = () => {
     );
   };
 
+  async function pickNewImage() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== "granted") {
+      Alert.alert("Permissão", "Conceda acesso às imagens.");
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (res.canceled) return;
+    const a = res.assets[0];
+    setImageAsset({
+      uri: a.uri,
+      name: a.fileName || `item-${editingItem?.id || Date.now()}.jpg`,
+      type: a.mimeType || "image/jpeg",
+    });
+  }
+
+  async function handleSaveImage() {
+    if (!editingItem || !imageAsset) return;
+    setImageSaving(true);
+    try {
+      const updated = await updateItemPhoto(
+        editingItem.id,
+        imageAsset,
+        token || undefined // <— usa token do contexto
+      );
+      setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
+      setForm((f) => ({ ...f, image_url: updated.image_url || "" }));
+      setImageAsset(null);
+      Alert.alert("Imagem", "Imagem atualizada com sucesso.");
+    } catch (err: any) {
+      Alert.alert("Erro", err?.response?.data?.error || err?.message || "Falha ao atualizar imagem.");
+    } finally {
+      setImageSaving(false);
+    }
+  }
+
   const handleSave = async () => {
     if (!editingItem) return;
     if (!form.name.trim()) {
@@ -267,19 +315,17 @@ const EditItem: React.FC = () => {
       return;
     }
 
-    const payload: Item = {
-      ...editingItem,
+    const payload: Partial<Item> = {
       name: form.name,
       description: form.description,
       rarity: form.rarity,
       type: form.type,
       price: form.price ? Number(form.price) : 0,
-      image_url: form.image_url,
     };
 
     try {
       setSaving(true);
-      const updated = await updateItem(editingItem.id, payload);
+      const updated = await updateItem(editingItem.id, payload as Item);
       setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
       setEditingItem(null);
     } catch (err: any) {
@@ -386,10 +432,58 @@ const EditItem: React.FC = () => {
               />
               {/* FIM COMPONENTE: LabeledInput (Preço) */}
 
-              {/* INÍCIO COMPONENTE: LabeledInput (URL da imagem) */}
-              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">URL da imagem</Text>
-              <ImageInput form={form} setForm={setForm} />
-              {/* FIM COMPONENTE: LabeledInput (URL da imagem) */}
+              {/* NOVO BLOCO: Imagem do Item */}
+              <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Imagem do Item</Text>
+              <View className="flex-row items-center mb-2">
+                <TouchableOpacity
+                  onPress={pickNewImage}
+                  className="bg-[#2b2b45] px-3 py-2 rounded-lg mr-2"
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-white font-semibold text-sm">
+                    {imageAsset ? "Trocar Seleção" : form.image_url ? "Trocar Imagem" : "Escolher Imagem"}
+                  </Text>
+                </TouchableOpacity>
+                {imageAsset ? (
+                  <TouchableOpacity
+                    onPress={() => setImageAsset(null)}
+                    className="bg-[#3a3a5a] px-3 py-2 rounded-lg"
+                    activeOpacity={0.85}
+                  >
+                    <Text className="text-white font-semibold text-sm">Cancelar</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <View className="rounded-lg border border-[#2b2b45] bg-[#0f0f1a] overflow-hidden mb-3 items-center justify-center" style={{ height: 140 }}>
+                {imageAsset ? (
+                  <Image
+                    source={{ uri: imageAsset.uri }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="contain"
+                  />
+                ) : form.image_url ? (
+                  <Image
+                    source={{ uri: form.image_url.startsWith("http") ? form.image_url : `${api.defaults.baseURL?.replace(/\/$/,'')}/${form.image_url.startsWith('/')?form.image_url.slice(1):form.image_url}` }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Text className="text-[#8a87a8]">Sem imagem</Text>
+                )}
+              </View>
+              {imageAsset ? (
+                <TouchableOpacity
+                  disabled={imageSaving}
+                  onPress={handleSaveImage}
+                  className="bg-[#7f32cc] px-4 py-2 rounded-lg mb-4"
+                  activeOpacity={0.85}
+                >
+                  <Text className="text-white font-bold text-center text-sm">
+                    {imageSaving ? "Salvando imagem..." : "Salvar Imagem"}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+
               <SaveCancel handleSave={handleSave} saving={saving} deleting={deleting} setEditingItem={setEditingItem} />
               <DeleteSection editingItem={editingItem} setEditingItem={setEditingItem} deleteItem={deleteItem} setItems={setItems} saving={saving} deleting={deleting} setDeleting={setDeleting} />
             </RNScrollView>
