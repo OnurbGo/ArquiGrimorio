@@ -22,13 +22,10 @@ export function ProfileHeaderCard({
     
   let resolvedUrl = `${api.defaults.baseURL}${user.url_img}`;
   console.log("URL do avatar antes da verificação:", resolvedUrl);
-  
-  //console.log("Resolved URL do avatar:", resolvedUrl);
 
   return (
     <View className="bg-white rounded-2xl p-4 border border-indigo-500/10 mb-3">
       <View className="flex-row items-center">
-        {/* INÍCIO COMPONENTE: Avatar */}
         <View className="mr-3">
           {editable ? (
             <Pressable onPress={onPressEdit} className="relative">
@@ -71,24 +68,16 @@ export function ProfileHeaderCard({
             </>
           )}
         </View>
-        {/* FIM COMPONENTE: Avatar */}
         <View className="flex-1">
-          {/* INÍCIO COMPONENTE: UserName */}
           <Text className="text-xl font-extrabold text-slate-900">
             {user.name || "Usuário"}
           </Text>
-          {/* FIM COMPONENTE: UserName */}
-          {/* INÍCIO COMPONENTE: RoleBadge */}
           <View className="mt-2 self-start bg-indigo-100 px-2.5 py-1 rounded-full">
             <Text className="text-indigo-600 font-bold">Criador</Text>
           </View>
-          {/* FIM COMPONENTE: RoleBadge */}
-
-          {/* INÍCIO COMPONENTE: Description */}
           <Text className="mt-2 text-slate-500">
             {user.description || "Este usuário não adicionou descrição."}
           </Text>
-          {/* FIM COMPONENTE: Description */}
         </View>
       </View>
     </View>

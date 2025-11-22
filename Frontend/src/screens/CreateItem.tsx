@@ -282,8 +282,6 @@ export default function CreateItem() {
                 />
               </View>
             </View>
-
-            {/* NOVO BLOCO: Seleção de Imagem */}
             <View className="w-full mb-3">
               <Text className="text-sm font-bold text-slate-900 mb-1.5">
                 Imagem (Opcional)

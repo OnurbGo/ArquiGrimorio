@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios, { InternalAxiosRequestConfig } from "axios";
 
 const api = axios.create({
-  //LEMBRAR DE MUDAR O IP
   baseURL: `${process.env.BASE_URL}`,
 });
 

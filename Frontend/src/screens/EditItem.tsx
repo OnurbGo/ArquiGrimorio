@@ -1,4 +1,3 @@
-// screens/EditItem.tsx
 import { BlurView } from "expo-blur";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -33,12 +32,10 @@ import RarityType from "@/components/itemedit/RarityType";
 import * as ImagePicker from "expo-image-picker";
 import api from "@/services/api";
 
-// cap width como na Home para evitar escalonamento exagerado em web muito larga
 const WIN = Dimensions.get("window");
 const CAP_WIDTH = Math.min(WIN.width, 1200);
 const vw = CAP_WIDTH / 100;
 
-/* ---------- picker options (copiado do Search) ---------- */
 const RARITIES = [
   { value: "todas", label: "Todas" },
   { value: "comum", label: "Comum" },
@@ -70,11 +67,6 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-/**
- * DarkSelect - dropdown customizado para usar dentro do modal.
- * Implementado inline para evitar dependências externas e garantir estilo escuro.
- */
-// INÍCIO COMPONENTE: DarkSelect
 function DarkSelect({
   options,
   value,
@@ -130,7 +122,6 @@ function DarkSelect({
           <Text className="text-[#8a87a8] ml-2">{open ? "▴" : "▾"}</Text>
         </TouchableOpacity>
       </View>
-      {/* Dropdown como modal/portal */}
       <RNModal
         visible={open}
         transparent
@@ -171,20 +162,17 @@ function DarkSelect({
     </View>
   );
 }
-// FIM COMPONENTE: DarkSelect
 
 const EditItem: React.FC = () => {
-  const { user, token } = useAuth(); // <— adiciona token aqui
+  const { user, token } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { width } = useWindowDimensions();
 
-  // Modal / edição
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
-  // formulário local dentro do modal
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -200,13 +188,11 @@ const EditItem: React.FC = () => {
   } | null>(null);
   const [imageSaving, setImageSaving] = useState(false);
 
-  // responsivo: 1 / 2 / 3 colunas
   const numColumns = width >= 1024 ? 3 : width >= 768 ? 2 : 1;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -219,7 +205,7 @@ const EditItem: React.FC = () => {
         price: editingItem.price != null ? String(editingItem.price) : "",
         image_url: editingItem.image_url ?? "",
       });
-      setImageAsset(null); // limpa seleção anterior
+      setImageAsset(null);
     }
   }, [editingItem]);
 
@@ -236,12 +222,10 @@ const EditItem: React.FC = () => {
     }
   };
 
-  // Abre modal de edição (é chamado pelo ItemCardEdit)
   const handleEdit = (item: Item) => {
     setEditingItem(item);
   };
 
-  // Remove item (usado no card e também após confirmação no modal)
   const handleDelete = async (itemId: number) => {
     Alert.alert(
       "Excluir Item",
@@ -296,7 +280,7 @@ const EditItem: React.FC = () => {
       const updated = await updateItemPhoto(
         editingItem.id,
         imageAsset,
-        token || undefined // <— usa token do contexto
+        token || undefined
       );
       setItems((prev) => prev.map((it) => (it.id === updated.id ? updated : it)));
       setForm((f) => ({ ...f, image_url: updated.image_url || "" }));
@@ -342,62 +326,40 @@ const EditItem: React.FC = () => {
 
   return (
     <View className="flex-1 bg-[#07070a]" style={{ paddingTop: insets.top }}>
-      {/* INÍCIO COMPONENTE: ScreenContainer */}
       <Navigation />
 
-      {/* INÍCIO COMPONENTE: ContentWrapper */}
       <View className="flex-1 pt-2.5" style={{ paddingHorizontal: 5 * vw }}>
-        {/* INÍCIO COMPONENTE: HeaderBar */}
         <View className="flex-row items-baseline justify-between mb-2.5">
           <Text className="text-2xl font-extrabold text-white">Meus Itens</Text>
           <Text className="text-[#d1cfe8] font-semibold">
             {items.length} item{items.length !== 1 ? "s" : ""}
           </Text>
         </View>
-        {/* FIM COMPONENTE: HeaderBar */}
 
         {loading ? (
           <>
-            {/* INÍCIO COMPONENTE: LoadingIndicator */}
             <ActivityIndicator style={{ marginTop: 30 }} />
-            {/* FIM COMPONENTE: LoadingIndicator */}
           </>
         ) : (
           <>
-            {/* INÍCIO COMPONENTE: ItemsGrid */}
             <ItemsGridEdit items={items} renderItem={renderItem} fetchItems={fetchItems} loading={loading} numColumns={numColumns} vw={vw} />
-            {/* FIM COMPONENTE: ItemsGrid */}
           </>
         )}
       </View>
-      {/* FIM COMPONENTE: ContentWrapper */}
-
-      {/* Modal de edição com blur no fundo */}
-      {/* INÍCIO COMPONENTE: EditModal */}
       <Modal
         visible={!!editingItem}
         transparent
         animationType="fade"
         onRequestClose={() => setEditingItem(null)}
       >
-        {/* Blur por trás */}
-        {/* INÍCIO COMPONENTE: BlurOverlay */}
         <BlurView intensity={80} tint="dark" className="absolute inset-0 z-[1000]" />
-        {/* FIM COMPONENTE: BlurOverlay */}
-
-        {/* INÍCIO COMPONENTE: KeyboardAvoidingContainer */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1 justify-center items-center px-4 z-[1001]"
         >
-          {/* INÍCIO COMPONENTE: ModalCard */}
           <View className="w-full max-w-[900px] bg-[#1a1a2b] rounded-xl p-4 border border-[#7f32cc] shadow-lg">
             <RNScrollView contentContainerStyle={{ paddingBottom: 18 }}>
-              {/* INÍCIO COMPONENTE: FormTitle */}
               <Text className="text-white text-xl font-extrabold mb-3">Editar Item</Text>
-              {/* FIM COMPONENTE: FormTitle */}
-
-              {/* INÍCIO COMPONENTE: LabeledInput (Nome) */}
               <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Nome</Text>
               <TextInput
                 value={form.name}
@@ -406,9 +368,6 @@ const EditItem: React.FC = () => {
                 placeholder="Nome do item"
                 placeholderTextColor="#8a87a8"
               />
-              {/* FIM COMPONENTE: LabeledInput (Nome) */}
-
-              {/* INÍCIO COMPONENTE: TextArea (Descrição) */}
               <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Descrição</Text>
               <TextInput
                 value={form.description}
@@ -418,10 +377,8 @@ const EditItem: React.FC = () => {
                 placeholderTextColor="#8a87a8"
                 multiline
               />
-              {/* FIM COMPONENTE: TextArea (Descrição) */}
 
-              <RarityType form={form} setForm={setForm} RARITIES={RARITIES} TYPES={TYPES} DarkSelect={DarkSelect} />  
-              {/* INÍCIO COMPONENTE: LabeledInput (Preço) */}
+              <RarityType form={form} setForm={setForm} RARITIES={RARITIES} TYPES={TYPES} DarkSelect={DarkSelect} />
               <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Preço (mo)</Text>
               <TextInput
                 value={form.price}
@@ -431,9 +388,6 @@ const EditItem: React.FC = () => {
                 placeholderTextColor="#8a87a8"
                 keyboardType="numeric"
               />
-              {/* FIM COMPONENTE: LabeledInput (Preço) */}
-
-              {/* NOVO BLOCO: Imagem do Item */}
               <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">Imagem do Item</Text>
               <View className="flex-row items-center mb-2">
                 <TouchableOpacity
@@ -489,12 +443,8 @@ const EditItem: React.FC = () => {
               <DeleteSection editingItem={editingItem} setEditingItem={setEditingItem} deleteItem={deleteItem} setItems={setItems} saving={saving} deleting={deleting} setDeleting={setDeleting} />
             </RNScrollView>
           </View>
-          {/* FIM COMPONENTE: ModalCard */}
         </KeyboardAvoidingView>
-        {/* FIM COMPONENTE: KeyboardAvoidingContainer */}
       </Modal>
-      {/* FIM COMPONENTE: EditModal */}
-      {/* FIM COMPONENTE: ScreenContainer */}
     </View>
   );
 };

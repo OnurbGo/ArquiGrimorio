@@ -1,6 +1,5 @@
 import LabeledDesc from "@/components/register/LabeledDesc";
 import LabeledEmail from "@/components/register/LabeledEmail";
-// import LabeledImage from "@/components/register/LabeledImage"; // removido
 import LabeledName from "@/components/register/LabeledName";
 import LabeledPassword from "@/components/register/LabeledPassword";
 import { useEffect, useState } from "react";
@@ -10,7 +9,6 @@ import Navigation from "../components/Navigation";
 import { createUser } from "../hooks/user/user";
 
 import { useNavigation } from '@react-navigation/native';
-// Update the path below to the correct relative path if needed
 import { RootStackParamList } from '../navigation/Routes';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -36,7 +34,6 @@ export default function CreateAccount() {
     email: "",
     password: "",
     confirmPassword: "",
-    // url_img: "", // removido
     description: "",
   });
 
@@ -89,7 +86,6 @@ export default function CreateAccount() {
         email: "",
         password: "",
         confirmPassword: "",
-        // url_img: "",
         description: "",
       });
       setPasswordStrength(null);
@@ -137,7 +133,6 @@ export default function CreateAccount() {
               showConfirmPassword={showConfirmPassword}
               setShowConfirmPassword={setShowConfirmPassword}
             />
-            {/* Campo de URL da imagem removido do cadastro. Envie a foto em /users/{id}/photo após criar a conta. */}
             <LabeledDesc formData={formData} setFormData={setFormData} />
             {error ? (
               <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center">

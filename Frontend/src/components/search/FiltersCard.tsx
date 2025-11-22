@@ -8,7 +8,6 @@ export default function FilterCard( {filters, setFilters, clearFilters, RARITIES
     return (
         <View>
              <View className="bg-slate-100 rounded-xl p-3 md:p-4 mb-4 border border-slate-900/10 shadow-md md:flex-row md:items-end md:gap-3">
-            {/* INÍCIO COMPONENTE: SearchInput */}
             <View className="mb-2 md:flex-1">
               <Text className="font-bold mb-1.5 text-slate-900">Buscar</Text>
               <View className="flex-row items-center gap-2 bg-slate-200/60 rounded-lg py-2 px-2.5 border border-slate-900/10">
@@ -25,9 +24,6 @@ export default function FilterCard( {filters, setFilters, clearFilters, RARITIES
                 />
               </View>
             </View>
-            {/* FIM COMPONENTE: SearchInput */}
-
-            {/* INÍCIO COMPONENTE: RarityPicker */}
             <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
               <Text className="font-bold mb-1.5 text-slate-900">Raridade</Text>
               <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
@@ -54,9 +50,6 @@ export default function FilterCard( {filters, setFilters, clearFilters, RARITIES
                 </Picker>
               </View>
             </View>
-            {/* FIM COMPONENTE: RarityPicker */}
-
-            {/* INÍCIO COMPONENTE: TypePicker */}
             <View className="mb-2 md:w-[220px] bg-slate-50 rounded-lg border border-slate-900/10 p-2">
               <Text className="font-bold mb-1.5 text-slate-900">Tipo</Text>
               <View className="rounded-lg overflow-hidden border border-slate-900/20 bg-slate-200/60 justify-center shadow-sm min-h-[42px]">
@@ -83,13 +76,9 @@ export default function FilterCard( {filters, setFilters, clearFilters, RARITIES
                 </Picker>
               </View>
             </View>
-            {/* FIM COMPONENTE: TypePicker */}
-
-            {/* INÍCIO COMPONENTE: ClearFiltersButton */}
             <View className="mt-2 md:mt-0 ml-auto self-center">
               <Button onPress={clearFilters}>Limpar Filtros</Button>
             </View>
-            {/* FIM COMPONENTE: ClearFiltersButton */}
           </View>
         </View>
     );

@@ -22,7 +22,7 @@ import {
 import { Item, ItemFilters } from "../interface/Item";
 import { useAuth } from "../utils/AuthContext";
 
-const HORIZONTAL_PADDING = 32; // container left+right padding (16 + 16)
+const HORIZONTAL_PADDING = 32;
 
 const GAP = 12;
 const MIN_CARD_WIDTH = 160;
@@ -202,9 +202,7 @@ export default function Search() {
         <FlatList
           data={items}
           keyExtractor={(item) => String(item.id)}
-          // usa colunas calculadas dinamicamente
           numColumns={columns}
-          // ajusta espaçamento horizontal entre colunas
           columnWrapperStyle={{
             justifyContent: "space-between",
             paddingHorizontal: HORIZONTAL_PADDING / 2,
@@ -237,7 +235,6 @@ export default function Search() {
               ) : null}
             </>
           }
-          // cada item fica dentro de um wrapper com largura fixa calculada
           renderItem={({ item }) => (
             <View style={{ width: itemWrapperWidth, marginBottom: GAP }}>
               <ResultsGrid

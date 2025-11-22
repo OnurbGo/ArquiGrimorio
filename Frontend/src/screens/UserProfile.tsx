@@ -167,9 +167,6 @@ export default function UserProfile() {
       setRefreshing(false);
     }
   }, [routeUserId, authUser, fetchUserData]);
-  // FIM COMPONENTE: OnRefreshHandler
-
-  // determine if this profile is the authenticated user's own profile
   const isSelf = !!authUser?.id && (routeUserId == null || Number(routeUserId) === authUser.id);
 
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -209,7 +206,6 @@ export default function UserProfile() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // backend returns the updated user
       setUser(res.data);
       Alert.alert("Sucesso", "Foto de perfil atualizada!");
     } catch (e: any) {
@@ -223,9 +219,7 @@ export default function UserProfile() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-slate-50">
-        {/* INÍCIO COMPONENTE: LoadingState */}
         <ActivityIndicator size="large" color="#6d28d9" />
-        {/* FIM COMPONENTE: LoadingState */}
       </SafeAreaView>
     );
   }
@@ -233,11 +227,8 @@ export default function UserProfile() {
   if (error || !user) {
     return (
       <SafeAreaView className="flex-1 bg-slate-50">
-        {/* INÍCIO COMPONENTE: NavigationBar */}
         <Navigation />
-        {/* FIM COMPONENTE: NavigationBar */}
         <View className="flex-1 justify-center items-center">
-          {/* INÍCIO COMPONENTE: ErrorCard */}
           <View className="bg-white p-4 rounded-xl border border-red-100">
             <Text className="text-red-500 font-extrabold mb-2">
               {error ?? "Usuário não encontrado"}
@@ -246,29 +237,17 @@ export default function UserProfile() {
               Voltar ao Início
             </Button>
           </View>
-          {/* FIM COMPONENTE: ErrorCard */}
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    // INÍCIO COMPONENTE: ScreenContainer
     <View className="flex-1 bg-slate-50" style={{ paddingTop: insets.top }}>
-      {/* INÍCIO COMPONENTE: NavigationBar */}
       <Navigation />
-      {/* FIM COMPONENTE: NavigationBar */}
-      {/* INÍCIO COMPONENTE: ContentContainer */}
       <View className="flex-1 p-4">
-        {/* INÍCIO COMPONENTE: ProfileHeaderCard */}
         <ProfileHeaderCard user={user} editable={isSelf} onPressEdit={handleChangePhoto} />
-        {/* FIM COMPONENTE: ProfileHeaderCard */}
-
-        {/* INÍCIO COMPONENTE: StatsRow */}
         <StatCard userItems={userItems} userLikesTotal={userLikesTotal} />
-        {/* FIM COMPONENTE: StatsRow */}
-
-        {/* INÍCIO COMPONENTE: SectionHeader */}
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-lg font-extrabold text-slate-900">
             Itens Criados por {user.name || "Usuário"}
@@ -277,10 +256,8 @@ export default function UserProfile() {
             {userItems.length} {userItems.length === 1 ? "item" : "itens"}
           </Text>
         </View>
-        {/* FIM COMPONENTE: SectionHeader */}
 
         {itemsWithLikes.length > 0 ? (
-          // INÍCIO COMPONENTE: ItemsGrid
           <ItemsGridProfile
             itemsWithLikes={itemsWithLikes}
             ItemCard={ItemCard}
@@ -291,13 +268,10 @@ export default function UserProfile() {
             columns={columns}
             GAP={GAP}
           />
-          // FIM COMPONENTE: ItemsGrid
         ) : (
           <EmptyState user={user} />
         )}
       </View>
-      {/* FIM COMPONENTE: ContentContainer */}
     </View>
-    // FIM COMPONENTE: ScreenContainer
   );
 }

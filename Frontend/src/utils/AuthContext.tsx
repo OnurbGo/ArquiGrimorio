@@ -30,7 +30,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// --- storage helpers (web / SecureStore / AsyncStorage) ---
 let _secureAvailableCache: boolean | null = null;
 async function secureAvailable(): Promise<boolean> {
   if (DEBUG_FORCE_ASYNCSTORE) return false;
@@ -117,7 +116,6 @@ async function storageRemove(key: string) {
   await AsyncStorage.removeItem(key);
 }
 
-// --- Provider ---
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -125,7 +123,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userId, setUserId] = useState<number | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
 
-  // Safely decode JWT payload and return minimal info (id, email)
   const decodeToken = (t: string): { id?: number; email?: string } | null => {
     try {
       const payloadPart = t.split(".")[1];
@@ -149,7 +146,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setToken(stored);
           api.defaults.headers.common["Authorization"] = `Bearer ${stored}`;
 
-          // Try to use cached id/name quickly
           const cachedIdStr = await storageGet(AUTH_USERID_KEY);
           const cachedName = await storageGet(AUTH_USERNAME_KEY);
           const decoded = decodeToken(stored);
@@ -158,7 +154,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserId(Number.isFinite(idToUse as number) ? (idToUse as number) : null);
           setUserName(cachedName ?? null);
 
-          // Refresh user data from API when possible
           if (idToUse) {
             try {
               const res = await api.get(`/users/${idToUse}`);

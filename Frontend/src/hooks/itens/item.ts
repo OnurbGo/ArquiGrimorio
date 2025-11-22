@@ -10,19 +10,16 @@ export const getItems = async (params?: any): Promise<Item[]> => {
   return [];
 };
 
-// Buscar item por ID
 export const getItemById = async (id: number): Promise<Item> => {
   const response = await api.get(`/item/${id}`);
   return response.data;
 };
 
-// Criar item
 export const createItem = async (item: Item): Promise<Item> => {
   const response = await api.post("/item", item);
   return response.data;
 };
 
-// Criar item com imagem
 export async function pickItemImage(): Promise<string | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") return null;
@@ -52,7 +49,6 @@ export const createItemWithImage = async (payload: {
   if (payload.price != null) form.append("price", String(payload.price));
   if (payload.imageUri) {
     form.append("file", {
-      // @ts-ignore React Native FormData
       uri: payload.imageUri,
       name: "item.jpg",
       type: "image/jpeg",
@@ -64,16 +60,11 @@ export const createItemWithImage = async (payload: {
   return res.data;
 };
 
-// Atualizar item
 export const updateItem = async (id: number, item: Item): Promise<Item> => {
   const response = await api.put(`/item/${id}`, item);
   return response.data;
 };
 
-/**
- * Atualiza somente a foto do item (endpoint correto: PUT /item/{id}/photo).
- * Usa campo multipart "file".
- */
 export async function updateItemPhoto(
   id: number,
   file: { uri: string; name: string; type: string },
@@ -96,9 +87,6 @@ export async function updateItemPhoto(
   return res.data;
 }
 
-// (Opcional) Deprecado: NÃO usar para atualizar imagem (backend rejeita multipart em /item/:id)
-// export const updateItemWithImage = ...
-// Atualizar item com imagem
 export const updateItemWithImage = async (
   id: number,
   payload: {

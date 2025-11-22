@@ -8,11 +8,6 @@ export interface CreateUserPayload {
   description?: string;
 }
 
-/*export const createUser = async (user: CreateUserPayload): Promise<User> => {
-  const response = await api.post("/users", user);
-  return response.data;
-};*/
-
 export const updateUser = async (id: number, user: User): Promise<User> => {
   const response = await api.put(`/users/${id}`, user);
   return response.data;

@@ -6,9 +6,9 @@ import type { Item } from "../interface/Item";
 import { useAuth } from "../utils/AuthContext";
 import api from "@/services/api";
 
-const DESCRIPTION_LINES = 3; // linhas da descrição antes de "..."
-const CARD_HEIGHT = 320; // altura fixa do card (uniformiza grid)
-const IMAGE_HEIGHT = 110; // altura da imagem dentro do card
+const DESCRIPTION_LINES = 3;
+const CARD_HEIGHT = 320;
+const IMAGE_HEIGHT = 110;
 
 const rarityClasses: Record<string, string> = {
   comum: "bg-gray-200 text-gray-800",
@@ -50,7 +50,6 @@ export default function ItemCard({ item, onView, onLike }: Props) {
 
   async function handleLike() {
     if (onLike) {
-      // optimistic local update (pai persistirá)
       setLocalItem((prev) => {
         const isLiked = !prev.isLiked;
         const likes = isLiked

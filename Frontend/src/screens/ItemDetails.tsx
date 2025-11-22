@@ -1,4 +1,3 @@
-// ItemDetails.tsx
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -93,7 +92,6 @@ export default function ItemDetails() {
         if (!active) return;
         const data = resp.data as ItemWithExtras;
 
-        // likes + isLiked
         let likes = 0;
         let isLiked = false;
         try {
@@ -109,7 +107,6 @@ export default function ItemDetails() {
         if (!active) return;
         setItem({ ...data, likes, isLiked });
 
-        // TRY: fetch history if api provides it; fallback if not
         try {
           if (typeof getLikesHistory === "function") {
             const hist = await getLikesHistory(Number(id));
@@ -126,7 +123,6 @@ export default function ItemDetails() {
             throw new Error("no getLikesHistory");
           }
         } catch {
-          // fallback: create a smooth series from 0..likes
           const total = Math.max(0, likes ?? 0);
           const points = Math.min(10, Math.max(4, total > 0 ? 8 : 4));
           const arr = Array.from({ length: points }, (_, i) => {
@@ -155,7 +151,6 @@ export default function ItemDetails() {
     };
   }, [id, token, authUser]);
 
-  // INÍCIO COMPONENTE: LikeToggleHandler
   async function handleLikeToggle(itemId: number) {
     if (!token || likeLoading) return;
     setLikeLoading(true);
@@ -172,7 +167,6 @@ export default function ItemDetails() {
             ? (prev.likes ?? 0) + 1
             : Math.max((prev.likes ?? 0) - 1, 0);
 
-        // update history optimistically
         setLikesHistory((hist) => {
           try {
             const copy = [...hist];
@@ -198,10 +192,6 @@ export default function ItemDetails() {
       setLikeLoading(false);
     }
   }
-  // FIM COMPONENTE: LikeToggleHandler
-
-  // line chart path generation + points
-  // INÍCIO COMPONENTE: ChartDataBuilder
   const chart = useMemo(() => {
     const data = likesHistory || [];
     const WIN = Dimensions.get("window");
@@ -230,14 +220,11 @@ export default function ItemDetails() {
 
     return { w, h, path, points, max, padding };
   }, [likesHistory]);
-  // FIM COMPONENTE: ChartDataBuilder
 
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        {/* INÍCIO COMPONENTE: LoadingState */}
         <ActivityIndicator size="large" color="#6d28d9" />
-        {/* FIM COMPONENTE: LoadingState */}
       </SafeAreaView>
     );
   }
@@ -248,12 +235,8 @@ export default function ItemDetails() {
         className="flex-1 bg-white"
         style={[{ paddingTop: insets.top }]}
       >
-  {/* INÍCIO COMPONENTE: ErrorState */}
-        {/* INÍCIO COMPONENTE: NavigationBar */}
         <Navigation />
-        {/* FIM COMPONENTE: NavigationBar */}
         <View className="flex-1 items-center justify-center p-5">
-          {/* INÍCIO COMPONENTE: ErrorCard */}
           <View className="bg-white p-4 rounded-xl border border-[#eee]">
             <Text className="text-red-500 font-bold mb-2">
               {error ?? "Item não encontrado"}
@@ -265,9 +248,7 @@ export default function ItemDetails() {
               <Text className="text-indigo-600 font-semibold">Voltar</Text>
             </TouchableOpacity>
           </View>
-          {/* FIM COMPONENTE: ErrorCard */}
         </View>
-  {/* FIM COMPONENTE: ErrorState */}
       </SafeAreaView>
     );
   }
@@ -301,11 +282,7 @@ export default function ItemDetails() {
   console.log("ItemDetails - image_url:", item.image_url);
   return (
     <View className="flex-1 bg-white" style={[{ paddingTop: insets.top }]}>
-      {/* INÍCIO COMPONENTE: ScreenContainer */}
-      {/* INÍCIO COMPONENTE: NavigationBar */}
       <Navigation />
-      {/* FIM COMPONENTE: NavigationBar */}
-      {/* INÍCIO COMPONENTE: MainScroll */}
       <ScrollView contentContainerClassName="p-4 pb-9 bg-white">
         <View className="bg-white rounded-2xl p-3 border border-indigo-50 shadow-sm mb-4">
           <View className="relative items-center justify-center">
@@ -319,7 +296,6 @@ export default function ItemDetails() {
               <View className="w-full h-[220px] rounded-xl bg-slate-50 items-center justify-center" />
             )}
 
-            {/* overlay like (kept on image) */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => handleLikeToggle(item.id!)}
@@ -336,66 +312,43 @@ export default function ItemDetails() {
               </Text>
             </TouchableOpacity>
           </View>
-          {/* FIM COMPONENTE: ImageWithLikeOverlay */}
-
-          {/* INÍCIO COMPONENTE: NameAndBadges */}
           <Text className="text-xl font-extrabold text-slate-900 mt-3 text-center">
             {item.name}
           </Text>
 
           <View className="flex-row justify-center gap-2 mt-2.5">
-            {/* INÍCIO COMPONENTE: RarityBadge */}
             <View className="bg-indigo-50 px-2.5 py-1.5 rounded-full mx-1.5">
               <Text className="text-indigo-600 font-bold">{item.rarity}</Text>
             </View>
-            {/* FIM COMPONENTE: RarityBadge */}
-            {/* INÍCIO COMPONENTE: TypeBadge */}
             <View className="bg-white border border-[#e6e6f6] px-2.5 py-1.5 rounded-full mx-1.5">
               <Text className="text-slate-700 font-bold">{item.type}</Text>
             </View>
-            {/* FIM COMPONENTE: TypeBadge */}
           </View>
-          {/* FIM COMPONENTE: NameAndBadges */}
 
-          {/* INÍCIO COMPONENTE: Description */}
           <Text className="text-center text-slate-500 mt-3 leading-5">
             {item.description || "—"}
           </Text>
-          {/* FIM COMPONENTE: Description */}
-
-          {/* INÍCIO COMPONENTE: StatsRow */}
           <View className="flex-row justify-between mt-4">
-            {/* INÍCIO COMPONENTE: StatCard (Likes) */}
             <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
               <Text className="text-slate-500 text-xs">Likes</Text>
               <Text className="text-lg font-bold text-slate-900 mt-1.5">
                 {item.likes ?? 0}
               </Text>
             </View>
-            {/* FIM COMPONENTE: StatCard (Likes) */}
-            {/* INÍCIO COMPONENTE: StatCard (Preço) */}
             <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
               <Text className="text-slate-500 text-xs">Preço</Text>
               <Text className="text-lg font-bold text-slate-900 mt-1.5">
                 {priceText}
               </Text>
             </View>
-            {/* FIM COMPONENTE: StatCard (Preço) */}
-            {/* INÍCIO COMPONENTE: StatCard (Desc chars) */}
             <View className="flex-1 p-3 mx-1 rounded-lg bg-[#fbfbff] items-center">
               <Text className="text-slate-500 text-xs">Desc. (chars)</Text>
               <Text className="text-lg font-bold text-slate-900 mt-1.5">
                 {(item.description || "").length}
               </Text>
             </View>
-            {/* FIM COMPONENTE: StatCard (Desc chars) */}
           </View>
-          {/* FIM COMPONENTE: StatsRow */}
-
-          {/* INÍCIO COMPONENTE: CreatorAndChartRow */}
           <View className="mt-4 md:flex-row gap-3 items-start justify-between">
-            {/* left: creator */}
-            {/* INÍCIO COMPONENTE: CreatorCard */}
             <View className="md:flex-[0.4] w-full">
               <TouchableOpacity
                 onPress={goToCreatorProfile}
@@ -418,13 +371,7 @@ export default function ItemDetails() {
                   </Text>
                 </View>
               </TouchableOpacity>
-
-              {/* removed the smallLikeBtn that was next to creator (as requested) */}
             </View>
-            {/* FIM COMPONENTE: CreatorCard */}
-
-            {/* right: interactive chart + aligned like button */}
-            {/* INÍCIO COMPONENTE: LikesChartCard */}
             <View className="md:flex-[0.6] w-full">
               <Text className="font-bold text-slate-900 mb-2">
                 Evolução de Likes
@@ -437,10 +384,8 @@ export default function ItemDetails() {
                   return false;
                 }}
               >
-                {/* INÍCIO COMPONENTE: LikesChart */}
                 <Svg width={chart.w} height={chart.h}>
                   <G>
-                    {/* INÍCIO COMPONENTE: GridLines */}
                     {[0, 0.5, 1].map((t, i) => {
                       const y =
                         chart.padding + t * (chart.h - chart.padding * 2);
@@ -456,9 +401,6 @@ export default function ItemDetails() {
                         />
                       );
                     })}
-                    {/* FIM COMPONENTE: GridLines */}
-
-                    {/* INÍCIO COMPONENTE: LinePath */}
                     {chart.path ? (
                       <Path
                         d={chart.path}
@@ -468,9 +410,6 @@ export default function ItemDetails() {
                         strokeLinecap="round"
                       />
                     ) : null}
-                    {/* FIM COMPONENTE: LinePath */}
-
-                    {/* INÍCIO COMPONENTE: Points */}
                     {chart.points.map((p, idx) => (
                       <G key={`pt-${idx}`}>
                         <Circle
@@ -493,9 +432,6 @@ export default function ItemDetails() {
                         />
                       </G>
                     ))}
-                    {/* FIM COMPONENTE: Points */}
-
-                    {/* INÍCIO COMPONENTE: Tooltip */}
                     {selectedPoint
                       ? (() => {
                           const text = String(selectedPoint.v);
@@ -534,12 +470,8 @@ export default function ItemDetails() {
                           );
                         })()
                       : null}
-                    {/* FIM COMPONENTE: Tooltip */}
                   </G>
                 </Svg>
-                {/* FIM COMPONENTE: LikesChart */}
-
-                {/* INÍCIO COMPONENTE: AxisLabels */}
                 <View className="flex-row justify-between w-full mt-1.5">
                   <Text className="text-slate-500 text-[11px]">
                     {chart.points[0]?.label ?? ""}
@@ -548,9 +480,6 @@ export default function ItemDetails() {
                     {chart.points[chart.points.length - 1]?.label ?? ""}
                   </Text>
                 </View>
-                {/* FIM COMPONENTE: AxisLabels */}
-
-                {/* INÍCIO COMPONENTE: LikeButtonUnderChart */}
                 <View className="mt-2.5 items-center">
                   <TouchableOpacity
                     onPress={() => handleLikeToggle(item.id!)}
@@ -560,29 +489,17 @@ export default function ItemDetails() {
                     }`}
                   ></TouchableOpacity>
                 </View>
-                {/* FIM COMPONENTE: LikeButtonUnderChart */}
               </View>
             </View>
-            {/* FIM COMPONENTE: LikesChartCard */}
           </View>
-          {/* FIM COMPONENTE: CreatorAndChartRow */}
         </View>
-        {/* FIM COMPONENTE: PrimaryCard */}
-
-        {/* INÍCIO COMPONENTE: ExtraDetailsCard */}
         <View className="bg-white rounded-xl p-3.5 border border-indigo-50 mt-3">
-          {/* INÍCIO COMPONENTE: DetailsHeader */}
           <Text className="font-extrabold text-base text-slate-900 mb-2">
             Detalhes
           </Text>
-          {/* FIM COMPONENTE: DetailsHeader */}
-          {/* INÍCIO COMPONENTE: DetailsText */}
           <Text className="text-slate-600 leading-5">
             {item.description || "Sem descrição adicional."}
           </Text>
-          {/* FIM COMPONENTE: DetailsText */}
-
-          {/* INÍCIO COMPONENTE: ActionButtonsRow */}
           <View className="flex-row mt-3">
             <TouchableOpacity
               className="bg-white px-3 py-2 rounded-lg border border-[#e6e6f6] mr-2"
@@ -599,12 +516,8 @@ export default function ItemDetails() {
               <Text className="text-indigo-600 font-bold">Denunciar</Text>
             </TouchableOpacity>
           </View>
-          {/* FIM COMPONENTE: ActionButtonsRow */}
         </View>
-        {/* FIM COMPONENTE: ExtraDetailsCard */}
   </ScrollView>
-      {/* FIM COMPONENTE: MainScroll */}
-  {/* FIM COMPONENTE: ScreenContainer */}
     </View>
   );
 }

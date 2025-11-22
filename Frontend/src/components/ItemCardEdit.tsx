@@ -11,15 +11,10 @@ import api from "@/services/api";
 
 interface Props {
   item: Item;
-  onEdit: (item: Item) => void; // aberto como modal pela tela pai
-  onDelete: (id: number) => void; // usado caso queira deletar direto do card
+  onEdit: (item: Item) => void;
+  onDelete: (id: number) => void;
 }
 
-/**
- * Cartão usado na lista de edição de itens (visual escuro).
- * - Exibe image_url com mais espaço e resizeMode contain (imagem aparece completa).
- * - Chama onEdit(item) para abrir modal de edição (pai decide o que fazer).
- */
 export default function ItemCardEdit({ item, onEdit }: Props) {
   function toAbsoluteUrl(url?: string | null) {
     if (!url) return null;
