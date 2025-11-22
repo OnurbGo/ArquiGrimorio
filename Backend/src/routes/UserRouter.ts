@@ -19,7 +19,7 @@ router.post("/users", createUser);
 router.get("/users/count", getUserCount);
 router.get("/users", requireAdmin, getAll);
 router.get("/users/:id", authMiddleware, getUserById);
-router.get("/users/:id/item", authMiddlewareUserOrAdmin({ id: "id" }), getUserItems);
+router.get("/users/:id/item", authMiddleware, getUserItems);
 
 router.put("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), updateUser);
 router.put("/users/:id/photo", authMiddlewareUserOrAdmin({ id: "id" }), updateUserPhoto);
