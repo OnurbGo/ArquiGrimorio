@@ -8,7 +8,6 @@ import { uploadItemImageViaProxy, ImageUploadError } from "../utils/imageProxy";
 import { uploadStreamToImageService } from "../utils/imageProxy";
 import Busboy from "busboy";
 
-// Helper: cria via multipart (campos + file)
 async function createItemFromMultipart(req: Request, res: Response) {
   return new Promise<Response>((resolve) => {
     const bb = Busboy({ headers: req.headers });
@@ -86,7 +85,6 @@ async function createItemFromMultipart(req: Request, res: Response) {
   });
 }
 
-// Helper: atualiza via multipart (campos + file)
 async function updateItemFromMultipart(req: Request<{ id: string }>, res: Response) {
   return new Promise<Response>((resolve) => {
     const bb = Busboy({ headers: req.headers });
@@ -144,7 +142,6 @@ async function updateItemFromMultipart(req: Request<{ id: string }>, res: Respon
           }
         }
 
-        // Compute diffs antes de salvar
         const changedFields = item.changed() as string[] | false;
         let changes: Record<string, { from: unknown; to: unknown }> | undefined;
         if (changedFields && changedFields.length) {
@@ -156,7 +153,6 @@ async function updateItemFromMultipart(req: Request<{ id: string }>, res: Respon
 
         await item.save();
 
-        // Publica evento de atualização (inclui mudança de foto se houver)
         publishItemUpdated({
           id: item.id as unknown as number,
           name: (item as any).name,
@@ -189,7 +185,6 @@ export const createItem = async (req: Request, res: Response) => {
     if (!name || !rarity || !type || !description)
       return res.status(400).json({ error: "Missing required fields" });
 
-    // Imagem: agora somente via URL já fornecida (sem arquivo)
     let finalImageUrl: string | null = image_url ?? null;
 
     const item = await ItemModel.create({
@@ -291,10 +286,8 @@ export const getItemById = async (
   }
 };
 
-// Exemplo: adapte dentro do handler que atualiza o item (PUT/PATCH /items/:id)
 export const updateItem = async (req: Request<{ id: string }>, res: Response) => {
   try {
-    // Não aceita multipart neste endpoint
     const contentType = String(req.headers["content-type"] || "");
     if (contentType.includes("multipart/form-data")) {
       return res.status(400).json({
@@ -302,7 +295,6 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
       });
     }
 
-    // Bloqueia alteração de image_url por aqui
     if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "image_url")) {
       return res.status(400).json({
         error: "image_url não pode ser alterado em /item/:id. Use PUT /item/:id/photo.",
@@ -320,17 +312,14 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
       return res.status(403).json({ error: "Sem permissão para atualizar este item" });
     }
 
-    // Campos permitidos (sem image_url)
     const allowed = ["name", "rarity", "type", "description", "price"];
     const payload: Record<string, any> = {};
     for (const k of allowed) {
       if (k in (req.body ?? {})) payload[k] = (req.body as any)[k];
     }
 
-    // Aplique mudanças
     item.set(payload);
 
-    // Capture diffs antes de salvar
     const changedFields = item.changed() as string[] | false;
     let changes: Record<string, { from: unknown; to: unknown }> | undefined;
     if (changedFields && changedFields.length) {
@@ -342,7 +331,6 @@ export const updateItem = async (req: Request<{ id: string }>, res: Response) =>
 
     await item.save();
 
-    // Publica evento
     publishItemUpdated({
       id: item.id as unknown as number,
       name: (item as any).name,
@@ -373,7 +361,6 @@ export const deleteItem = async (req: Request<{ id: string }>, res: Response) =>
     const nameBeforeDelete = item.name;
     await item.destroy();
 
-    // Dispara evento de exclusão
     publishItemDeleted({ id, name: nameBeforeDelete, user_id: userId });
 
     return res.json({ success: true });
@@ -383,7 +370,6 @@ export const deleteItem = async (req: Request<{ id: string }>, res: Response) =>
   }
 };
 
-// Novo: atualiza a imagem de um item existente via multipart (campo "file")
 export const updateItemPhoto = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const item = await ItemModel.findByPk(req.params.id);
@@ -395,11 +381,10 @@ export const updateItemPhoto = async (req: Request<{ id: string }>, res: Respons
       return res.status(502).json({ error: "Image service did not return an URL" });
     }
 
-    const prevUrl = item.image_url; // capturar anterior
+    const prevUrl = item.image_url;
     item.image_url = newUrl;
     await item.save();
 
-    // Publica item.updated se a URL mudou
     if (prevUrl !== newUrl) {
       publishItemUpdated({
         id: item.id as unknown as number,

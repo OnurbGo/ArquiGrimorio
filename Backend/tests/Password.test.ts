@@ -1,7 +1,6 @@
 import request from "supertest";
 import sequelize from "../src/config/database";
-import app from "../src/app"; // Ajuste o caminho conforme necessário
-//import UserModel from "../src/models/UserModel";
+import app from "../src/app";
 
 describe("User Controller - Password Validation", () => {
   beforeAll(async () => {
@@ -9,7 +8,7 @@ describe("User Controller - Password Validation", () => {
   });
 
   afterAll(async () => {
-    await sequelize.close(); // Fecha a conexão após os testes
+    await sequelize.close();
   });
 
   test("Deve aceitar uma senha válida", async () => {

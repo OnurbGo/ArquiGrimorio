@@ -1,5 +1,5 @@
-import app from "../src/app"; // Importando a aplicação (já deve estar no seu código)
-import sequelize from "../src/config/database"; // Configuração do banco de dados
+import app from "../src/app"; 
+import sequelize from "../src/config/database";
 import request from "supertest";
 import { authMiddleware } from "../src/middleware/authMiddleware";
 import UserModel from "../src/models/UserModel";
@@ -11,7 +11,6 @@ jest.mock("../src/middleware/authMiddleware", () => {
         name: "Gustavo Lima",
         email: "qualquer@exemplo.com",
         password: "@senhaBolada714",
-        CPF: "000.000.000-00",
       };
 
       next();
@@ -25,14 +24,12 @@ describe("Login Endpoint", () => {
     await UserModel.create({
       name: "Zangief",
       email: "tornadovermelho@gmail.com",
-      password: "#Tornadoa255", // Precisa ser hashado no modelo
-      CPF: "123.456.789-00",
-      type: "teacher",
+      password: "#Tornadoa255",
     });
   });
 
   afterAll(async () => {
-    await sequelize.close(); // Fecha a conexão após os testes
+    await sequelize.close();
   });
 
   test("Login should to connect", async () => {

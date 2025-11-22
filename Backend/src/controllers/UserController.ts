@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import UserModel from "../models/UserModel";
 import ItemModel from "../models/ItemModel";
-import { redisGet, redisSet, redisDel } from "../utils/redis"; // <- novo import
+import { redisGet, redisSet, redisDel } from "../utils/redis";
 import { uploadUserPhotoViaProxy, ImageUploadError } from "../utils/imageProxy";
 
 const toBool = (v: any) =>
@@ -19,7 +19,6 @@ export const getUserCount = async (req: Request, res: Response) => {
       return res.status(200).json({ count: Number(cached), cached: true });
     }
     const count = await UserModel.count();
-    // TTL 60 segundos (ajuste conforme necessidade)
     await redisSet(CACHE_KEY, String(count), 60);
     return res.status(200).json({ count, cached: false });
   } catch (error) {
@@ -51,7 +50,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const getAll = async (req: Request, res: Response) => {
   try {
-    const users = await UserModel.findAll(); // defaultScope já exclui password
+    const users = await UserModel.findAll();
     return res.status(200).json(users);
   } catch (error) {
     console.error("getAll error:", error);
@@ -73,7 +72,6 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    // Cadastro não aceita imagem; use /users/:id/photo depois.
     const contentType = String(req.headers["content-type"] || "");
     if (contentType.includes("multipart/form-data")) {
       return res.status(400).json({
@@ -95,7 +93,6 @@ export const createUser = async (req: Request, res: Response) => {
     const existing = await UserModel.findOne({ where: { email } });
     if (existing) return res.status(409).json({ error: "Email already in use" });
 
-    // url_img sempre nulo no cadastro
     const finalUrlImg: string | null = null;
 
     const user = await UserModel.create({
@@ -119,7 +116,6 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request<{ id: string }>, res: Response) => {
   try {
-    // Bloqueia multipart (upload só na rota /users/:id/photo)
     const contentType = String(req.headers["content-type"] || "");
     if (contentType.includes("multipart/form-data")) {
       return res.status(400).json({
@@ -127,7 +123,6 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
       });
     }
 
-    // Bloqueia alteração de url_img neste endpoint
     if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "url_img")) {
       return res.status(400).json({
         error: "url_img não pode ser alterado em /users/:id. Use PUT /users/:id/photo.",
@@ -181,7 +176,6 @@ export const destroyUserById = async (
     if (!user) return res.status(404).json({ error: "User not found" });
 
     await user.destroy();
-    // Invalida cache
     await redisDel("userCount:v1");
     return res.status(204).send();
   } catch (error) {
@@ -196,7 +190,6 @@ export const updateUserPhoto = async (req: Request<{ id: string }>, res: Respons
     const user = await UserModel.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Encaminha o multipart/form-data para o microservice
     const img = await uploadUserPhotoViaProxy(req);
     console.log(`[user] photo upload ok userId=${req.params.id} url=${img.url || img.urlNginx}`);
 

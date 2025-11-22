@@ -25,15 +25,14 @@ app.use(LoginRoutes);
 app.use(ItemRouter);
 app.use(ItemLikeRouter);
 
-// Healthcheck
 app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
 
 function resolveOpenApiPath(): string | null {
   const candidates = [
-    path.resolve(__dirname, "openapi-backend.yaml"),            // dist/openapi-backend.yaml
-    path.resolve(__dirname, "../src/openapi-backend.yaml"),     // quando src é copiado
-    path.resolve(process.cwd(), "src", "openapi-backend.yaml"), // dev
-    path.resolve(process.cwd(), "openapi-backend.yaml"),        // root
+    path.resolve(__dirname, "openapi-backend.yaml"),            
+    path.resolve(__dirname, "../src/openapi-backend.yaml"),     
+    path.resolve(process.cwd(), "src", "openapi-backend.yaml"), 
+    path.resolve(process.cwd(), "openapi-backend.yaml"),        
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return p;

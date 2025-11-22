@@ -16,7 +16,7 @@ import { randomUUID } from 'crypto';
           cb(null, `${randomUUID()}${ext}`);
         },
       }),
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+      limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         const allowedMimes = ['image/png', 'image/jpeg'];
         const allowedExts = ['.png', '.jpg', '.jpeg'];

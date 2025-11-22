@@ -9,7 +9,6 @@ export const toggleLike = async (
   try {
     const itemId = Number(req.params.id);
 
-    // O middleware de autenticação deve popular req.user
     const user = (req as any).user;
     if (!user || !user.id) {
       console.warn("toggleLike: Usuário não autenticado ou token inválido.");
@@ -25,25 +24,21 @@ export const toggleLike = async (
       return res.status(404).json({ error: "Item não encontrado." });
     }
 
-    // Verifica se já existe like
     const existing = await ItemLikeModel.findOne({
       where: { item_id: itemId, user_id: userId },
     });
 
     if (existing) {
-      // Remove o like
       await existing.destroy();
       const total = await ItemLikeModel.count({ where: { item_id: itemId } });
       return res.status(200).json({ liked: false, totalLikes: total });
     } else {
-      // Adiciona o like
       await ItemLikeModel.create({ item_id: itemId, user_id: userId });
       const total = await ItemLikeModel.count({ where: { item_id: itemId } });
       return res.status(201).json({ liked: true, totalLikes: total });
     }
   } catch (error: any) {
     console.error("toggleLike error:", error);
-    // Mensagem de erro detalhada
     return res.status(500).json({
       error: "Erro interno ao processar o like.",
       details: error.message,
@@ -68,7 +63,6 @@ export const getLikesForItem = async (
   }
 };
 
-// Handler para buscar todos os likes de um usuário
 export const getLikesByUser = async (
   req: Request<{ userId: string }>,
   res: Response
@@ -92,7 +86,6 @@ export const getLikesByUser = async (
   }
 };
 
-// Handler para buscar todos os likes de um item
 export const getLikesByItem = async (
   req: Request<{ itemId: string }>,
   res: Response

@@ -7,7 +7,7 @@ import {
   updateUser,
   getUserItems,
   getUserCount,
-  updateUserPhoto, // <-- add
+  updateUserPhoto,
 } from "../controllers/UserController";
 import {  requireAdmin, authMiddlewareUserOrAdmin, authMiddleware } from "../middleware/authMiddleware";
 import { listAdminNotifications, deleteAllAdminNotifications, deleteAdminNotification } from "../controllers/AdminNotificationController";
