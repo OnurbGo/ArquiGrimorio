@@ -403,7 +403,7 @@ export default function ItemDetails() {
               >
                 {item.creator?.url_img ? (
                   <Image
-                    source={{ uri: item.creator.url_img }}
+                    source={{ uri: `${api.defaults.baseURL}${item.creator.url_img}` }}
                     className="w-14 h-14 rounded-full mr-3"
                   />
                 ) : (

@@ -191,14 +191,16 @@ export const destroyUserById = async (
 };
 
 export const updateUserPhoto = async (req: Request<{ id: string }>, res: Response) => {
+  console.log(`[user] starting photo update userId=${req.params.id}`);
   try {
     const user = await UserModel.findByPk(req.params.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     // Encaminha o multipart/form-data para o microservice
-    const up = await uploadUserPhotoViaProxy(req);
+    const img = await uploadUserPhotoViaProxy(req);
+    console.log(`[user] photo upload ok userId=${req.params.id} url=${img.url || img.urlNginx}`);
 
-    const newUrl = (up as any).urlNginx || (up as any).url || null;
+    const newUrl = (img as any).urlNginx || (img as any).url || null;
     if (!newUrl) {
       return res.status(502).json({ error: "Image service did not return an URL" });
     }
@@ -208,6 +210,7 @@ export const updateUserPhoto = async (req: Request<{ id: string }>, res: Respons
 
     return res.status(200).json(user.toJSON());
   } catch (e) {
+    console.log(`[user] photo upload error userId=${req.params.id} err=${e}`);
     if (e instanceof ImageUploadError) {
       return res.status(e.status).json({ error: e.message, code: e.code, details: e.details });
     }

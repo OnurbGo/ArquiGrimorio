@@ -1,4 +1,3 @@
-// Encaminha o corpo multipart do request diretamente ao microservice sem usar Multer nem base64.
 import http from "http";
 import https from "https";
 import { IncomingMessage } from "http";
@@ -47,13 +46,14 @@ async function forwardMultipart(req: IncomingMessage, path: string): Promise<Ima
     headers,
   };
 
+  console.log(`[proxy] forwarding multipart to ${path} ct=${headers['content-type']}`);
   return new Promise<ImageServiceResponse>((resolve, reject) => {
     const proxied = client.request(options, (svcRes) => {
       const chunks: Buffer[] = [];
       svcRes.on("data", (d) => chunks.push(Buffer.from(d)));
       svcRes.on("end", () => {
         const body = Buffer.concat(chunks).toString("utf8");
-
+        console.log(`[proxy] completed request to ${path} status=${svcRes.statusCode} bodyLen=${body.length}`);
         if (svcRes.statusCode && svcRes.statusCode >= 200 && svcRes.statusCode < 300) {
           try {
             const data = JSON.parse(body);
@@ -75,6 +75,7 @@ async function forwardMultipart(req: IncomingMessage, path: string): Promise<Ima
     });
 
     proxied.on("error", (err) => {
+      console.log(`[proxy] error reaching image service path=${path} err=${String(err)}`);
       reject(new ImageUploadError(502, "IMAGE_SVC_UNREACHABLE", "Failed to reach image service.", { error: String(err) }));
     });
 
@@ -82,13 +83,14 @@ async function forwardMultipart(req: IncomingMessage, path: string): Promise<Ima
   });
 }
 
-// Upload de IMAGEM DE ITEM via proxy (sem multer/base64)
 export function uploadItemImageViaProxy(req: IncomingMessage) {
+  console.log(`[proxy] start upload item image`);
   return forwardMultipart(req, "/image-item/upload");
 }
 
 // Upload de IMAGEM DE USER (já usado no user)
 export function uploadUserPhotoViaProxy(req: IncomingMessage) {
+  console.log(`[proxy] start upload user photo`);
   return forwardMultipart(req, "/image-user/upload");
 }
 

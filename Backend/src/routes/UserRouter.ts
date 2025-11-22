@@ -9,7 +9,7 @@ import {
   getUserCount,
   updateUserPhoto, // <-- add
 } from "../controllers/UserController";
-import {  requireAdmin, authMiddlewareUserOrAdmin } from "../middleware/authMiddleware";
+import {  requireAdmin, authMiddlewareUserOrAdmin, authMiddleware } from "../middleware/authMiddleware";
 import { listAdminNotifications, deleteAllAdminNotifications, deleteAdminNotification } from "../controllers/AdminNotificationController";
 
 const router = express.Router();
@@ -18,7 +18,7 @@ router.post("/users", createUser);
 
 router.get("/users/count", getUserCount);
 router.get("/users", requireAdmin, getAll);
-router.get("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), getUserById);
+router.get("/users/:id", authMiddleware, getUserById);
 router.get("/users/:id/item", authMiddlewareUserOrAdmin({ id: "id" }), getUserItems);
 
 router.put("/users/:id", authMiddlewareUserOrAdmin({ id: "id" }), updateUser);

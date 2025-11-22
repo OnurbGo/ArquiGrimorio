@@ -281,6 +281,7 @@ const EditItem: React.FC = () => {
     });
     if (res.canceled) return;
     const a = res.assets[0];
+    console.log(`[frontend] edit item picked new image uri=${a.uri} mime=${a.mimeType}`);
     setImageAsset({
       uri: a.uri,
       name: a.fileName || `item-${editingItem?.id || Date.now()}.jpg`,

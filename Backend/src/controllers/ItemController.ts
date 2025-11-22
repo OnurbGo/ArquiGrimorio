@@ -23,7 +23,16 @@ async function createItemFromMultipart(req: Request, res: Response) {
       if (name !== "file") return file.resume();
       const filename = info?.filename || `upload_${Date.now()}.jpg`;
       const mimeType = info?.mimeType || "image/jpeg";
-      uploadPromise = uploadStreamToImageService(file, filename, mimeType, "item");
+      console.log(`[item] creating item received file field=${name} filename=${filename} mime=${mimeType}`);
+      uploadPromise = uploadStreamToImageService(file, filename, mimeType, "item")
+        .then(r => {
+          console.log(`[item] create item upload ok filename=${filename} url=${r.url || r.urlNginx}`);
+          return r;
+        })
+        .catch(err => {
+          console.log(`[item] create item upload error filename=${filename} err=${err?.message}`);
+          throw err;
+        });
     });
 
     bb.on("close", async () => {
@@ -92,7 +101,16 @@ async function updateItemFromMultipart(req: Request<{ id: string }>, res: Respon
       if (name !== "file") return file.resume();
       const filename = info?.filename || `upload_${Date.now()}.jpg`;
       const mimeType = info?.mimeType || "image/jpeg";
-      uploadPromise = uploadStreamToImageService(file, filename, mimeType, "item");
+      console.log(`[item] incoming file field=${name} filename=${filename} mime=${mimeType}`);
+      uploadPromise = uploadStreamToImageService(file, filename, mimeType, "item")
+        .then(r => {
+          console.log(`[item] microservice upload ok filename=${filename} url=${r.url || r.urlNginx}`);
+          return r;
+        })
+        .catch(err => {
+          console.log(`[item] microservice upload error filename=${filename} err=${err?.message}`);
+          throw err;
+        });
     });
 
     bb.on("close", async () => {
