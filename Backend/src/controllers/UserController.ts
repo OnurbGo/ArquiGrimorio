@@ -13,13 +13,21 @@ const toBool = (v: any) =>
 
 export const getUserCount = async (req: Request, res: Response) => {
   const CACHE_KEY = "userCount:v1";
+  console.log("[UserController.getUserCount] iniciando verificação de cache");
   try {
     const cached = await redisGet(CACHE_KEY);
     if (cached !== null) {
+      console.log(
+        `[UserController.getUserCount] cache HIT key=${CACHE_KEY} valor=${cached}`
+      );
       return res.status(200).json({ count: Number(cached), cached: true });
     }
+    console.log("[UserController.getUserCount] cache MISS, consultando DB...");
     const count = await UserModel.count();
     await redisSet(CACHE_KEY, String(count), 60);
+    console.log(
+      `[UserController.getUserCount] cache SET key=${CACHE_KEY} valor=${count}`
+    );
     return res.status(200).json({ count, cached: false });
   } catch (error) {
     console.error("getUserCount error:", error);
@@ -103,6 +111,10 @@ export const createUser = async (req: Request, res: Response) => {
       description: description || null,
       admin: admin !== undefined ? toBool(admin) : false,
     });
+    // Invalida cache
+    console.log(
+      "[UserController.createUser] invalida cache userCount:v1 após criação"
+    );
     await redisDel("userCount:v1");
     return res.status(201).json(user.toJSON());
   } catch (error) {
@@ -176,6 +188,9 @@ export const destroyUserById = async (
     if (!user) return res.status(404).json({ error: "User not found" });
 
     await user.destroy();
+    console.log(
+      "[UserController.destroyUserById] invalida cache userCount:v1 após remoção"
+    );
     await redisDel("userCount:v1");
     return res.status(204).send();
   } catch (error) {
