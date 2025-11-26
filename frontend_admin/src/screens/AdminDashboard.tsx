@@ -39,7 +39,7 @@ const AdminDashboard: React.FC = () => {
           }
         }
       } catch (e) {
-        // ignore per-item errors
+        console.error("processIncomingNotifications error", e);
       }
     });
   };
@@ -61,8 +61,6 @@ const AdminDashboard: React.FC = () => {
 
         const incoming = (notifsResp.data ?? []) as any[];
         processIncomingNotifications(incoming);
-
-        // use server list directly (no local filtering)
         setNotifications(incoming);
       } catch (e) {
         console.error("fetchAll error", e);
@@ -158,7 +156,6 @@ const AdminDashboard: React.FC = () => {
         "Could not determine notification id to resolve",
         notifOrId
       );
-      // remove from UI locally (cannot resolve on server without id)
       setNotifications((s) =>
         s.filter((n: any, idx: number) => n !== notifOrId)
       );
@@ -171,7 +168,6 @@ const AdminDashboard: React.FC = () => {
     const key = String(id);
     setResolvingIds((s) => ({ ...s, [key]: true }));
 
-    // optimistic remove from UI
     setNotifications((s) =>
       s.filter((n: any, idx: number) => {
         const nid = n?.id ?? n?._id ?? idx;
@@ -180,11 +176,9 @@ const AdminDashboard: React.FC = () => {
     );
 
     try {
-      // use server route DELETE /admin/notifications/:id
       await api.delete(`/admin/notifications/${id}`);
     } catch (err: any) {
       console.warn("Could not resolve notification on server:", err);
-      // refetch from server to restore consistent state
       try {
         const res = await api.get("/admin/notifications");
         setNotifications(res.data ?? []);
@@ -204,15 +198,12 @@ const AdminDashboard: React.FC = () => {
     if (!confirm("Deseja realmente limpar todas as notificações?")) return;
     setClearingAll(true);
 
-    // optimistic clear UI
     setNotifications([]);
 
     try {
-      // use server route DELETE /admin/notifications
       await api.delete("/admin/notifications");
     } catch (err) {
       console.warn("Não foi possível limpar notificações no servidor:", err);
-      // try to refetch to restore state
       try {
         const res = await api.get("/admin/notifications");
         setNotifications(res.data ?? []);
@@ -303,7 +294,6 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setShowNotifs((s) => !s)}
             aria-label="Notificações"
           >
-            {/*Sininho*/}
             <svg
               width="18"
               height="18"

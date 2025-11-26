@@ -54,7 +54,7 @@ export default function Navigation() {
   const {getUser} = useHookGetUser();
   const avatarUrl = `${api.defaults.baseURL}${getUser?.url_img}`;
   const profileName = getUser?.name ?? null;
-  console.log("Avatar URL:", avatarUrl);
+  //console.log("Avatar URL:", avatarUrl);
 
   return (
     <View className="w-full bg-[#181825] border-b-2 border-b-[#7f32cc] py-[2%] px-[3%] pr-5 z-50">

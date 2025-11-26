@@ -1,13 +1,68 @@
 // --- C4 - Contexto (LikeC4) ---
 // Versão atual: inclui Redis para cache e mensageria (notificações de itens)
 
+specification {
+  element person
+  element system
+  element external
+}
+
+model {
+  // Atores
+  User = person 'User' {
+    description 'Jogador que cria e compartilha de itens mágicos de RPG'
+  }
+  
+  admin = person 'Administrator' {
+    description 'Administrador que gerencia usuários, itens e visualiza notificações do sistema'
+  }
+
+  // Sistema Principal
+  arquigrimorio = system 'ArquiGrimorio' {
+    description 'Sistema de catalogação e compartilhamento de itens mágicos de RPG'
+  }
+
+  // Sistemas Externos
+  email = external 'Email System' {
+    description 'Sistema externo de envio de emails (planejado para futuras notificações)'
+  }
+
+  // Relacionamentos
+  player -> arquigrimorio 'Cria grimórios, busca e curte itens mágicos'
+  admin -> arquigrimorio 'Gerencia usuários, itens e visualiza notificações'
+  arquigrimorio -> email 'Envia notificações' 'SMTP (planejado)'
+}
+
 model {
   UserCtx = person 'Usuário' 'Mobile'
 
   // Infra principal
+  Frontend = system 'Frontend' {
+    description 'Interface do usuário para interação com o sistema'
+  }
+  Nginx = system 'Nginx' {
+    description 'Proxy reverso que encaminha requisições para o Backend e ServiceImage'
+  }
+  Backend = system 'Backend' {
+    description 'Lógica de negócio e API principal do sistema'
+  }
+  ServiceImage = system 'ServiceImage' {
+    description 'Serviço responsável pelo processamento e armazenamento de imagens'
+  }
+  MainDB = external 'MainDB' {
+    description 'Banco de dados principal (ORM/MySQL)'
+  }
+  ImageDB = external 'ImageDB' {
+    description 'Banco de dados de imagens (MySQL)'
+  }
+  Redis = external 'Redis' {
+    description 'Armazenamento de cache e mensageria (Pub/Sub)'
+  }
+
+  // Infra principal
   Frontend -> Nginx 'HTTP'
-  Nginx -> Backend '"/"'
-  Nginx -> ServiceImage '"/image/"'
+  Nginx -> Backend ''
+  Nginx -> ServiceImage ''
 
   // Upload delegação
   Backend -> ServiceImage 'Upload (axios + FormData)'
@@ -17,15 +72,12 @@ model {
   ServiceImage -> ImageDB 'MySQL'
 
   // Redis para cache e pub/sub
-  Backend -> Redis 'Cache contagem usuários / PubSub (item.created)'
-
-  // Notificações admin (consomem lista em Redis)
-  Backend -> Redis 'Lista admin:notifications'
+  Backend -> Redis 'Cache contagem usuários / PubSub (item.created). Lista admin:notifications'
 }
 
 views {
   view SystemContext {
-    title 'C4 - Contexto do Sistema'
+    title 'C4 - Context'
     description 'Frontend via Nginx → Backend; uploads delegados ao Service-Image; Redis para cache e mensageria.'
     include UserCtx
     include Frontend
@@ -37,4 +89,5 @@ views {
     include Redis
     autoLayout LeftRight
   }
+
 }
