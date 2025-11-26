@@ -28,8 +28,6 @@ export default function LabeledPassword({ formData, setFormData, passwordStrengt
                 )}
               </TouchableOpacity>
             </View>
-            {/* FIM COMPONENTE: PasswordInputWithToggle (Senha) */}
-            {/* INÍCIO COMPONENTE: PasswordStrengthBadge */}
             {passwordStrength && (
               <Text
                 className={`text-xs lg:text-base mt-1.5 font-bold ${
@@ -41,10 +39,6 @@ export default function LabeledPassword({ formData, setFormData, passwordStrengt
                 Senha {passwordStrength}
               </Text>
             )}
-            {/* FIM COMPONENTE: PasswordStrengthBadge */}
-
-            {/* Confirmar Senha */}
-            {/* INÍCIO COMPONENTE: PasswordInputWithToggle (Confirmar Senha) */}
             <Text className="text-sm lg:text-lg font-bold text-theme-text mb-1.5 mt-2">Confirmar Senha</Text>
             <View className="relative">
               <TextInput

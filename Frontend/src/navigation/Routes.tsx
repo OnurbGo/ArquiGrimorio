@@ -1,7 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
-// ...existing code...
 import CreateAccount from "../screens/CreateAccount";
 import CreateItem from "../screens/CreateItem";
 import EditItem from "../screens/EditItem";
@@ -13,9 +12,7 @@ import Search from "../screens/Search";
 import UserProfile from "../screens/UserProfile";
 import PrivateRoute from "../utils/PrivateRoute";
 
-/**
- * Root stack params: definir aqui centraliza as tipagens para uso em todas as telas.
- */
+
 export type RootStackParamList = {
   Home: undefined;
   Search: undefined;

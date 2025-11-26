@@ -19,7 +19,6 @@ export default function ItemsGridProfile( {
         renderItem={({ item, index }) => {
           const isLastInRow = (index + 1) % columns === 0;
           return (
-            // INÍCIO COMPONENTE: GridItemWrapper
             <View
               className="mb-3"
               style={[{ width: itemWidth, marginRight: isLastInRow ? 0 : GAP }]}
@@ -31,7 +30,6 @@ export default function ItemsGridProfile( {
                 }
               />
             </View>
-            // FIM COMPONENTE: GridItemWrapper
           );
         }}
         contentContainerStyle={{ paddingBottom: 36 }}

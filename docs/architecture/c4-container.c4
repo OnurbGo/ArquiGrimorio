@@ -2,6 +2,46 @@
 // Acrescentado Redis como container de Cache/Mensageria
 
 model {
+  user = person 'Usuário'
+  adminUser = person 'Administrador'
+
+  frontend = container 'Frontend Mobile' 'Permite que usuários consultem, criem e editem itens, além de gerenciar seus perfis.' 'React Native (Expo)'
+  frontendAdmin = container 'Frontend Admin' 'Painel web para administradores gerenciarem usuários e itens.' 'React + Vite'
+  backend = container 'Backend API' 'API principal que lida com regras de negócio, autenticação, gerenciamento de usuários e itens.' 'Node.js (Express)'
+  imageService = container 'Microserviço de Imagens' 'Responsável pelo upload, armazenamento e acesso a imagens.' 'Node.js (NestJS)'
+  mainDb = database 'Banco de Dados Principal' 'Armazena dados de usuários, itens, likes, etc.' 'MySQL'
+  imageDb = database 'Banco de Dados de Imagens' 'Armazena metadados das imagens (URLs, etc).' 'MySQL'
+  redis = database 'Cache & Message Broker' 'Armazena sessões, cache de contadores e notificações para admin via pub/sub.' 'Redis'
+  uploadsVolume = storage 'Volume de Uploads' 'Armazena os arquivos de imagem enviados localmente.' 'Docker Volume'
+
+  // Relacionamentos
+  user -> frontend 'Usa' 'HTTPS'
+  admin -> frontendAdmin 'Usa' 'HTTPS'
+
+  frontend -> nginx 'Faz chamadas de API' 'HTTPS'
+  frontendAdmin -> nginx 'Faz chamadas de API' 'HTTPS'
+
+  nginx -> backend 'Roteia requisições para /' 'HTTP'
+  nginx -> imageService 'Roteia requisições para /image/' 'HTTP'
+
+  backend -> mainDb 'Lê e escreve' 'TCP'
+  backend -> redis 'Usa para cache e pub/sub' 'TCP'
+  backend -> imageService 'Delega upload de imagens' 'HTTP'
+
+  imageService -> imageDb 'Lê e escreve metadados' 'TCP'
+  imageService -> uploadsVolume 'Salva e lê arquivos de imagem'
+}
+
+/*views {
+  view SystemContainers {
+    title 'Diagrama de Contêineres - ArquiGrimório'
+    description 'Visão dos contêineres que compõem o sistema ArquiGrimório e suas interações.'
+    include *
+    autoLayout LeftRight
+  }
+}*/
+
+model {
   Frontend = container 'Frontend (React Native / Expo)' 'Cliente mobile' 'Expo'
   NginxProxy = container 'Nginx (Reverse Proxy)' 'Roteamento / TLS' 'nginx'
   BackendAPI = container 'Backend (Express)' 'API principal' 'Node'
@@ -11,8 +51,7 @@ model {
   Redis = container 'Redis (Cache/Mensageria)' 'Cache + Pub/Sub' 'redis:7'
   ImageStorageCDN = storage 'CDN/Storage (Planejado)' 'Cloudinary/S3'
   LocalUploadsVolume = storage 'Uploads (/uploads)' 'Volume local'
-  OAuth = storage 'Login Social' 'SSO/OAuth'
-  Firebase = storage 'Firebase (Push/Analytics)' 'Push/Analytics'
+  OAuth = storage 'Login' 'SSO/OAuth'
 
   Frontend -> NginxProxy 'HTTP 8080'
   NginxProxy -> BackendAPI '"/"'
@@ -24,10 +63,8 @@ model {
 
   // Redis usos
   BackendAPI -> Redis 'Cache (userCount) / PubSub (item.created)'
-  BackendAPI -> Redis 'Lista admin:notifications (rPush/lRange)'
 
   BackendAPI -> OAuth 'SSO'
-  Frontend -> Firebase 'push/analytics'
   ImageService -> ImageStorageCDN 'upload/CDN'
   ImageService -> LocalUploadsVolume 'serve /image/uploads/*'
 }
@@ -44,9 +81,108 @@ views {
     include ImageDB
     include Redis
     include OAuth
-    include Firebase
     include ImageStorageCDN
     include LocalUploadsVolume
     autoLayout LeftRight
   }
+}
+
+specification {
+  element person
+  element system
+  element webapp
+  element mobileapp
+  element api
+  element microservice
+  element database
+  element cache
+  element gateway
+  element storage
+}
+
+model {
+  // Atores
+  player = person 'Player' {
+    description 'Jogador que usa o aplicativo mobile'
+  }
+  
+  admin = person 'Administrator' {
+    description 'Administrador que usa a interface web'
+  }
+
+  // Sistema ArquiGrimorio
+  arquigrimorio = system 'ArquiGrimorio' {
+    
+    // Frontend Mobile
+    mobileApp = mobileapp 'Mobile Application' {
+      description 'Aplicativo React Native para jogadores criarem e compartilharem grimórios'
+      technology 'React Native, Expo, TypeScript'
+    }
+    
+    // Frontend Web Admin
+    adminWeb = webapp 'Admin Web Application' {
+      description 'Painel administrativo para gerenciar usuários, itens e notificações'
+      technology 'React, TypeScript, Vite'
+    }
+    
+    // API Gateway
+    nginx = gateway 'NGINX Reverse Proxy' {
+      description 'Proxy reverso que roteia requisições (porta 8080)'
+      technology 'NGINX'
+    }
+    
+    // Backend Principal
+    backend = api 'Backend API' {
+      description 'API REST monolítica modular: usuários, autenticação (JWT), itens, curtidas, notificações admin'
+      technology 'Node.js, Express, TypeScript, Sequelize'
+    }
+    
+    // Microserviço de Imagens
+    imageService = microservice 'Image Service' {
+      description 'Microserviço responsável por upload, armazenamento e servir imagens'
+      technology 'NestJS, TypeScript, Multer'
+    }
+    
+    // Cache e Mensageria
+    redis = cache 'Redis' {
+      description 'Cache de contadores, sessões e pub/sub para notificações administrativas'
+      technology 'Redis 7'
+    }
+    
+    // Banco de Dados Principal
+    mainDb = database 'Main Database' {
+      description 'Banco principal: usuários, itens, curtidas (item_likes)'
+      technology 'MySQL 8.0'
+    }
+    
+    // Banco de Dados do Microserviço
+    imageDb = database 'Image Database' {
+      description 'Banco de metadados de imagens (URLs, referências)'
+      technology 'MySQL 8.0'
+    }
+    
+    // Armazenamento Local
+    uploadsVolume = storage 'Uploads Volume' {
+      description 'Volume Docker persistente para arquivos de imagem'
+      technology 'Docker Volume'
+    }
+
+    // Relacionamentos
+    mobileApp -> nginx 'Faz requisições API' 'HTTPS'
+    adminWeb -> nginx 'Faz requisições API' 'HTTPS'
+    
+    nginx -> backend 'Roteia / para' 'HTTP'
+    nginx -> imageService 'Roteia /image/ para' 'HTTP'
+    
+    backend -> mainDb 'Lê/escreve dados' 'MySQL Protocol'
+    backend -> redis 'Cache + Pub/Sub' 'Redis Protocol'
+    backend -> imageService 'Delega upload de imagens' 'HTTP/REST'
+    
+    imageService -> imageDb 'Armazena metadados' 'MySQL Protocol'
+    imageService -> uploadsVolume 'Persiste arquivos' 'File System'
+  }
+
+  // Relacionamentos Externos
+  player -> arquigrimorio.mobileApp 'Usa' 'HTTPS'
+  admin -> arquigrimorio.adminWeb 'Usa' 'HTTPS'
 }

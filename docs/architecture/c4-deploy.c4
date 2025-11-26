@@ -1,120 +1,167 @@
-// --- Deploy ---
-// Atualizado com Redis no ambiente local e cloud
-
-// Duplicate element declarations removed; element kinds are defined once below in the subsequent specification block.
-
-// ====================================================================
-// 1. ESPECIFICAÇÃO E ELEMENTOS COMUNS
-// ====================================================================
-
 specification {
-    // Elemento para representar o usuário
-    element person { style { shape person } }
-    // Elementos utilitários para o deploy sem deploymentNode
-    element container { style { shape rectangle } }
-    element database { style { shape cylinder } }
-    // Serviço externo genérico (ex.: S3/Cloudinary, Observabilidade)
-    element storage { style { shape storage } }
+  element person
+  element system
+  element container
+  element database
+  element storage
 }
-
-// ====================================================================
-// 2. AMBIENTE LOCAL (DOCKER-COMPOSE)
-// ====================================================================
 
 model {
-    // Ambiente Local (sem deploymentNode)
-    LocalUser = person 'Usuário' 'Acessando via app mobile (Expo)'
+  // AMBIENTE LOCAL (Docker Compose)
+  localUser = person 'Local User' {
+    description 'Desenvolvedor acessando via localhost:8080'
+  }
 
-    Nginx = container 'Nginx (Reverse Proxy)' 'Ponto de entrada' 'nginx:alpine | :8080'
-    Backend = container 'Backend (Express)' 'API principal' 'Node/Express | :3000'
-    ServiceImage = container 'Service-Image (NestJS)' 'Microserviço de Imagens' 'NestJS | :3001→3000'
-    MainDB = database 'Database (MySQL)' 'Persistência principal' 'mysql:8.0 | :3306'
-    ImageDB = database 'Image-DB (MySQL)' 'Persistência de imagens' 'mysql:8.0 | :3306 (host 3307)'
-    RedisLocal = container 'Redis (Cache/Mensageria)' 'Redis local' 'redis:alpine | :6379'
-    UploadsVolume = storage 'Uploads (/uploads)' 'Volume Docker persistente'
+  dockerHost = system 'Docker Host' {
+    description 'Máquina local executando Docker Compose'
+    technology 'Docker Engine + Docker Compose'
+    
+    appNetwork = system 'app-network (Bridge)' {
+      description 'Rede Docker interna para comunicação entre containers'
+      technology 'Docker Network'
+      
+      nginxContainer = container 'nginx:alpine' {
+        description 'Proxy reverso (porta 8080 → backend:3000 e service-image:3000)'
+        technology 'NGINX'
+      }
+      
+      backendContainer = container 'backend:latest' {
+        description 'Backend Node.js (porta 3000)'
+        technology 'Node.js + Express + Sequelize'
+      }
+      
+      imageServiceContainer = container 'service-image:latest' {
+        description 'Microserviço de imagens (porta 3001→3000)'
+        technology 'NestJS + Multer'
+      }
+      
+      redisContainer = container 'redis:7-alpine' {
+        description 'Cache e Pub/Sub (porta 6379)'
+        technology 'Redis'
+      }
+      
+      mainDbContainer = container 'mysql:8.0' {
+        description 'Banco principal (porta 3306)'
+        technology 'MySQL'
+      }
+      
+      imageDbContainer = container 'mysql:8.0-image' {
+        description 'Banco do microserviço (porta 3307→3306)'
+        technology 'MySQL'
+      }
+      
+      // Relacionamentos
+      nginxContainer -> backendContainer 'Proxy /' 'HTTP'
+      nginxContainer -> imageServiceContainer 'Proxy /image/' 'HTTP'
+      backendContainer -> mainDbContainer 'Conecta' 'MySQL'
+      backendContainer -> redisContainer 'Cache + Pub/Sub' 'Redis'
+      backendContainer -> imageServiceContainer 'Delega upload' 'HTTP'
+      imageServiceContainer -> imageDbContainer 'Conecta' 'MySQL'
+    }
+    
+    volumes = system 'Docker Volumes' {
+      description 'Volumes persistentes locais'
+      technology 'Docker Volume'
+      
+      dbData = storage 'db_data' {
+        description 'Dados do MySQL principal'
+      }
+      
+      usersData = storage 'users_data' {
+        description 'Dados do MySQL de imagens'
+      }
+      
+      uploadsData = storage 'uploads' {
+        description 'Arquivos de imagens enviados'
+      }
+      
+      // Relacionamentos com volumes
+      mainDbContainer -> dbData 'Persiste'
+      imageDbContainer -> usersData 'Persiste'
+      imageServiceContainer -> uploadsData 'Persiste'
+    }
+  }
+  
+  // AMBIENTE CLOUD (Planejado)
+  cloudUser = person 'Cloud User' {
+    description 'Usuário final acessando produção via HTTPS'
+  }
 
-    // Relacionamentos Locais
-    LocalUser -> Nginx 'Acessa' 'HTTP 8080'
-    Nginx -> Backend 'Roteia rota /' 'HTTP'
-    Nginx -> ServiceImage 'Roteia rota /image/' 'HTTP'
-    Backend -> MainDB 'Acessa dados' 'TCP 3306 (Interno)'
-    ServiceImage -> ImageDB 'Acessa metadados' 'TCP 3306 (Interno)'
-    ServiceImage -> UploadsVolume 'Salva/serve estático /image/uploads/*'
-    Backend -> RedisLocal 'Cache + Pub/Sub' 'TCP 6379 (Interno)'
-    RedisLocal -> Backend 'Eventos item.created / list admin:notifications' 'TCP 6379 (Interno)'
-
-// ====================================================================
-// 3. AMBIENTE CLOUD (PLANEJADO/PRODUÇÃO)
-// ====================================================================
-
-    // Ambiente Cloud (sem deploymentNode)
-    CloudUser = person 'Usuário' 'Usuário final (mobile)'
-
-    ReverseProxy = container 'Nginx/Proxy' 'Terminação TLS' 'VPS/Fly.io | HTTPS 443'
-    BackendCloud = container 'Backend (Express)' 'API principal' 'Render/Railway/Fly.io'
-    ImgSvcCloud = container 'Microserviço de Imagens (NestJS)' 'Serviço de imagens' 'Render/Railway/Fly.io'
-    MainDBCloud = database 'MySQL Principal' 'Banco gerenciado' 'RDS/PlanetScale'
-    ImgDBCloud = database 'MySQL Imagens' 'Banco gerenciado' 'RDS/PlanetScale'
-    RedisCloud = container 'Redis Gerenciado' 'Cache/Mensageria' 'redis:alpine'
-    ImageStorage = storage 'Armazenamento/CDN' 'Cloudinary / AWS S3 + CloudFront'
-    Observability = storage 'Observabilidade' 'Prometheus/Grafana / Logs Cloud'
-    FrontendCloud = container 'Frontend Mobile' 'Distribuição OTA' 'Expo'
-
-    // Relacionamentos Cloud
-    CloudUser -> ReverseProxy 'Acessa' 'HTTPS 443 (TLS)'
-    ReverseProxy -> BackendCloud 'Encaminha rota /' 'HTTP Interno'
-    ReverseProxy -> ImgSvcCloud 'Encaminha rota /image/' 'HTTP Interno'
-    BackendCloud -> MainDBCloud 'Acessa dados' 'Rede Privada'
-    ImgSvcCloud -> ImgDBCloud 'Acessa metadados' 'Rede Privada'
-    BackendCloud -> RedisCloud 'Cache/PubSub' 'Rede Privada'
-    ImgSvcCloud -> ImageStorage 'Faz Upload/Armazena' 'API Cloud'
-    FrontendCloud -> ImageStorage 'Exibe Imagens' 'HTTPS (CDN)'
-    BackendCloud -> Observability 'Envia Logs e Métricas'
-    ImgSvcCloud -> Observability 'Envia Logs e Métricas'
+  cloudInfra = system 'Cloud Infrastructure (Planejado)' {
+    description 'Infraestrutura de produção em cloud provider'
+    technology 'Render / Railway / Fly.io'
+    
+    reverseProxy = container 'Reverse Proxy' {
+      description 'Proxy com terminação SSL/TLS'
+      technology 'NGINX / Caddy'
+    }
+    
+    backendCloud = container 'Backend Cloud' {
+      description 'Backend em produção com escalabilidade horizontal'
+      technology 'Node.js + Express'
+    }
+    
+    imageServiceCloud = container 'Image Service Cloud' {
+      description 'Microserviço de imagens em produção'
+      technology 'NestJS'
+    }
+    
+    redisCloud = container 'Redis Managed' {
+      description 'Redis gerenciado com persistência'
+      technology 'Redis Cloud / Upstash'
+    }
+    
+    mainDbCloud = database 'MySQL Main Cloud' {
+      description 'MySQL gerenciado para dados principais'
+      technology 'PlanetScale / AWS RDS'
+    }
+    
+    imageDbCloud = database 'MySQL Image Cloud' {
+      description 'MySQL gerenciado para metadados de imagens'
+      technology 'PlanetScale / AWS RDS'
+    }
+    
+    cdnStorage = storage 'CDN / Object Storage' {
+      description 'Armazenamento e distribuição de imagens via CDN'
+      technology 'Cloudinary / AWS S3 + CloudFront'
+    }
+    
+    observability = storage 'Observability Stack' {
+      description 'Monitoramento, logs e métricas'
+      technology 'Prometheus / Grafana / Datadog'
+    }
+    
+    // Relacionamentos cloud
+    reverseProxy -> backendCloud 'Roteia /' 'HTTPS'
+    reverseProxy -> imageServiceCloud 'Roteia /image/' 'HTTPS'
+    backendCloud -> mainDbCloud 'Conecta' 'MySQL SSL'
+    backendCloud -> redisCloud 'Cache + Pub/Sub' 'Redis TLS'
+    backendCloud -> imageServiceCloud 'Delega upload' 'HTTP'
+    imageServiceCloud -> imageDbCloud 'Conecta' 'MySQL SSL'
+    imageServiceCloud -> cdnStorage 'Upload/Serve' 'HTTP API'
+    backendCloud -> observability 'Envia métricas' 'HTTP'
+    imageServiceCloud -> observability 'Envia métricas' 'HTTP'
+  }
+  
+  // Relacionamentos com usuários
+  localUser -> dockerHost.appNetwork.nginxContainer 'Acessa' 'HTTP :8080'
+  cloudUser -> cloudInfra.reverseProxy 'Acessa' 'HTTPS :443'
 }
 
-// ====================================================================
-// 4. VISTAS (VIEWS)
-// ====================================================================
-
 views {
-    // Vista do Ambiente Local (Docker)
-    view LocalDeployment {
-        title 'Deployment Local (Docker)'
-        description 'Topologia local com Nginx (client_max_body_size ajustado) roteando / → Backend e /image/ → Service-Image; Service-Image persiste arquivos em volume /uploads.'
-        include LocalUser
-        include Nginx
-        include Backend
-        include ServiceImage
-        include MainDB
-        include ImageDB
-        include RedisLocal
-        include UploadsVolume
-    autoLayout LeftRight
-    }
-
-    // Vista do Ambiente Cloud (Produção)
-    view CloudDeployment {
-        title 'Deployment Cloud (Produção)'
-        description 'Cenário planejado de deploy em nuvem (sem deploymentNode).'
-        include CloudUser
-        include ReverseProxy
-        include BackendCloud
-        include ImgSvcCloud
-        include MainDBCloud
-        include ImgDBCloud
-        include RedisCloud
-        include ImageStorage
-        include Observability
-        include FrontendCloud
-    autoLayout LeftRight
-    }
-
-// Estilos
-    style BackendCloud { color primary }
-    style ImgSvcCloud { color primary }
-    style ImageStorage { color green }
-    style ReverseProxy { color amber }
-    style RedisCloud { color amber }
-    style RedisLocal { color amber }
+  view localDeployment {
+    title "C4 - Deploy: Deployment Diagram - Local Environment"
+    description "Ambiente local Docker Compose com volumes persistentes"
+    include localUser
+    include dockerHost.*
+    autoLayout TopBottom
+  }
+  
+  view cloudDeployment {
+    title "C4 - Deploy: Deployment Diagram - Cloud Environment (Planned)"
+    description "Arquitetura planejada para produção com serviços gerenciados em cloud"
+    include cloudUser
+    include cloudInfra.*
+    autoLayout TopBottom
+  }
 }

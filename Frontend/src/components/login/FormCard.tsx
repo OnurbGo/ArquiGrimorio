@@ -17,7 +17,6 @@ export default function FormCard({
 }: any) {
   return (
     <View className="w-full max-w-md bg-[#071525] p-6 rounded-2xl shadow-lg">
-      {/* INÍCIO COMPONENTE: LabeledInput (Email) */}
       <Text className="text-base font-bold text-slate-200 mb-1.5">Email</Text>
       <TextInput
         value={email}
@@ -38,12 +37,10 @@ export default function FormCard({
         accessible
         accessibilityLabel="Email"
       />
-      {/* FIM COMPONENTE: LabeledInput (Email) */}
 
       <Text className="text-base font-bold text-slate-200 mb-1.5 mt-3">
         Senha
       </Text>
-      {/* INÍCIO COMPONENTE: PasswordField */}
       <View className="relative">
         <TextInput
           ref={passwordRef}
@@ -65,7 +62,6 @@ export default function FormCard({
           accessible
           accessibilityLabel="Senha"
         />
-        {/* INÍCIO COMPONENTE: ToggleVisibilityButton */}
         <TouchableOpacity
           onPress={() => setSecure((s: any) => !s)}
           accessibilityLabel="alternar visibilidade senha"
@@ -78,11 +74,7 @@ export default function FormCard({
             <EyeOff size={20} color={"#9ca3af"} />
           )}
         </TouchableOpacity>
-        {/* FIM COMPONENTE: ToggleVisibilityButton */}
       </View>
-      {/* FIM COMPONENTE: PasswordField */}
-
-      {/* INÍCIO COMPONENTE: FormSubmitButton */}
       <Button
         onPress={handleSubmit}
         loading={loading}
@@ -90,15 +82,11 @@ export default function FormCard({
       >
         Entrar
       </Button>
-      {/* FIM COMPONENTE: FormSubmitButton */}
-
-      {/* INÍCIO COMPONENTE: FormError */}
       {error ? (
         <Text className="mt-2.5 text-rose-400 text-center font-semibold">
           {error}
         </Text>
       ) : null}
-      {/* FIM COMPONENTE: FormError */}
     </View>
   );
 }

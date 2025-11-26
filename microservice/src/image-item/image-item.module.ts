@@ -16,7 +16,7 @@ import { randomUUID } from 'crypto';
           cb(null, `${randomUUID()}${ext}`);
         },
       }),
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+      limits: { fileSize: 10 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         const allowedMimes = ['image/png', 'image/jpeg'];
         const allowedExts = ['.png', '.jpg', '.jpeg'];
@@ -26,6 +26,9 @@ import { randomUUID } from 'crypto';
           !allowedMimes.includes(file.mimetype) ||
           !allowedExts.includes(ext)
         ) {
+          console.log(
+            `[image-item] rejected file=${file.originalname} mime=${file.mimetype} ext=${ext}`,
+          );
           return cb(
             new BadRequestException(
               'Invalid file type. Please upload only PNG or JPEG (.png, .jpg, .jpeg).',
@@ -33,6 +36,9 @@ import { randomUUID } from 'crypto';
             false,
           );
         }
+        console.log(
+          `[image-item] accepted file=${file.originalname} mime=${file.mimetype} ext=${ext}`,
+        );
         cb(null, true);
       },
     }),

@@ -1,6 +1,5 @@
 import LabeledDesc from "@/components/register/LabeledDesc";
 import LabeledEmail from "@/components/register/LabeledEmail";
-import LabeledImage from "@/components/register/LabeledImage";
 import LabeledName from "@/components/register/LabeledName";
 import LabeledPassword from "@/components/register/LabeledPassword";
 import { useEffect, useState } from "react";
@@ -8,6 +7,11 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Navigation from "../components/Navigation";
 import { createUser } from "../hooks/user/user";
+
+import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/Routes';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // --- Helpers: validação de senha ---
 const validatePassword = (password: string): boolean => {
@@ -30,7 +34,6 @@ export default function CreateAccount() {
     email: "",
     password: "",
     confirmPassword: "",
-    url_img: "",
     description: "",
   });
 
@@ -41,6 +44,8 @@ export default function CreateAccount() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp>();
+  
   useEffect(() => {
     if (success) {
       const t = setTimeout(() => setSuccess(false), 4000);
@@ -71,8 +76,8 @@ export default function CreateAccount() {
     }
 
     try {
-      const { name, email, password, url_img, description } = formData;
-      await createUser({ name, email, password, url_img, description });
+      const { name, email, password, description } = formData;
+      await createUser({ name, email, password, description });
       setSuccess(true);
       setError("");
       setErrorAlert(false);
@@ -81,10 +86,10 @@ export default function CreateAccount() {
         email: "",
         password: "",
         confirmPassword: "",
-        url_img: "",
         description: "",
       });
       setPasswordStrength(null);
+      navigation.navigate('Login');
     } catch {
       setError("Erro ao registrar. Tente novamente.");
       setErrorAlert(true);
@@ -128,7 +133,6 @@ export default function CreateAccount() {
               showConfirmPassword={showConfirmPassword}
               setShowConfirmPassword={setShowConfirmPassword}
             />
-            <LabeledImage formData={formData} setFormData={setFormData} />
             <LabeledDesc formData={formData} setFormData={setFormData} />
             {error ? (
               <Text className="text-theme-danger text-xs lg:text-base mt-2 mb-1 text-center">

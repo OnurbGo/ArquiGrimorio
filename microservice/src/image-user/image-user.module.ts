@@ -26,6 +26,9 @@ import { randomUUID } from 'crypto';
           !allowedMimes.includes(file.mimetype) ||
           !allowedExts.includes(ext)
         ) {
+          console.log(
+            `[image-user] rejected file=${file.originalname} mime=${file.mimetype} ext=${ext}`,
+          );
           return cb(
             new BadRequestException(
               'Invalid file type. Please upload only PNG or JPEG (.png, .jpg, .jpeg).',
@@ -33,6 +36,9 @@ import { randomUUID } from 'crypto';
             false,
           );
         }
+        console.log(
+          `[image-user] accepted file=${file.originalname} mime=${file.mimetype} ext=${ext}`,
+        );
         cb(null, true);
       },
     }),

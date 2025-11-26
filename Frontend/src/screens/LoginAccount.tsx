@@ -1,4 +1,3 @@
-// LoginAccount.tsx
 import { useRef, useState, useCallback } from "react";
 import { KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +28,7 @@ export default function LoginAccount() {
   const insets = useSafeAreaInsets();
   const passwordRef = useRef<TextInput | null>(null);
 
-  // INÍCIO COMPONENTE: GetErrorMessage
+
   const getErrorMessage = (err: unknown): string => {
     if (isAxiosError(err)) {
       const msg = err.response?.data?.message ?? err.response?.data ?? err.message;
@@ -38,9 +37,6 @@ export default function LoginAccount() {
     if (err instanceof Error) return err.message;
     return "Erro ao autenticar";
   };
-  // FIM COMPONENTE: GetErrorMessage
-
-  // INÍCIO COMPONENTE: HandleSubmit
   const handleSubmit = useCallback(async () => {
     if (!email.trim() || !password) {
       setError("Preencha email e senha.");
@@ -65,26 +61,19 @@ export default function LoginAccount() {
       setLoading(false);
     }
   }, [email, password, login, navigation]);
-  // FIM COMPONENTE: HandleSubmit
 
   return (
-    // INÍCIO COMPONENTE: ScreenContainer
     <View
       className="flex-1 bg-[#0b1220]"
       style={[{ paddingTop: insets.top }]}
     >
-      {/* INÍCIO COMPONENTE: NavigationBar */}
       <Navigation />
-      {/* FIM COMPONENTE: NavigationBar */}
       <View className="flex-1">
-        {/* INÍCIO COMPONENTE: KeyboardAwareContainer */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
-          {/* INÍCIO COMPONENTE: CenteredContentContainer */}
           <View className="flex-1 justify-center items-center p-4">
-            {/* INÍCIO COMPONENTE: AuthHeader */}
             <View className="items-center mb-4">
               <Text className="text-4xl font-black text-slate-200 text-center">
                 ArquiGrimório
@@ -93,13 +82,7 @@ export default function LoginAccount() {
                 Portal de Itens Místicos
               </Text>
             </View>
-            {/* FIM COMPONENTE: AuthHeader */}
-
-            {/* INÍCIO COMPONENTE: FormCard */}
             <FormCard email={email} setEmail={setEmail} password={password} setPassword={setPassword} secure={secure} setSecure={setSecure} error={error} setError={setError} passwordRef={passwordRef} handleSubmit={handleSubmit} loading={loading} />
-            {/* FIM COMPONENTE: FormCard */}
-
-            {/* INÍCIO COMPONENTE: SignUpPrompt */}
             <View className="mt-4 items-center">
               <Text className="text-base text-slate-400">
                 Não tem conta?{" "}
@@ -112,13 +95,9 @@ export default function LoginAccount() {
                 </Text>{" "}
               </Text>
             </View>
-            {/* FIM COMPONENTE: SignUpPrompt */}
           </View>
-          {/* FIM COMPONENTE: CenteredContentContainer */}
         </KeyboardAvoidingView>
-        {/* FIM COMPONENTE: KeyboardAwareContainer */}
       </View>
     </View>
-    // FIM COMPONENTE: ScreenContainer
   );
 }

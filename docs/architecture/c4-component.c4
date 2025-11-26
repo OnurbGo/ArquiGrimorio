@@ -2,119 +2,171 @@
 // Atualizado com Redis util, MessageBus e AdminNotificationController
 
 specification {
-  element component { style { shape rectangle } }
+  element person
+  element webapp
+  element mobileapp
+  element gateway
+  element api
+  element component
+  element microservice
+  element database
+  element cache
 }
 
 model {
-  // Backend (Express)
-  App = component 'app.ts' 'Bootstrap / middlewares' 'Express'
-  AuthRoutes = component 'Auth (LoginRoutes)' 'POST /login' 'Router'
-  UserRoutes = component 'UserRoutes' 'CRUD usuários + /users/count' 'Router'
-  ItemRoutes = component 'ItemRouter' 'CRUD itens' 'Router'
-  ItemLikeRoutes = component 'ItemLikeRouter' 'Likes de itens' 'Router'
-  AdminNotifRoutes = component 'AdminNotificationRoute' 'GET /admin/notifications' 'Router'
-  AuthMiddleware = component 'authMiddleware' 'JWT + attach user/admin' 'Middleware'
-  SequelizeModels = component 'Sequelize Models' 'Mapeamento ORM' 'ORM'
-  MulterMemory = component 'multer.memoryStorage' 'Multipart handling' 'Middleware'
-  ImageUploadUtil = component 'utils/imageUpload.ts' 'Delegação de upload (axios)' 'Util'
-  RedisUtil = component 'utils/redis.ts' 'Conexão get/set/del' 'Util'
-  MessageBusUtil = component 'utils/messageBus.ts' 'Pub/Sub item.created' 'Util'
-  AdminNotificationController = component 'AdminNotificationController.ts' 'Lista notificações' 'Controller'
+  // Atores
+  User = person 'User'
+  admin = person 'Administrator'
+  
+  // Frontends
+  adminWeb = webapp 'Admin Web Application'
+  mobileApp = mobileapp 'Mobile Application'
+  
+  // Gateway
+  nginx = gateway 'NGINX'
+  
+  // Backend API com componentes internos
+  backend = api 'Backend API' {
+    
+    // Controllers (camada de apresentação)
+    authController = component 'Login Controller' {
+      description 'Gerencia login, registro e geração de tokens JWT'
+      technology 'Express Controller'
+    }
+    
+    userController = component 'User Controller' {
+      description 'CRUD de usuários, upload de foto de perfil via proxy'
+      technology 'Express Controller'
+    }
+    
+    itemController = component 'Item Controller' {
+      description 'CRUD de itens mágicos, delega upload de imagens ao microserviço'
+      technology 'Express Controller'
+    }
+    
+    likeController = component 'Item Like Controller' {
+      description 'Gerencia curtidas (criar, remover, listar)'
+      technology 'Express Controller'
+    }
+    
+    adminController = component 'Admin Notification Controller' {
+      description 'Lista notificações administrativas (eventos de criação de itens)'
+      technology 'Express Controller'
+    }
+    
+    // Middleware
+    authMiddleware = component 'Auth Middleware' {
+      description 'Valida tokens JWT e protege rotas'
+      technology 'Express Middleware'
+    }
+    
+    // Models (camada de dados)
+    userModel = component 'User Model' {
+      description 'Entidade usuário com Sequelize'
+      technology 'Sequelize Model'
+    }
+    
+    itemModel = component 'Item Model' {
+      description 'Entidade item com Sequelize'
+      technology 'Sequelize Model'
+    }
+    
+    likeModel = component 'Item Like Model' {
+      description 'Entidade curtida (item_like) com Sequelize'
+      technology 'Sequelize Model'
+    }
+    
+    // Utilities
+    jwtUtil = component 'JWT Utility' {
+      description 'Funções para gerar e validar tokens JWT'
+      technology 'jsonwebtoken'
+    }
+    
+    imageProxy = component 'Image Proxy' {
+      description 'Cliente HTTP para comunicação com Image Service'
+      technology 'axios'
+    }
+    
+    redisUtil = component 'Redis Utility' {
+      description 'Cliente Redis para cache e sessões'
+      technology 'redis'
+    }
+    
+    messageBus = component 'Message Bus' {
+      description 'Pub/Sub para eventos assíncronos (ex: item.created)'
+      technology 'Redis Pub/Sub'
+    }
 
-  // Microserviço Imagens
-  ImageUserController = component 'ImageUserController' 'GET /image-user' 'Controller'
-  ImageItemController = component 'ImageItemController' 'Upload/CRUD imagem item' 'Controller'
-  ImageItemService = component 'ImageItemService' 'Regras imagem item' 'Service'
-  FileInterceptor = component 'FileInterceptor (Multer)' 'Extrai arquivo' 'Interceptor'
-  StaticServe = component 'Static /uploads' 'Serve arquivos' 'Infra'
-  DiskStorage = component 'Uploads (/uploads)' 'Armazenamento local' 'Storage'
-  UploadAdapter = component 'Upload Adapter (Planejado)' 'CDN futura' 'Adapter'
-
-  // Registros
-  App -> AuthRoutes 'registra'
-  App -> UserRoutes 'registra'
-  App -> ItemRoutes 'registra'
-  App -> ItemLikeRoutes 'registra'
-  App -> AdminNotifRoutes 'registra'
-
-  // ORM
-  AuthRoutes -> SequelizeModels
-  UserRoutes -> SequelizeModels
-  ItemRoutes -> SequelizeModels
-  ItemLikeRoutes -> SequelizeModels
-  AdminNotifRoutes -> SequelizeModels
-
-  // Auth
-  UserRoutes -> AuthMiddleware
-  ItemRoutes -> AuthMiddleware
-  ItemLikeRoutes -> AuthMiddleware
-  AdminNotifRoutes -> AuthMiddleware
-
-  // Upload flow
-  UserRoutes -> MulterMemory
-  ItemRoutes -> MulterMemory
-  UserRoutes -> ImageUploadUtil
-  ItemRoutes -> ImageUploadUtil
-  ImageUploadUtil -> ServiceImage 'HTTP (axios)'
-
-  // Redis cache contagem de usuários
-  UserRoutes -> RedisUtil 'get/set userCount'
-
-  // Pub/Sub item.created
-  ItemRoutes -> MessageBusUtil 'publish item.created'
-  MessageBusUtil -> RedisUtil 'usa conexão pub/sub'
-
-  // Admin notifications list
-  AdminNotifRoutes -> RedisUtil 'lRange admin:notifications'
-
-  // Subscriber grava notificações
-  MessageBusUtil -> RedisUtil 'rPush admin:notifications'
-
-  // Microserviço
-  ImageUserController -> FileInterceptor
-  ImageItemController -> FileInterceptor
-  ImageItemController -> ImageItemService
-  ImageItemService -> DiskStorage
-  ServiceImage -> StaticServe
-  ImageItemService -> UploadAdapter 'planejado'
-
+    // Relacionamentos internos
+    authController -> jwtUtil 'Gera tokens'
+    authController -> userModel 'Cria/valida usuário'
+    
+    authMiddleware -> jwtUtil 'Valida tokens'
+    authMiddleware -> redisUtil 'Verifica sessões'
+    
+    userController -> authMiddleware 'Protegido por'
+    userController -> userModel 'CRUD usuários'
+    userController -> imageProxy 'Upload foto perfil'
+    
+    itemController -> authMiddleware 'Protegido por'
+    itemController -> itemModel 'CRUD itens'
+    itemController -> imageProxy 'Upload imagem item'
+    itemController -> messageBus 'Publica item.created'
+    
+    likeController -> authMiddleware 'Protegido por'
+    likeController -> likeModel 'CRUD curtidas'
+    
+    adminController -> authMiddleware 'Protegido por'
+    adminController -> redisUtil 'Lê lista admin:notifications'
+    
+    userModel -> messageBus 'Publica eventos'
+    itemModel -> messageBus 'Publica eventos'
+  }
+  
+  // Sistemas externos ao Backend
+  mainDb = database 'Main Database'
+  redis = cache 'Redis Cache'
+  imageService = microservice 'Image Service'
+  
+  // Relacionamentos externos
+  User -> mobileApp 'Usa'
+  admin -> adminWeb 'Usa'
+  
+  mobileApp -> nginx 'HTTPS'
+  adminWeb -> nginx 'HTTPS'
+  nginx -> backend 'HTTP'
+  
+  backend.userModel -> mainDb 'MySQL'
+  backend.itemModel -> mainDb 'MySQL'
+  backend.likeModel -> mainDb 'MySQL'
+  backend.redisUtil -> redis 'Redis Protocol'
+  backend.messageBus -> redis 'Redis Pub/Sub'
+  backend.imageProxy -> imageService 'HTTP/REST'
 }
 
 views {
-  view BackendComponents {
-    title 'Componentes - Backend'
-    description 'Inclui RedisUtil, MessageBus e AdminNotificationController.'
-    include Backend
-    include App
-    include AuthRoutes
-    include UserRoutes
-    include ItemRoutes
-    include ItemLikeRoutes
-    include AdminNotifRoutes
-    include AuthMiddleware
-    include SequelizeModels
-    include MulterMemory
-    include ImageUploadUtil
-    include RedisUtil
-    include MessageBusUtil
-    include AdminNotificationController
-    include ServiceImage
-    autoLayout LeftRight
+  // Visão focada nos componentes internos do Backend
+  view backendComponents {
+    title "C4 - Components: Backend"
+    description "Componentes internos do Backend API e suas conexões com sistemas externos como banco de dados, cache e microserviço de imagens."
+    
+    // Inclui o container do backend e todos os seus componentes internos
+    include backend.*
+    
+    // Inclui os sistemas externos com os quais o backend se comunica
+    include mainDb, redis, imageService
+    
+    autoLayout TopBottom
   }
 
-  view ImageServiceComponents {
-    title 'Componentes - service-image'
-    description 'Upload e serviço de imagens.'
-    include ServiceImage
-    include ImageUserController
-    include ImageItemController
-    include ImageItemService
-    include UploadAdapter
-    include FileInterceptor
-    include StaticServe
-    include DiskStorage
+  // Visão focada na interação dos Frontends
+  view frontendInteraction {
+    title "C4 - Componets: Frontends"
+    description "Como os atores interagem com as aplicações Frontend e como estas se conectam à API através do Gateway."
+    
+    // Inclui os atores, os frontends, o gateway e o backend como uma caixa preta
+    include User, admin, mobileApp, adminWeb, nginx, backend
+    
     autoLayout LeftRight
   }
-
-  style UploadAdapter { color gray }
 }

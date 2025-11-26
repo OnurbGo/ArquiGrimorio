@@ -3,7 +3,6 @@ import { View, Text } from "react-native";
 export default function UserProfile({ userItems, userLikesTotal } : { userItems: any[]; userLikesTotal: number }) {
   return (
     <View className="flex-row justify-between my-3.5">
-      {/* INÍCIO COMPONENTE: StatCard (Itens Criados) */}
       <View className="flex-1 mx-1.5 p-3.5 rounded-xl bg-white items-center border border-slate-100">
         <Text className="text-lg">📚</Text>
         <Text className="text-xl font-extrabold text-slate-900 mt-1.5">
@@ -11,9 +10,6 @@ export default function UserProfile({ userItems, userLikesTotal } : { userItems:
         </Text>
         <Text className="text-slate-500 mt-1">Itens Criados</Text>
       </View>
-
-      {/* FIM COMPONENTE: StatCard (Itens Criados) */}
-      {/* INÍCIO COMPONENTE: StatCard (Likes Totais) */}
       <View className="flex-1 mx-1.5 p-3.5 rounded-xl bg-white items-center border border-slate-100">
         <Text className="text-lg">❤️</Text>
         <Text className="text-xl font-extrabold text-slate-900 mt-1.5">

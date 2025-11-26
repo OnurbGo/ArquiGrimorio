@@ -16,9 +16,8 @@ export default function Home() {
       <Navigation />
 
       <ScrollView style={{ flex: 1 }}>
-        {/* Hero Section */}
         <LinearGradient
-          colors={["#07070a", "#0e0f14", "#141417"]} // bgStart, bgMid, bgEnd
+          colors={["#07070a", "#0e0f14", "#141417"]}
           start={[0, 0]}
           end={[1, 1]}
           className="px-6 py-10 items-center rounded-b-2xl"
@@ -47,8 +46,6 @@ export default function Home() {
             para jogadores.
           </Text>
         </LinearGradient>
-        {/* End of HeroSection */}
-
         <View className="px-5 pt-6">
           <Text className="text-sectionTitle text-2xl font-bold mb-4 text-center">
             Visão Geral

@@ -18,6 +18,8 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../utils/AuthContext";
+import useHookGetUser from "@/hooks/user/hookGetUser";
+import api from "@/services/api";
 
 const NAV_ITEMS = [
   { key: "Home", label: "Grimório", route: "Home", icon: BookOpen },
@@ -49,8 +51,10 @@ export default function Navigation() {
     }
   }
 
-  const avatarUrl = user?.url_img ?? null;
-  const profileName = user?.name ?? null;
+  const {getUser} = useHookGetUser();
+  const avatarUrl = `${api.defaults.baseURL}${getUser?.url_img}`;
+  const profileName = getUser?.name ?? null;
+  //console.log("Avatar URL:", avatarUrl);
 
   return (
     <View className="w-full bg-[#181825] border-b-2 border-b-[#7f32cc] py-[2%] px-[3%] pr-5 z-50">
@@ -71,7 +75,6 @@ export default function Navigation() {
         {isWide ? (
           <View className="flex-row items-center">
             <View className="flex-row items-center justify-start gap-6 min-w-0">
-              {/* Grimório */}
               <TouchableOpacity
                 onPress={() => goTo("Home")}
                 className="flex-row items-center ml-2 py-1.5 px-2.5 rounded-lg bg-[#23234a] shrink-0"
@@ -80,7 +83,6 @@ export default function Navigation() {
                 <BookOpen size={18} color="#fff" />
                 <Text className="ml-2 text-sm text-white">Grimório</Text>
               </TouchableOpacity>
-              {/* Buscar */}
               <TouchableOpacity
                 onPress={() => goTo("Search")}
                 className="flex-row items-center ml-2 py-1.5 px-2.5 rounded-lg bg-[#23234a] shrink-0"
@@ -89,7 +91,6 @@ export default function Navigation() {
                 <Search size={18} color="#fff" />
                 <Text className="ml-2 text-sm text-white">Buscar</Text>
               </TouchableOpacity>
-              {/* Criar Item - moved left, before avatar */}
               <TouchableOpacity
                 onPress={() => goTo("CreateItem")}
                 className="flex-row items-center ml-3 py-1.5 px-2.5 rounded-lg bg-[#7f32cc] relative z-20 shrink-0"
@@ -154,7 +155,6 @@ export default function Navigation() {
                       </View>
                     </TouchableOpacity>
 
-                    {/* Editar Item */}
                     <TouchableOpacity
                       onPress={() => {
                         setAvatarMenuOpen(false);
@@ -197,7 +197,6 @@ export default function Navigation() {
           </View>
         ) : (
           <View className="flex-row items-center">
-            {/* No mobile, só mostra o menu hamburger e login */}
             {!isAuthenticated ? null : null}
             <TouchableOpacity
               onPress={() => setHamburgerOpen((s) => !s)}
@@ -243,7 +242,6 @@ export default function Navigation() {
                 <Text className="text-[15px] text-white">Ver Perfil</Text>
               </TouchableOpacity>
 
-              {/* Editar Item - mobile hamburger menu */}
               <TouchableOpacity
                 onPress={() => {
                   setHamburgerOpen(false);
@@ -282,8 +280,7 @@ export default function Navigation() {
             <UserIcon size={16} color="#fff" className="mr-2.5" />
             <Text className="text-white">Ver Perfil</Text>
           </TouchableOpacity>
-
-          {/* Editar Item - mobile avatar menu */}
+          
           <TouchableOpacity
             onPress={() => {
               setAvatarMenuOpen(false);

@@ -9,7 +9,7 @@ export interface UserAttributes {
   password: string;
   url_img?: string | null;
   description?: string | null;
-  admin?: boolean; // <— ADD (se ainda não existir)
+  admin?: boolean;
 }
 
 interface UserCreationAttributes
@@ -25,9 +25,8 @@ class UserModel
   public password!: string;
   public url_img?: string | null;
   public description?: string | null;
-  public admin?: boolean; // <— ADD (se ainda não existir)
+  public admin?: boolean;
 
-  // Hash da senha antes de salvar
   public async hashPassword(): Promise<void> {
     if (this.password) {
       const salt = await bcrypt.genSalt(10);
@@ -35,7 +34,6 @@ class UserModel
     }
   }
 
-  // Validação de senha
   public async validatePassword(password: string): Promise<boolean> {
     if (!this.password) return false;
     return bcrypt.compare(password, this.password);
@@ -100,7 +98,6 @@ UserModel.init(
   }
 );
 
-// Hooks para hash de senha
 UserModel.beforeCreate(async (user: UserModel) => {
   if (user.password) {
     await user.hashPassword();

@@ -13,8 +13,12 @@ export class ImageItemController {
   @UseInterceptors(FileInterceptor('file'))
   upload(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
+      console.log('[image-item] no file received');
       throw new BadRequestException('File not provided.');
     }
+    console.log(
+      `[image-item] received file orig=${file.originalname} stored=${file.filename} mime=${file.mimetype} size=${file.size}`,
+    );
     return {
       filename: file.filename,
       mimetype: file.mimetype,

@@ -11,15 +11,11 @@ export const isAuthenticated = async (): Promise<boolean> => {
     const token = await AsyncStorage.getItem(AUTH_KEY);
     return !!token;
   } catch (err) {
-    // em erro, considerar não autenticado
     console.warn("isAuthenticated error:", err);
     return false;
   }
 };
 
-/**
- * Retorna o token (ou null) de forma assíncrona.
- */
 export const getAuthToken = async (): Promise<string | null> => {
   try {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -32,9 +28,6 @@ export const getAuthToken = async (): Promise<string | null> => {
   }
 };
 
-/**
- * Helpers extras (opcionais) para salvar / remover o token.
- */
 export const setAuthToken = async (token: string): Promise<void> => {
   try {
     if (Platform.OS === "web" && typeof window !== "undefined") {

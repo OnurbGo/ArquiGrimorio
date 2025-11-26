@@ -7,20 +7,24 @@ import {
   View,
 } from "react-native";
 import type { Item } from "../interface/Item";
+import api from "@/services/api";
 
 interface Props {
   item: Item;
-  onEdit: (item: Item) => void; // aberto como modal pela tela pai
-  onDelete: (id: number) => void; // usado caso queira deletar direto do card
+  onEdit: (item: Item) => void;
+  onDelete: (id: number) => void;
 }
 
-/**
- * Cartão usado na lista de edição de itens (visual escuro).
- * - Exibe image_url com mais espaço e resizeMode contain (imagem aparece completa).
- * - Chama onEdit(item) para abrir modal de edição (pai decide o que fazer).
- */
 export default function ItemCardEdit({ item, onEdit }: Props) {
-  const thumb = item.image_url || null;
+  function toAbsoluteUrl(url?: string | null) {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    const base = (api.defaults.baseURL || "").replace(/\/$/, "");
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return `${base}${path}`;
+  }
+
+  const thumb = toAbsoluteUrl(item.image_url) || null;
 
   const handleEdit = (e?: GestureResponderEvent) => {
     onEdit(item);

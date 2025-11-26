@@ -7,7 +7,6 @@ jest.mock("../src/middleware/authMiddleware", () => {
   return {
     authMiddleware: (req: any, res: any, next: any) => {
       req.user = { id: 1 };
-      // Verifica se o id da rota é o mesmo do usuário autenticado
       if (Number(req.params.id) !== req.user.id) {
         return res.status(403).json({ error: "Acesso negado" });
       }
@@ -43,7 +42,7 @@ describe("User Endpoint", () => {
 
   test("PUT /users/:id should allow user to edit their own data", async () => {
     const response = await request(app)
-      .put("/users/1") // ID do usuário autenticado
+      .put("/users/1")
       .send({
         name: "Paulo Gustavo",
         email: "emailatualizado@gmail.com",
@@ -64,7 +63,7 @@ describe("User Endpoint", () => {
       type: "teacher",
     });
 
-    expect(response.status).toBe(403); // Deve retornar Forbidden
+    expect(response.status).toBe(403);
     expect(response.body.error).toBe("Acesso negado");
   });
 });

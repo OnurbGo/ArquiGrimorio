@@ -10,7 +10,6 @@ export default function RarityType({
     <View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <View style={{ flex: 1, zIndex: 99999 }}>
-          {/* INÍCIO COMPONENTE: SelectField (Raridade) */}
           <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
             Raridade
           </Text>
@@ -24,11 +23,9 @@ export default function RarityType({
             containerStyle={{ zIndex: 99999 }}
             labelStyle={{ color: "#fff" }}
           />
-          {/* FIM COMPONENTE: SelectField (Raridade) */}
         </View>
 
         <View style={{ flex: 1, zIndex: 99999 }}>
-          {/* INÍCIO COMPONENTE: SelectField (Tipo) */}
           <Text className="text-[#d1cfe8] mb-1.5 mt-1.5 font-semibold">
             Tipo
           </Text>
@@ -40,7 +37,6 @@ export default function RarityType({
             containerStyle={{ zIndex: 99999 }}
             labelStyle={{ color: "#fff" }}
           />
-          {/* FIM COMPONENTE: SelectField (Tipo) */}
         </View>
       </View>
     </View>
