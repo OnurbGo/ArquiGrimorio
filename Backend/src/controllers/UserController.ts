@@ -145,6 +145,7 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const { name, password, description, admin } = req.body;
+    const requester = (req as any).user;
 
     if (name !== undefined) {
       if (!String(name).trim()) {
@@ -168,6 +169,9 @@ export const updateUser = async (req: Request<{ id: string }>, res: Response) =>
     }
 
     if (admin !== undefined) {
+      if (!requester?.admin) {
+        return res.status(403).json({ error: "Sem permissão para alterar privilégio admin" });
+      }
       (user as any).admin = toBool(admin);
     }
 
